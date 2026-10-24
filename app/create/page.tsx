@@ -66,6 +66,10 @@ export default function CreateAgreementPage() {
   const [extractedData, setExtractedData] = useState<ExtractedAgreementData | null>(null);
   const [draft, setDraft] = useState<AgreementDraft | null>(null);
   const [formationAnalysis, setFormationAnalysis] = useState<FormationAnalysis | null>(null);
+  const [garmentData, setGarmentData] = useState<any>(null);
+  const [udyamUrn, setUdyamUrn] = useState('UDYAM-KR-03-0128945');
+  const [isSec29Halted, setIsSec29Halted] = useState(false);
+  const [sec29Reasons, setSec29Reasons] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'letter' | 'terms' | 'missing' | 'draft' | 'traceability' | 'stamp' | 'bsa' | 'tamper'>('letter');
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
@@ -81,6 +85,11 @@ export default function CreateAgreementPage() {
     setValidationErrors([]);
     setApiError(null);
     setStatutoryBlock(null);
+    setIsSec29Halted(false);
+    setSec29Reasons([]);
+    if (preset.id === 'bommanahalli-kurti') setUdyamUrn('UDYAM-KR-03-0128945');
+    else if (preset.id === 'tiruppur-polo') setUdyamUrn('UDYAM-TN-27-0045812');
+    else if (preset.id === 'ambiguous-cargo-pants') setUdyamUrn('');
   };
 
   const handleTrySampleQuick = () => {
@@ -158,6 +167,7 @@ export default function CreateAgreementPage() {
           businessContext,
           rawConversation,
           consentAcknowledged,
+          udyam_urn: udyamUrn,
         }),
       });
 
@@ -169,6 +179,16 @@ export default function CreateAgreementPage() {
 
       setExtractedData(result.extractedData);
       setDraft(result.draft);
+      if (result.garmentAnalysis) {
+        setGarmentData(result.garmentAnalysis);
+        if (result.garmentAnalysis.contract_status === 'HALTED_AMBIGUOUS_SEC_29') {
+          setIsSec29Halted(true);
+          setSec29Reasons(result.garmentAnalysis.sec_29_halt_reasons || []);
+        } else {
+          setIsSec29Halted(false);
+          setSec29Reasons([]);
+        }
+      }
       setActiveTab('letter');
 
       // Auto-save to draft store
@@ -400,6 +420,63 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
             className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all leading-relaxed"
           />
         </div>
+
+        {/* Udyam Pre-Registration Gatekeeper Input (Silpi Industries / NBCC 2025 Precedent) */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5">
+            <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+              <span>Tailor Udyam Registration (URN)</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-bold">
+                Silpi / NBCC (2025) Gatekeeper
+              </span>
+            </span>
+            <p className="text-[11px] text-slate-400">
+              Required before date of supply to unlock 3x RBI interest & MSME ODR Portal (MSEFC) recovery.
+            </p>
+          </div>
+          <input
+            type="text"
+            value={udyamUrn}
+            onChange={e => setUdyamUrn(e.target.value.toUpperCase())}
+            placeholder="UDYAM-KR-03-0128945"
+            className="w-full sm:w-60 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        {/* Section 29 ICA Hard Halt on Ambiguity Banner */}
+        {isSec29Halted && (
+          <div className="bg-amber-950/70 border-2 border-amber-500 rounded-2xl p-6 text-white space-y-3 animate-in fade-in">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-amber-600 text-white">
+                  <AlertTriangle className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-amber-200">
+                    CONTRACT HALTED: VOID FOR UNCERTAINTY (SECTION 29 INDIAN CONTRACT ACT, 1872)
+                  </h3>
+                  <p className="text-xs text-amber-300/80 mt-0.5 font-mono">
+                    Signing blocked until open ranges and subjective rates are made certain
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/80 p-4 rounded-xl border border-amber-900/60 space-y-2 text-xs">
+              <p className="text-amber-200 leading-relaxed font-sans">
+                <strong>Legal Finding:</strong> The chat contains indefinite commercial terms that cannot be enforced in a court of law:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1 font-mono text-[11px]">
+                {sec29Reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+              <p className="text-emerald-300 pt-2 border-t border-amber-950 font-sans">
+                <strong>Protective Action:</strong> Ask the buyer to confirm an exact piece count and definite per-piece stitching rate before cutting fabric.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Big Action Button */}
         <button

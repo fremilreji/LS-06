@@ -25,6 +25,26 @@ export async function POST(req: NextRequest) {
     // Run hybrid analysis (uses Gemini if GEMINI_API_KEY is configured, else deterministic rules)
     const extractedData = await extractTermsHybrid(rawConversation, title, businessContext);
 
+    // Call Python FastAPI statutory engine for Garment Job-Work Sector analysis
+    let garmentAnalysis = null;
+    try {
+      const fastApiResponse = await fetch('http://127.0.0.1:8000/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raw_chat: rawConversation,
+          udyam_urn: body.udyam_urn || 'UDYAM-KR-03-0128945',
+          state: body.state || 'Karnataka',
+        }),
+        signal: AbortSignal.timeout(3000),
+      });
+      if (fastApiResponse.ok) {
+        garmentAnalysis = await fastApiResponse.json();
+      }
+    } catch {
+      // FastAPI fallback continues smoothly with local deterministic rules
+    }
+
     // Generate initial plain-language draft with [Needs confirmation] tags
     const draft = await generateAgreementDraft(extractedData);
 
@@ -32,6 +52,7 @@ export async function POST(req: NextRequest) {
       success: true,
       extractedData,
       draft,
+      garmentAnalysis,
     });
   } catch (error: any) {
     console.error('Analysis error:', error);

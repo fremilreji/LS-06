@@ -10,68 +10,57 @@ export interface SamplePreset {
 
 export const SAMPLE_CONVERSATIONS: SamplePreset[] = [
   {
-    id: 'chairs-ravi',
-    title: 'Procurement of 100 Office Chairs (Benchmark)',
-    category: 'Furniture Supply / Goods',
-    businessContext: 'Office setup procurement between vendor and commercial buyer',
-    rawConversation: `Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver them within 10 days. You can pay after delivery. Please confirm.`,
-    description: 'Official hackathon benchmark prompt. Tests role distinction, missing tax terms, unspecified delivery trigger, and lack of inspection protocol.',
+    id: 'bommanahalli-kurti',
+    title: 'Bommanahalli Kurti Stitching Lot (1,500 Pcs)',
+    category: 'Garment Job-Work / Micro-Unit',
+    businessContext: 'Cutting, stitching & finishing on buyer-supplied Rayon fabric',
+    rawConversation: `10:00 AM [Raghav - Apex Fashion Brands]: Namaste Suresh ji, we need 1,500 Rayon Printed Kurtis stitched. Fabric cut panels and main brand labels will be supplied by our warehouse. Thread, buttons, and polybag packing from your end.
+10:05 AM [Suresh - Lakshmi Garments (Tailor)]: Namaste Raghav ji. Our rate for cutting-stitching-finishing is ₹70 per piece. Total consideration will be ₹1,05,000.
+10:08 AM [Raghav - Apex Fashion Brands]: Rate ₹70 is approved. Delivery needed at our Bommanahalli warehouse on or before November 5.
+10:12 AM [Suresh - Lakshmi Garments (Tailor)]: Done sir. Please send fabric by tomorrow. Payment terms please confirm.
+10:15 AM [Raghav - Apex Fashion Brands]: Payment baad mein karenge, standard cycle mein ho jayega. Please start sampling.`,
+    description: 'Real garment cluster case. Tests 2 sector exploitation traps: unstated payment date ("baad mein") and missing inspection cutoff. Injects Sec 15 MSMED 15-day rule and Sec 41 SOGA 72-hr inspection.',
     highlightedExpectations: [
-      'Identifies speaker as prospective supplier and Ravi as counterparty (not supplier)',
-      'Identifies quantity: 100 office chairs, price: ₹50,000, timeline: within 10 days, payment: after delivery',
-      'Flags critical missing terms: Registered entities, GST inclusion, delivery start date, payment due deadline',
-      'Flags missing transport responsibility and inspection window',
+      'Extracts 1,500 Rayon Kurtis @ ₹70/pc (Total: ₹1,05,000 INR)',
+      'Identifies Suresh (Lakshmi Garments) as Job-Worker Bailee and Raghav (Apex) as Buyer Bailor',
+      'Flags Trap 1: Missing defect inspection cutoff (protects against delayed Kat debit notes)',
+      'Flags Trap 2: Unstated payment date (auto-applies 15-day Appointed Day default under MSMED Sec 15)',
+      'Injects 2.5% permissible wastage allowance & latent defect shield under Sec 150-152 ICA',
     ],
   },
   {
-    id: 'app-dev-priya',
-    title: 'Custom Mobile App Frontend Development (Novation Demo)',
-    category: 'Software Services',
-    businessContext: 'Freelance development engagement for a local retail mobile application',
-    rawConversation: `Dear Priya,
-As discussed on the call, our agency can develop the Flutter mobile app for your grocery store for ₹85,000. 
-We will need 40% advance to start work, 30% on beta milestone, and the remaining 30% upon final app store submission.
-Target completion is within 45 days. 
-Please share your business GSTIN and initial approval.`,
-    description: 'Service contract scenario with milestone-based payments and technical delivery scope.',
+    id: 'tiruppur-polo',
+    title: 'Tiruppur Polo T-Shirts (Voice-Note Scope Creep)',
+    category: 'Knitwear Job-Work / Variation',
+    businessContext: '2,000 pcs Polo T-shirts with mid-stream embroidery & bio-wash variation',
+    rawConversation: `09:30 AM [Kumar - Tiruppur Knitwear Hub]: Hello brother, we are locking 2,000 Polo T-Shirts stitching at ₹55/piece. Delivery deadline is October 30.
+09:35 AM [Murugan - Murugan Apparels (Job-Worker)]: Confirmed Kumar sir. 2,000 pcs @ ₹55/pc = ₹1,10,000. 50% advance on PO, balance within 15 days.
+02:15 PM [Kumar - Tiruppur Knitwear Hub] [Voice Note MSG-03]: "Brother, one small change in the Polo order. Brand wants chest logo embroidery plus silicone bio-wash on all pieces, and add 300 extra XXL pieces. Delivery October 30 only, at the same ₹55 rate."
+02:45 PM [Murugan - Murugan Apparels (Job-Worker)]: Sir, embroidery and bio-wash require external job work. Rate will be +₹15 extra (₹70/piece total) and delivery requires 2 more days till November 2. Please confirm.
+03:10 PM [Kumar - Tiruppur Knitwear Hub]: Done, ₹70/pc approved for full lot, November 2 delivery, 30 days payment.`,
+    description: 'Demonstrates mid-stream voice-note scope creep resolved bilaterally under Section 62 & 70 (Quantum Meruit) of the Indian Contract Act, 1872.',
     highlightedExpectations: [
-      'Extracts 40/30/30 milestone payment terms and ₹85,000 project fee',
-      'Detects 45-day development timeline',
-      'Flags missing IP ownership handover clause, scope-creep limits, and third-party API expense liabilities',
+      'Detects mid-stream voice note MSG-03 adding operations (embroidery + bio-wash)',
+      'Shields tailor under Section 7 & 62 ICA against unilateral scope creep at old rate',
+      'Confirms bilateral rate revision to ₹70/pc and extended deadline to November 2',
+      'Applies Sections 53 & 67 delay shield for fabric supply delays',
     ],
   },
   {
-    id: 'cotton-textiles',
-    title: 'Wholesale Cotton Fabric Order',
-    category: 'Manufacturing / Textiles',
-    businessContext: 'B2B supply of raw textile materials between distributor and garment manufacturer',
-    rawConversation: `Namaste Sharmaji,
-We can supply 500 meters of premium cotton fabric at ₹120 per meter. Total comes to ₹60,000.
-We can dispatch the rolls within 5 days from our Surat warehouse. 
-Payment via RTGS within 15 days of invoice date. 
-Freight extra at actuals. 
-Kindly confirm so we can block the inventory for you.`,
-    description: 'B2B manufacturing transaction with freight liability, explicit unit pricing, and credit terms.',
-    highlightedExpectations: [
-      'Extracts unit price (₹120/m) and total price (₹60,000) for 500 meters',
-      'Explicitly detects freight is extra at actuals',
-      'Highlights missing quality inspection window (fabric defect detection before cutting)',
-      'Asks for GST inclusion confirmation',
-    ],
-  },
-  {
-    id: 'failure-edge-case',
-    title: 'Failure Edge Case: Vague Informal Banter (Section 29 ICA)',
+    id: 'ambiguous-cargo-pants',
+    title: 'Cargo Pants Ambiguity Trap (Sec 29 ICA Hard Halt)',
     category: 'Uncertainty / Void Contract',
-    businessContext: 'Casual WhatsApp exchange lacking essential terms',
-    rawConversation: `09:15 AM [Karan]: Bro send the usual items at last month's cash rate.
-09:18 AM [Sunil]: Done bro, will send.`,
-    description: 'Intellectual honesty demo: Refuses to hallucinate missing terms. Correctly flags deal as Void for Uncertainty under Section 29 of the Indian Contract Act, 1872.',
+    businessContext: 'Vague quantity range, unfixed rate, and arbitrary flat deduction threat',
+    rawConversation: `11:00 AM [Buyer - Unverified Sourcing Agent]: Bhai cargo pants banana hai. 1,500 se 2,000 pieces ke beech banwana hai. Rate market rate chalega, ₹90 se ₹105 ke beech finishing dekh ke denge.
+11:15 AM [Tailor - Small Stitching Workshop]: Bhai payment kab milega aur delivery kab chahiye?
+11:20 AM [Buyer - Unverified Sourcing Agent]: Delivery jaldi chahiye. Payment jab showroom party paisa chhorega tab milega. Agar fitting me zara bhi dikkat aayi toh flat 20% kat-ke milega. Saman bhej rahe hain.`,
+    description: 'Intellectual honesty demo: Triggers Hard Halt under Section 29 ICA (agreements void for uncertainty) and blocks signing until definite terms are confirmed.',
     highlightedExpectations: [
-      'Refuses to fabricate prices, quantities, or product names',
-      'Flags scope and consideration as completely missing',
-      'Scores validity at 20% and warns agreement cannot be enforced in an Indian court',
-      'Drafts a WhatsApp clarification asking for explicit written terms before dispatch',
+      'Halts contract generation under Section 29 Indian Contract Act, 1872',
+      'Flags open quantity range ("1,500 se 2,000 pcs") as non-contractual',
+      'Flags subjective rate ("market rate / finishing dekh ke") as legally indefinite',
+      'Blocks arbitrary 20% penalty clause under Section 74 ICA',
+      'Outputs 1-tap WhatsApp clarification checklist in Hinglish',
     ],
   },
 ];
