@@ -154,18 +154,37 @@ export function detectMissingAndAmbiguousTerms(data: {
     });
   }
 
-  // Calculate Completeness Score (0-100)
-  // Baseline 100, deduct based on missing issues
-  let score = 100;
-  for (const m of missing) {
-    if (m.criticality === 'CRITICAL') score -= 18;
-    else if (m.criticality === 'IMPORTANT') score -= 10;
-    else score -= 5;
-  }
-  for (const _a of ambiguous) {
-    score -= 6;
-  }
-  const finalScore = Math.max(15, Math.min(100, score));
+  // Calculate Completeness Score (0-100) using weighted contract pillars:
+  // Core Formation Terms (60%):
+  // - Scope of Goods/Services: 15%
+  // - Price / Financial Consideration: 15%
+  // - Quantity: 10%
+  // - Delivery Timeline: 10%
+  // - Payment Terms: 10%
+  // Regulatory & Operational Terms (40%):
+  // - Party Identification: 10% (5% each)
+  // - Tax / GST Status: 10%
+  // - Freight / Transport Liability: 8%
+  // - Quality Inspection Window: 7%
+  // - Cancellation Remedies: 5%
+  let score = 0;
+  if (data.scopeOrProducts.isExplicit && !data.scopeOrProducts.value.includes('Needs confirmation')) score += 15;
+  if (data.price.isExplicit && !data.price.value.includes('Unspecified')) score += 15;
+  if (data.quantity.isExplicit && !data.quantity.value.includes('Unspecified')) score += 10;
+  if (data.deliveryTimeline.isExplicit && !data.deliveryTimeline.value.includes('Unspecified')) score += 10;
+  if (data.paymentTerms.isExplicit && !data.paymentTerms.value.includes('Needs Confirmation')) score += 10;
+
+  if (data.partyA.isExplicit && !data.partyA.name.includes('First Party')) score += 5;
+  if (data.partyB.isExplicit && !data.partyB.name.includes('Counterparty')) score += 5;
+  if (data.taxInclusiveStatus !== 'UNSPECIFIED') score += 10;
+  if (data.transportResponsibility.isExplicit && !data.transportResponsibility.value.includes('Unspecified')) score += 8;
+  if (data.qualityAcceptance.isExplicit && !data.qualityAcceptance.value.includes('Unspecified')) score += 7;
+  if (data.cancellationRefund.isExplicit && !data.cancellationRefund.value.includes('Unspecified')) score += 5;
+
+  // Modest deduction for ambiguities (-3 pts each)
+  score -= (ambiguous.length * 3);
+
+  const finalScore = Math.max(15, Math.min(100, Math.round(score)));
 
   return {
     missingTerms: missing,

@@ -66,6 +66,25 @@ describe('DealProof AI - Analysis & Extraction Engine', () => {
     expect(hash1).not.toBe(hashAltered);
   });
 
+  it('correctly extracts terms from user structured bullet summary with quotes and direct name', async () => {
+    const userChat = `"Ravi, so we're on the same page regarding our agreement:
+• Scope: 100 ergonomic office chairs (100 units)
+• Consideration: ₹50,000 (INR)
+• Delivery: within 10 days
+• Payment: after delivery
+Please reply 'Confirmed' to lock this version."`;
+
+    const result = await extractTermsRuleBased(userChat, 'Office Chairs Agreement');
+    expect(result.partyB.name).toBe('Ravi');
+    expect(result.scopeOrProducts.value).toContain('ergonomic office chairs');
+    expect(result.quantity.value).toContain('100');
+    expect(result.price.value).toBe('₹50,000');
+    expect(result.currency).toBe('INR');
+    expect(result.deliveryTimeline.value.toLowerCase()).toContain('within 10 days');
+    expect(result.paymentTerms.value.toLowerCase()).toContain('after delivery');
+    expect(result.completenessScore).toBeGreaterThanOrEqual(40);
+  });
+
   it('generates a valid PDF document with realistic sample', async () => {
     const extracted = await extractTermsRuleBased(benchmarkChat, 'Chairs Purchase Agreement');
     const draft = await generateAgreementDraft(extracted);

@@ -15,33 +15,43 @@ export async function extractTermsRuleBased(
   const cleanedText = rawText.trim();
   const lowerText = cleanedText.toLowerCase();
 
-  // 1. Identify Addressee and Speaker
-  // e.g. "Hi Ravi", "Dear Ramesh", "Hey Alex"
-  const greetingMatch = cleanedText.match(/(?:hi|hello|hey|dear)\s+([A-Z][a-zA-Z0-9_\s]{1,20}?)(?:,|\.|\n|$)/i);
-  const addresseeName = greetingMatch ? greetingMatch[1].trim() : '';
+  // 1. Identify Addressee, Speaker, and Explicit Labeled Parties
+  // Explicit party labels: e.g. "Buyer: Ravi", "Party B: Ravi", "Seller: ABC Ltd"
+  const partyALabelMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:seller|supplier|provider|vendor|party\s*a)\s*:\s*([^\n]+)/i);
+  const partyBLabelMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:buyer|client|counterparty|party\s*b|customer)\s*:\s*([^\n]+)/i);
+
+  // Greetings e.g. "Hi Ravi", "Dear Ramesh", "Hey Alex" OR direct address e.g. '"Ravi, so we\'re on the same page' or 'Ravi,'
+  const greetingMatch =
+    cleanedText.match(/(?:hi|hello|hey|dear)\s+([A-Z][a-zA-Z0-9_\s]{1,20}?)(?:,|\.|\n|$)/i) ||
+    cleanedText.match(/^["']?\s*([A-Z][a-zA-Z0-9_]{1,20})(?:,|\.|\s+so\b|\s+please\b)/im);
+
+  const addresseeName = partyBLabelMatch ? partyBLabelMatch[1].trim() : (greetingMatch ? greetingMatch[1].trim() : '');
+  const explicitSenderName = partyALabelMatch ? partyALabelMatch[1].trim() : '';
 
   // Determine roles based on verbs like "I can supply", "I can build", "We will provide" vs "Can you provide"
   const isSenderOffering = /(?:i can supply|i can provide|i can deliver|we can supply|we can provide|we can build|i will create|i will develop)/i.test(lowerText);
   const isSenderRequesting = /(?:can you provide|can you supply|looking for|quote for|need)/i.test(lowerText);
 
   let partyA: PartyInfo = {
-    name: '[First Party / Provider - Needs Legal Name]',
+    name: explicitSenderName || '[First Party / Provider - Needs Legal Name]',
     role: 'Supplier',
-    isExplicit: false,
-    confidence: 'LOW',
-    clarificationNeeded: 'The sender offers terms in first person ("I can supply"), but the registered entity name is unstated.',
-    excerpt: greetingMatch ? greetingMatch[0] : undefined,
+    isExplicit: !!explicitSenderName,
+    confidence: explicitSenderName ? 'HIGH' : 'LOW',
+    clarificationNeeded: explicitSenderName 
+      ? undefined 
+      : 'The sender offers terms in first person ("I can supply"), but the registered entity name is unstated.',
+    excerpt: partyALabelMatch ? partyALabelMatch[0] : (greetingMatch ? greetingMatch[0] : undefined),
   };
 
   let partyB: PartyInfo = {
     name: addresseeName ? addresseeName : '[Counterparty / Buyer - Needs Confirmation]',
     role: 'Buyer',
     isExplicit: !!addresseeName,
-    confidence: addresseeName ? 'MEDIUM' : 'LOW',
+    confidence: partyBLabelMatch ? 'HIGH' : (addresseeName ? 'MEDIUM' : 'LOW'),
     clarificationNeeded: addresseeName
       ? `Addressed as "${addresseeName}". Needs verification whether ${addresseeName} represents an entity or individual.`
       : 'Counterparty name is not specified in the conversation.',
-    excerpt: greetingMatch ? greetingMatch[0] : undefined,
+    excerpt: partyBLabelMatch ? partyBLabelMatch[0] : (greetingMatch ? greetingMatch[0] : undefined),
   };
 
   if (isSenderRequesting && !isSenderOffering) {
@@ -62,60 +72,119 @@ export async function extractTermsRuleBased(
     confidence: 'LOW',
   };
 
-  // Check common quantity patterns e.g. "100 office chairs", "50 units", "500 meters of cotton"
-  const quantityWithProductMatch = cleanedText.match(/(\b\d+(?:,\d+)?(?:\.\d+)?\s*(?:units?|chairs?|pieces?|pcs?|meters?|mtrs?|boxes?|kg|tons?|laptops?|items?|hours?|pages?)?(?:\s+[a-zA-Z0-9\s-]{2,40})?)/i);
-  
-  // Specific chair / furniture / dev pattern
-  const chairPattern = cleanedText.match(/(\d+)\s*(office\s*chairs?|chairs?|tables?|desks?)/i);
-  const devPattern = cleanedText.match(/(mobile\s*app|application|website|software|e-commerce\s*app|crm|portal)/i);
-  const fabricPattern = cleanedText.match(/(\d+)\s*(meters?|mtrs?|rolls?)\s*(?:of\s*)?([a-zA-Z\s]{3,30})/i);
+  // Check structured bullet or labeled lines first (e.g. "• Scope: 100 ergonomic office chairs (100 units)")
+  const scopeLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:scope|item|product|deliverable|service)s?\s*:\s*([^\n]+)/i);
+  const qtyLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:quantity|qty)s?\s*:\s*([^\n]+)/i);
 
-  if (chairPattern) {
+  if (scopeLineMatch) {
+    const rawScope = scopeLineMatch[1].trim();
+    // Check if parentheses contain quantity e.g. "(100 units)" or "(50 pcs)"
+    const parenQty = rawScope.match(/\((\d+(?:,\d+)?(?:\.\d+)?\s*(?:units?|pcs?|pieces?|chairs?|boxes?|items?|mtrs?|meters?|rolls?)?)\)/i);
+    // Check leading quantity e.g. "100 ergonomic office chairs"
+    const leadingQty = rawScope.match(/^(\d+(?:,\d+)?(?:\.\d+)?)\s*(?:units?|pcs?|pieces?)?\s+(.+)$/i);
+
+    if (parenQty) {
+      const qVal = parenQty[1].trim();
+      quantity = {
+        value: /\s*(?:units?|pcs?|pieces?|chairs?|items?|meters?)/i.test(qVal) ? qVal : `${qVal} units`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: scopeLineMatch[0],
+      };
+      const cleanedProduct = rawScope.replace(/\(.*?\)/g, '').trim();
+      scopeOrProducts = {
+        value: cleanedProduct,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: scopeLineMatch[0],
+      };
+    } else if (leadingQty) {
+      quantity = {
+        value: `${leadingQty[1]} units`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: scopeLineMatch[0],
+      };
+      scopeOrProducts = {
+        value: leadingQty[2].trim(),
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: scopeLineMatch[0],
+      };
+    } else {
+      scopeOrProducts = {
+        value: rawScope,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: scopeLineMatch[0],
+      };
+    }
+  }
+
+  if (qtyLineMatch) {
     quantity = {
-      value: chairPattern[1] + ' units',
+      value: qtyLineMatch[1].trim(),
       isExplicit: true,
       confidence: 'HIGH',
-      excerpt: chairPattern[0],
+      excerpt: qtyLineMatch[0],
     };
-    scopeOrProducts = {
-      value: chairPattern[2],
-      isExplicit: true,
-      confidence: 'HIGH',
-      excerpt: chairPattern[0],
-    };
-  } else if (fabricPattern) {
-    quantity = {
-      value: `${fabricPattern[1]} ${fabricPattern[2]}`,
-      isExplicit: true,
-      confidence: 'HIGH',
-      excerpt: fabricPattern[0],
-    };
-    scopeOrProducts = {
-      value: fabricPattern[3].trim(),
-      isExplicit: true,
-      confidence: 'HIGH',
-      excerpt: fabricPattern[0],
-    };
-  } else if (devPattern) {
-    scopeOrProducts = {
-      value: devPattern[0],
-      isExplicit: true,
-      confidence: 'HIGH',
-      excerpt: devPattern[0],
-    };
-    quantity = {
-      value: '1 project scope',
-      isExplicit: false,
-      confidence: 'MEDIUM',
-      excerpt: devPattern[0],
-    };
-  } else if (quantityWithProductMatch) {
-    scopeOrProducts = {
-      value: quantityWithProductMatch[0].trim(),
-      isExplicit: true,
-      confidence: 'MEDIUM',
-      excerpt: quantityWithProductMatch[0],
-    };
+  }
+
+  // If not extracted via labeled line, fall back to smart patterns
+  if (!scopeLineMatch) {
+    // Specific chair / furniture pattern allowing adjectives (e.g., "100 ergonomic office chairs", "50 executive desks")
+    const chairPattern = cleanedText.match(/(\d+)\s*(?:[a-zA-Z-]+\s+){0,3}(office\s*chairs?|chairs?|tables?|desks?|workstations?|furniture)/i);
+    const devPattern = cleanedText.match(/(mobile\s*app|application|website|software|e-commerce\s*app|crm|portal)/i);
+    const fabricPattern = cleanedText.match(/(\d+)\s*(meters?|mtrs?|rolls?)\s*(?:of\s*)?([a-zA-Z\s]{3,30})/i);
+    const quantityWithProductMatch = cleanedText.match(/(\b\d+(?:,\d+)?(?:\.\d+)?\s*(?:units?|chairs?|pieces?|pcs?|meters?|mtrs?|boxes?|kg|tons?|laptops?|items?|hours?|pages?)?(?:\s+[a-zA-Z0-9\s-]{2,40})?)/i);
+
+    if (chairPattern) {
+      quantity = {
+        value: chairPattern[1] + ' units',
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: chairPattern[0],
+      };
+      scopeOrProducts = {
+        value: chairPattern[0].replace(new RegExp(`^${chairPattern[1]}\\s*`), '').trim() || chairPattern[1],
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: chairPattern[0],
+      };
+    } else if (fabricPattern) {
+      quantity = {
+        value: `${fabricPattern[1]} ${fabricPattern[2]}`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: fabricPattern[0],
+      };
+      scopeOrProducts = {
+        value: fabricPattern[3].trim(),
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: fabricPattern[0],
+      };
+    } else if (devPattern) {
+      scopeOrProducts = {
+        value: devPattern[0],
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: devPattern[0],
+      };
+      quantity = {
+        value: '1 project scope',
+        isExplicit: false,
+        confidence: 'MEDIUM',
+        excerpt: devPattern[0],
+      };
+    } else if (quantityWithProductMatch) {
+      scopeOrProducts = {
+        value: quantityWithProductMatch[0].trim(),
+        isExplicit: true,
+        confidence: 'MEDIUM',
+        excerpt: quantityWithProductMatch[0],
+      };
+    }
   }
 
   // 3. Price & Currency
@@ -127,6 +196,9 @@ export async function extractTermsRuleBased(
   };
   let taxInclusiveStatus: 'INCLUSIVE' | 'EXCLUSIVE' | 'UNSPECIFIED' = 'UNSPECIFIED';
 
+  // Explicit consideration line e.g. "• Consideration: ₹50,000 (INR)"
+  const considerationLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:consideration|price|amount|cost|fee|total)s?\s*:\s*([^\n]+)/i);
+
   // Currency & amount patterns: ₹50,000, Rs. 50,000, Rs 50000, 50,000 INR, $5,000, ?50000
   const inrMatch = 
     cleanedText.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)/i) || 
@@ -134,7 +206,35 @@ export async function extractTermsRuleBased(
     cleanedText.match(/(?:for|amount of|total of|sum of)\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)/i);
   const usdMatch = cleanedText.match(/(?:\$|usd)\s*([\d,]+(?:\.\d+)?)/i);
 
-  if (inrMatch) {
+  if (considerationLineMatch) {
+    const rawCons = considerationLineMatch[1].trim();
+    const consInr = rawCons.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)/i) || rawCons.match(/([\d,]+(?:\.\d+)?)\s*(?:inr|rupees|\/-)/i);
+    const consUsd = rawCons.match(/(?:\$|usd)\s*([\d,]+(?:\.\d+)?)/i);
+    if (consInr) {
+      currency = 'INR';
+      price = {
+        value: `₹${consInr[1]}`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: considerationLineMatch[0],
+      };
+    } else if (consUsd) {
+      currency = 'USD';
+      price = {
+        value: `$${consUsd[1]}`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: considerationLineMatch[0],
+      };
+    } else {
+      price = {
+        value: rawCons,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: considerationLineMatch[0],
+      };
+    }
+  } else if (inrMatch) {
     currency = 'INR';
     price = {
       value: `₹${inrMatch[1]}`,
@@ -168,11 +268,25 @@ export async function extractTermsRuleBased(
     confidence: 'LOW',
   };
 
+  const paymentLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:payment|terms|payment\s*terms)s?\s*:\s*([^\n]+)/i);
+
   const payAfterDelivery = cleanedText.match(/(?:you\s*can\s*pay\s*after\s*delivery|pay\s*after\s*delivery|payment\s*upon\s*delivery|cod)/i);
   const advancePayment = cleanedText.match(/(\d{1,3}%\s*advance|\d{1,3}%\s*upfront|advance\s*of\s*[\d,]+|token\s*advance)/i);
   const milestonePayment = cleanedText.match(/(milestone\s*based|milestones?|on\s*completion|net\s*\d+\s*days?)/i);
 
-  if (payAfterDelivery) {
+  if (paymentLineMatch) {
+    const rawPay = paymentLineMatch[1].trim();
+    const formattedPay = rawPay.toLowerCase().startsWith('payment') ? rawPay : `Payment due ${rawPay}`;
+    paymentTerms = {
+      value: formattedPay,
+      isExplicit: true,
+      confidence: 'HIGH',
+      excerpt: paymentLineMatch[0],
+      ambiguityNotes: rawPay.toLowerCase().includes('after delivery') && !rawPay.match(/\d+\s*(?:day|days|week|hours)/)
+        ? 'Specific deadline (number of days after delivery) is not defined.'
+        : undefined,
+    };
+  } else if (payAfterDelivery) {
     paymentTerms = {
       value: 'Payment due after delivery',
       isExplicit: true,
@@ -203,10 +317,24 @@ export async function extractTermsRuleBased(
     confidence: 'LOW',
   };
 
+  const deliveryLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:delivery|timeline|schedule|lead\s*time)s?\s*:\s*([^\n]+)/i);
+
   const deliveryMatch = cleanedText.match(/(?:deliver(?:y|ed)?(?:\s*them)?\s*(?:within|in|by)?\s*(\d+\s*(?:days?|weeks?|months?|business days?))|(?:within|in)\s*(\d+\s*(?:days?|weeks?|months?)))/i);
   const specificDateMatch = cleanedText.match(/(?:by|before|on)\s*(\d{1,2}(?:st|nd|rd|th)?\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(?:\d{2,4})?)/i);
 
-  if (deliveryMatch) {
+  if (deliveryLineMatch) {
+    const rawDel = deliveryLineMatch[1].trim();
+    const formattedDel = rawDel.toLowerCase().startsWith('within') || rawDel.toLowerCase().startsWith('by')
+      ? rawDel.charAt(0).toUpperCase() + rawDel.slice(1)
+      : `Within ${rawDel}`;
+    deliveryTimeline = {
+      value: formattedDel,
+      isExplicit: true,
+      confidence: 'HIGH',
+      excerpt: deliveryLineMatch[0],
+      ambiguityNotes: 'Start date or trigger event for the countdown is unspecified.',
+    };
+  } else if (deliveryMatch) {
     const timeFrame = deliveryMatch[1] || deliveryMatch[2];
     deliveryTimeline = {
       value: `Within ${timeFrame.trim()}`,

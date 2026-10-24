@@ -34,7 +34,11 @@ export default function LegalPaperDocument({
 
   const partyAName = draft.extractedData.partyA.name || 'Seller';
   const partyBName = draft.extractedData.partyB.name || 'Buyer';
-  const partyBFirstName = partyBName.split(/[ (]/)[0] || 'there';
+  const cleanedPartyB = partyBName.replace(/^[\[(]+/, '').trim();
+  const rawFirstName = cleanedPartyB.split(/[ \/(]/)[0] || '';
+  const partyBFirstName = (rawFirstName && !rawFirstName.toLowerCase().includes('counterparty') && !rawFirstName.toLowerCase().includes('buyer'))
+    ? rawFirstName
+    : 'Hello';
 
   const todayStr = new Date(draft.updatedAt).toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -145,7 +149,10 @@ export default function LegalPaperDocument({
                 1. SCOPE OF SUPPLY OR SERVICES
               </h3>
               <p>
-                The transaction concerns the provision of <strong>{draft.extractedData.scopeOrProducts.value}</strong> in the quantity of <strong>{draft.extractedData.quantity.value}</strong>. Context: {draft.extractedData.businessContext || 'Commercial transaction'}.
+                The transaction concerns the provision of <strong>{draft.extractedData.scopeOrProducts.value}</strong>
+                {draft.extractedData.quantity.value && !draft.extractedData.quantity.value.includes('Unspecified')
+                  ? ` (Agreed Quantity: ${draft.extractedData.quantity.value})`
+                  : ''}. Context: {draft.extractedData.businessContext || 'Commercial transaction'}.
               </p>
             </div>
 

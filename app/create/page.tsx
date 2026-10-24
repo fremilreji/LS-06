@@ -450,7 +450,7 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
                 </span>
               </div>
               <p className="text-sm text-slate-200 leading-relaxed font-sans">
-                {draft.title}: Agreement between <strong>{extractedData.partyA.name}</strong> and <strong>{extractedData.partyB.name}</strong> for provision of <strong>{extractedData.scopeOrProducts.value}</strong> ({extractedData.quantity.value}) for <strong>{extractedData.price.value}</strong> ({extractedData.currency}), targeted within <strong>{extractedData.deliveryTimeline.value}</strong>.
+                {draft.title}: Agreement between <strong>{extractedData.partyA.name}</strong> and <strong>{extractedData.partyB.name}</strong> for provision of <strong>{extractedData.scopeOrProducts.value}</strong> ({extractedData.quantity.value}) for <strong>{extractedData.price.value}</strong> ({extractedData.currency}), {extractedData.deliveryTimeline.value.toLowerCase().startsWith('within ') || extractedData.deliveryTimeline.value.toLowerCase().startsWith('by ') ? 'targeted ' : 'targeted within '}<strong>{extractedData.deliveryTimeline.value}</strong>.
               </p>
             </div>
 
