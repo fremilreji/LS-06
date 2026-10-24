@@ -3,7 +3,9 @@
 > **Srujana Tech Fest 2026 | Legal Services Hackathon**  
 > **Problem Statement:** LS-06 — From Handshake to Contract (Informal Agreements)  
 > **Event Dates:** 24–26 October 2026 (48-Hour Software Hackathon)  
-> **Evaluation Rubric:** Problem Understanding (15), Technical Depth (20), Functional Completeness (15), Domain Analysis (20), Validation & Robustness (10), UX & Accessibility (10), Presentation (10).
+> **Evaluation Rubric:** Problem Understanding (15), Technical Depth (20), Functional Completeness (15), Domain Analysis (20), Validation & Robustness (10), UX & Accessibility (10), Presentation (10).  
+> **Target Hosting:** **Vercel**  
+> **Backend & Auth:** **Firebase (Cloud Firestore & Firebase Authentication)**
 
 ---
 
@@ -23,7 +25,8 @@ When disputes reach judicial or arbitration forums, small business owners have n
 3. **Missing-Term & Ambiguity Triage:** Detects omitted tax clauses, missing transport terms, and ambiguous delivery windows with 1-click WhatsApp clarification questions.
 4. **Bilateral Plain-Language Draft:** Produces an editable 9-clause agreement draft clearly marking all unresolved gaps as `[Needs confirmation]`.
 5. **Cryptographic Tamper-Evidence:** Generates immutable SHA-256 digests over the normalized conversation and draft clauses for auditability.
-6. **Instant Vector PDF Export:** Downloads print-ready agreements complete with draft status badges and statutory legal disclaimers.
+6. **Cloud Firestore Sync & Security Rules:** Cloud database synchronization with strict owner-based Row Level Security rules (`firestore.rules`) and append-only version snapshots.
+7. **Instant Vector PDF Export:** Downloads print-ready agreements complete with draft status badges and statutory legal disclaimers.
 
 ---
 
@@ -36,20 +39,21 @@ To facilitate parallel development without branch collisions, the project is str
 | **Member 1** | **Frontend & UI/UX** | LegalTech design system in Tailwind CSS, responsive SaaS homepage (`/`), conversation input form (`/create`), sample benchmark presets (`components/SamplePresets.tsx`), and tabbed results layout. |
 | **Member 2** | **Analysis & Ambiguity Engine** | Deterministic extractor (`lib/analysis/extractTerms.ts`), counterparty role distinction, missing-term triage (`lib/analysis/detectMissingTerms.ts`), and WhatsApp clarification question generator. |
 | **Member 3** | **Draft Generation & PDF Export** | Plain-language draft generator (`lib/agreement/generateDraft.ts`), in-place clause editor (`components/AgreementEditor.tsx`), and client-side vector PDF generator (`lib/agreement/exportPdf.ts`). |
-| **Member 4** | **Storage, Security & Quality** | SHA-256 cryptographic audit trail (`lib/crypto/hash.ts`), version history manager (`lib/storage/draftStore.ts`), Supabase RLS schema (`lib/supabase/schema.sql`), and Vitest test suite (`tests/analysis.test.ts`). |
+| **Member 4** | **Firebase, Vercel, Security & Quality** | Firebase Auth & Firestore setup (`lib/firebase/`), hardened `firestore.rules`, SHA-256 cryptographic audit trail (`lib/crypto/hash.ts`), Vercel configuration (`vercel.json`), and Vitest test suite (`tests/analysis.test.ts`). |
 
 ---
 
 ## 3. Technology Stack
 
 - **Framework:** Next.js 16 (App Router) with React 19 and TypeScript 5
+- **Hosting & Serverless:** **Vercel** (`vercel.json`)
+- **Database & Authentication:** **Firebase Cloud Firestore** + **Firebase Auth** (with seamless LocalStorage fallback if offline)
 - **Styling:** Tailwind CSS v4 with dark legal SaaS theme (navy, slate, restrained blue)
 - **Validation:** Zod schemas (`ConversationInputSchema`, `PartyInfoSchema`, etc.)
 - **AI Integration:** Google Gemini (`@google/genai`) with **100% offline deterministic fallback**
 - **PDF Generation:** Client-side vector PDF engine (`jspdf`)
 - **Cryptography:** Web Crypto API SHA-256 digest computation
 - **Testing:** Vitest test runner (`npm test`)
-- **Persistence:** Local-first storage fallback + Supabase PostgreSQL schema with Row Level Security (RLS)
 
 ---
 
@@ -80,98 +84,74 @@ You can test the application live using our built-in benchmark presets:
 
 ---
 
-## 5. Getting Started (Setup & Run)
+## 5. Deployment Guide: Vercel & Firebase
 
-### Prerequisites
-- Node.js `v20.x` or `v22.x`
-- npm `10.x` or later
+### A. Deploy to Vercel
+
+1. Push your repository to GitHub:
+   ```bash
+   git push origin master
+   ```
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New Project"**.
+3. Import your GitHub repository.
+4. In **Environment Variables**, paste the values from your `.env.local` or `.env.example`:
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `GEMINI_API_KEY` (Optional)
+5. Click **Deploy**. Vercel will build and deploy the Next.js app on edge/serverless infrastructure.
+
+### B. Deploy Firestore Security Rules
+
+To deploy the production security rules to your Firebase project:
+```bash
+# Login to Firebase CLI
+npx -y firebase-tools login
+
+# Select your Firebase project
+npx -y firebase-tools use <your-project-id>
+
+# Deploy Firestore rules and indexes
+npx -y firebase-tools deploy --only firestore:rules,firestore:indexes
+```
+
+---
+
+## 6. Local Setup & Testing Instructions
 
 ### Installation
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/your-username/dealproof-ai.git
-cd dealproof-ai
+# 1. Install dependencies
+npm install --legacy-peer-deps
 
-# 2. Install dependencies
-npm install
-
-# 3. (Optional) Configure environment variables
-cp .env.example .env.local
-# DealProof AI works 100% offline out-of-the-box! Adding GEMINI_API_KEY activates hybrid AI analysis.
-```
-
-### Running Tests
-
-```bash
-# Run unit tests
+# 2. Run unit tests
 npm test
-```
 
-### Running Development Server
-
-```bash
+# 3. Start local development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Production Build
-
-```bash
-npm run build
-npm run start
-```
+> **Offline / Frictionless Demo:** Even if Firebase credentials are not yet configured, DealProof AI seamlessly runs in local-first mode using browser storage and deterministic rule extraction.
 
 ---
 
-## 6. Directory Structure
+## 7. Cloud Firestore Security Architecture (`firestore.rules`)
 
-```
-dealproof-ai/
-├── app/
-│   ├── layout.tsx            # Global layout, dark SaaS styling, metadata
-│   ├── page.tsx              # Feature A: Polished SaaS homepage
-│   ├── create/page.tsx       # Features B, C, D, E, F: Creation, triage & editor
-│   ├── drafts/page.tsx       # Feature G: Saved drafts & version history
-│   ├── about/page.tsx        # Problem LS-06 guide, team breakdown & disclosures
-│   └── api/
-│       └── analyse/route.ts  # Hybrid API endpoint with Zod validation
-├── components/
-│   ├── Navbar.tsx            # Navigation & Hackathon LS-06 badge
-│   ├── Footer.tsx            # Footer & legal notice
-│   ├── SamplePresets.tsx     # 1-click test scenarios
-│   ├── ExtractedTermsView.tsx# Feature C: Commercial terms & completeness meter
-│   ├── MissingTermsAlert.tsx # Feature D: Ambiguity triage & WhatsApp copy buttons
-│   ├── AgreementEditor.tsx   # Feature E: In-place clause editor & status switcher
-│   └── EvidenceTraceability.tsx # Feature F: Source quote mapping & audit trail
-├── lib/
-│   ├── analysis/
-│   │   ├── extractTerms.ts   # Deterministic Indian commercial rule engine
-│   │   ├── extractTermsAI.ts # Hybrid Gemini AI with automatic fallback
-│   │   └── detectMissingTerms.ts # Commercial gap & ambiguity detection
-│   ├── agreement/
-│   │   ├── generateDraft.ts  # 9-clause agreement template
-│   │   └── exportPdf.ts      # Feature H: Client-side vector PDF generator
-│   ├── crypto/
-│   │   └── hash.ts           # SHA-256 tamper-evident digest generator
-│   ├── storage/
-│   │   └── draftStore.ts     # Local-first persistence & version snapshots
-│   ├── supabase/
-│   │   ├── client.ts         # Supabase client connector
-│   │   └── schema.sql        # Supabase PostgreSQL schema with RLS policies
-│   └── data/
-│       └── sampleConversations.ts # Fictional benchmark scenarios
-├── types/
-│   └── agreement.ts          # Shared TypeScript interfaces & Zod schemas
-├── tests/
-│   └── analysis.test.ts      # Vitest test suite for extraction & PDF
-└── README.md
-```
+- **Owner-Only Read/Write:** Agreements can only be read, created, updated, or deleted by their verified creator (`request.auth.uid == resource.data.userId`).
+- **Immutable Fields:** Critical fields (`userId`, `createdAt`) are strictly locked against updates.
+- **Append-Only Versions:** Subcollection `agreements/{agreementId}/versions/{versionId}` is append-only (`allow update, delete: if false;`), ensuring an immutable audit history.
+- **Payload Validation & Bounds:** Title length (3–150), conversation length (<= 60,000), and status enums (`DRAFT_NEEDS_REVIEW`, `READY_FOR_PARTY_REVIEW`, `PARTY_CONFIRMED`) are enforced at the database level.
+- **Default Deny:** All unmapped paths are explicitly blocked.
 
 ---
 
-## 7. Compliance with Srujana Hackathon Rules
+## 8. Compliance with Srujana Hackathon Rules
 
 1. **Official Problem Selected:** LS-06 — From Handshake to Contract.
 2. **Authentic Hackathon Development:** All application modules were built iteratively during the hackathon.
@@ -180,14 +160,6 @@ dealproof-ai/
    > *"This document is an AI-assisted draft for review and discussion. It is not a guarantee of legal validity or a substitute for advice from a qualified legal professional."*
 5. **Privacy by Design:** Manual text paste prevents unauthorized background scraping; fictional data presets are used for demonstrations.
 6. **Tamper Evidence:** We provide verifiable SHA-256 cryptographic hashes without making unsubstantiated claims about blockchain immutability.
-
----
-
-## 8. Known Limitations & Roadmap
-
-- **Jurisdiction & Stamp Duty:** Operational drafts clarify commercial understanding; formal legal enforceability in court still requires state stamp duty payment.
-- **Multilingual Messaging:** Currently optimized for English informal business communication and Indian MSME terminology; regional Indian languages (Hindi, Kannada, Tamil) are planned.
-- **Bi-directional Sign-off:** Current prototype records user confirmation; future versions will support SMS/WhatsApp OTP counterparty verification.
 
 ---
 

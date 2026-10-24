@@ -1,0 +1,211 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: agreements
+    // Document ID: {agreementId} (e.g. UUID or alphanumeric string)
+    // Fields:
+    //   - userId: string (required, immutable) - Firebase Auth UID of document owner
+    //   - title: string (required, 3-150 chars) - Title or subject of agreement
+    //   - status: string (required, enum) - ['DRAFT_NEEDS_REVIEW', 'READY_FOR_PARTY_REVIEW', 'PARTY_CONFIRMED']
+    //   - version: number (required, >= 1) - Monotonically increasing revision counter
+    //   - rawConversation: string (required, 10-60000 chars) - Source discussion transcript
+    //   - extractedData: map (required) - Structured legal terms and analysis metadata
+    //   - clauses: list (required, max 200 items) - Formal agreement clauses
+    //   - tamperEvidenceHash: string (required, non-empty, 32-128 chars) - Cryptographic verification hash
+    //   - updatedAt: timestamp or string (required, 10-60 chars) - Last modification timestamp
+    //   - createdAt: timestamp or string (optional, immutable once set, 10-60 chars) - Creation timestamp
+    //   - auditTrail: list (optional, max 200 items) - History log of actions and modifications
+    //   - serverTimestamp: timestamp (optional) - Server-side commit timestamp
+    //   - businessContext: string (optional, max 1000 chars) - Operational context or notes
+    //   - reviewerNotes: string (optional, max 2000 chars) - Reviewer comments
+    //   - bothPartiesConfirmed: bool (optional) - Multi-party confirmation flag
+    //
+    // Subcollection: agreements/{agreementId}/versions
+    // Document ID: {versionId} (e.g. v1, v2)
+    // Fields:
+    //   - version: number (required, >= 1) - Frozen version number
+    //   - clauses: list (required, max 200 items) - Snapshot of agreement clauses
+    //   - tamperEvidenceHash: string (required, non-empty, 32-128 chars) - Cryptographic hash of snapshot
+    //   - createdAt: timestamp or string (required, 10-60 chars) - Snapshot creation timestamp
+    //   - changeSummary: string (optional, max 1000 chars) - Summary of version modifications
+    //   - createdBy: string (optional, max 100 chars) - Author identity or label
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user owns the resource by provided userId
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is owner based on document's userId field
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // Check that immutable fields have not been modified during update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Check that parent agreement exists and belongs to the authenticated user
+    function isParentAgreementOwner(agreementId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/agreements/$(agreementId)) &&
+        get(/databases/$(database)/documents/agreements/$(agreementId)).data.userId == request.auth.uid;
+    }
+
+    // Domain Validator: Agreement Draft validation (used in BOTH create and update)
+    function isValidAgreement(data) {
+      return (
+        // Required fields check
+        data.keys().hasAll([
+          'userId',
+          'title',
+          'status',
+          'version',
+          'rawConversation',
+          'extractedData',
+          'clauses',
+          'tamperEvidenceHash',
+          'updatedAt'
+        ]) &&
+        // Strict schema enforcement (prevent arbitrary schema pollution)
+        data.keys().hasOnly([
+          'userId',
+          'title',
+          'status',
+          'version',
+          'rawConversation',
+          'extractedData',
+          'clauses',
+          'tamperEvidenceHash',
+          'createdAt',
+          'updatedAt',
+          'auditTrail',
+          'serverTimestamp',
+          'businessContext',
+          'reviewerNotes',
+          'bothPartiesConfirmed'
+        ]) &&
+        // Field constraints and type safety
+        data.userId is string &&
+        data.userId == request.auth.uid &&
+        data.title is string &&
+        data.title.size() >= 3 &&
+        data.title.size() <= 150 &&
+        data.status in ['DRAFT_NEEDS_REVIEW', 'READY_FOR_PARTY_REVIEW', 'PARTY_CONFIRMED'] &&
+        (data.version is int || data.version is number) &&
+        data.version >= 1 &&
+        data.rawConversation is string &&
+        data.rawConversation.size() >= 10 &&
+        data.rawConversation.size() <= 60000 &&
+        data.extractedData is map &&
+        data.clauses is list &&
+        data.clauses.size() <= 200 &&
+        data.tamperEvidenceHash is string &&
+        data.tamperEvidenceHash.size() > 0 &&
+        data.tamperEvidenceHash.size() <= 128 &&
+        (data.updatedAt is timestamp || (data.updatedAt is string && data.updatedAt.size() >= 10 && data.updatedAt.size() <= 60)) &&
+        (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 60)) &&
+        (!('auditTrail' in data) || (data.auditTrail is list && data.auditTrail.size() <= 200)) &&
+        (!('serverTimestamp' in data) || data.serverTimestamp is timestamp) &&
+        (!('businessContext' in data) || (data.businessContext is string && data.businessContext.size() <= 1000)) &&
+        (!('reviewerNotes' in data) || (data.reviewerNotes is string && data.reviewerNotes.size() <= 2000)) &&
+        (!('bothPartiesConfirmed' in data) || data.bothPartiesConfirmed is bool)
+      );
+    }
+
+    // Domain Validator: Agreement Version snapshot validation
+    function isValidAgreementVersion(data) {
+      return (
+        // Required fields check
+        data.keys().hasAll([
+          'version',
+          'clauses',
+          'tamperEvidenceHash',
+          'createdAt'
+        ]) &&
+        // Strict schema enforcement
+        data.keys().hasOnly([
+          'version',
+          'clauses',
+          'tamperEvidenceHash',
+          'createdAt',
+          'changeSummary',
+          'createdBy'
+        ]) &&
+        // Field constraints and type safety
+        (data.version is int || data.version is number) &&
+        data.version >= 1 &&
+        data.clauses is list &&
+        data.clauses.size() <= 200 &&
+        data.tamperEvidenceHash is string &&
+        data.tamperEvidenceHash.size() > 0 &&
+        data.tamperEvidenceHash.size() <= 128 &&
+        (data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 60)) &&
+        (!('changeSummary' in data) || (data.changeSummary is string && data.changeSummary.size() <= 1000)) &&
+        (!('createdBy' in data) || (data.createdBy is string && data.createdBy.size() <= 100))
+      );
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Root Collection: agreements
+    match /agreements/{agreementId} {
+      // Authenticated users can only read their own agreements
+      // Supports single-doc get and collection query: where('userId', '==', auth.uid)
+      allow read: if isDocOwner();
+
+      // Users can only create agreements owned by their authenticated UID
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        isValidAgreement(request.resource.data);
+
+      // Users can only update their own agreements
+      // userId is strictly immutable, createdAt is immutable once set, and payload must be valid
+      allow update: if isDocOwner() &&
+        request.resource.data.userId == resource.data.userId &&
+        areImmutableFieldsUnchanged(['userId']) &&
+        (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt'])) &&
+        isValidAgreement(request.resource.data);
+
+      // Users can only delete their own agreements
+      allow delete: if isDocOwner();
+
+      // Subcollection: immutable version snapshots
+      match /versions/{versionId} {
+        // Read versions only if parent agreement belongs to the authenticated user
+        allow read: if isParentAgreementOwner(agreementId);
+
+        // Create version only if parent agreement belongs to the authenticated user
+        allow create: if isParentAgreementOwner(agreementId) &&
+          isValidAgreementVersion(request.resource.data);
+
+        // Snapshots are append-only immutable history: no modifications or deletions permitted
+        allow update, delete: if false;
+      }
+    }
+
+    // Default deny rule for all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

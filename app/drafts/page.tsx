@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { AgreementDraft, DraftStatus } from '@/types/agreement';
 import { DraftStore } from '@/lib/storage/draftStore';
 import { exportDraftToPdf } from '@/lib/agreement/exportPdf';
+import { useAuth } from '@/lib/firebase/authContext';
+import { FirestoreDraftService } from '@/lib/firebase/draftService';
 import { 
   FileText, 
   BookmarkCheck, 
@@ -15,7 +17,9 @@ import {
   Clock, 
   AlertCircle,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Cloud,
+  HardDrive
 } from 'lucide-react';
 import AgreementEditor from '@/components/AgreementEditor';
 
@@ -23,19 +27,43 @@ export default function SavedDraftsPage() {
   const [drafts, setDrafts] = useState<AgreementDraft[]>([]);
   const [activeDraft, setActiveDraft] = useState<AgreementDraft | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { user, isFirebaseActive } = useAuth();
 
   useEffect(() => {
-    const loaded = DraftStore.getAll();
-    setDrafts(loaded);
-    setIsLoaded(true);
-  }, []);
+    async function loadData() {
+      // 1. Load from local store
+      const localDrafts = DraftStore.getAll();
+      let combined = [...localDrafts];
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+      // 2. If Firebase user logged in, fetch from Firestore and merge
+      if (user && isFirebaseActive) {
+        try {
+          const remoteDrafts = await FirestoreDraftService.getUserDrafts(user.uid);
+          const map = new Map<string, AgreementDraft>();
+          localDrafts.forEach(d => map.set(d.id, d));
+          remoteDrafts.forEach(d => map.set(d.id, d));
+          combined = Array.from(map.values());
+        } catch (err) {
+          console.warn('Could not sync with Firestore:', err);
+        }
+      }
+
+      setDrafts(combined);
+      setIsLoaded(false);
+      setTimeout(() => setIsLoaded(true), 50);
+    }
+
+    loadData();
+  }, [user, isFirebaseActive]);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this draft record?')) {
       DraftStore.delete(id);
-      const updated = DraftStore.getAll();
-      setDrafts(updated);
+      if (user && isFirebaseActive) {
+        await FirestoreDraftService.deleteDraft(id);
+      }
+      setDrafts(prev => prev.filter(d => d.id !== id));
       if (activeDraft?.id === id) {
         setActiveDraft(null);
       }
@@ -54,17 +82,23 @@ export default function SavedDraftsPage() {
     }
   };
 
-  const handleUpdateActiveDraft = (updated: AgreementDraft) => {
+  const handleUpdateActiveDraft = async (updated: AgreementDraft) => {
     setActiveDraft(updated);
     DraftStore.save(updated);
-    setDrafts(DraftStore.getAll());
+    if (user && isFirebaseActive) {
+      await FirestoreDraftService.saveDraft(updated, user.uid);
+    }
+    setDrafts(prev => prev.map(d => (d.id === updated.id ? updated : d)));
   };
 
   const handleSaveNewVersion = async (summary: string) => {
     if (!activeDraft) return;
-    const updated = await DraftStore.createNewVersion(activeDraft, summary, 'Signatory');
+    const updated = await DraftStore.createNewVersion(activeDraft, summary, user?.uid || 'Signatory');
     setActiveDraft(updated);
-    setDrafts(DraftStore.getAll());
+    if (user && isFirebaseActive) {
+      await FirestoreDraftService.saveDraft(updated, user.uid);
+    }
+    setDrafts(prev => prev.map(d => (d.id === updated.id ? updated : d)));
   };
 
   const renderStatusBadge = (status: DraftStatus) => {
@@ -89,14 +123,6 @@ export default function SavedDraftsPage() {
     );
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center text-slate-400 text-sm">
-        Loading saved drafts...
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Page Header */}
@@ -107,6 +133,12 @@ export default function SavedDraftsPage() {
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
               {drafts.length} saved
             </span>
+            {isFirebaseActive && user && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                <Cloud className="w-3 h-3 text-emerald-400" />
+                Firestore Synced
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
             Access previous drafts, version snapshots, and tamper-evident audit logs.
@@ -122,7 +154,7 @@ export default function SavedDraftsPage() {
         </Link>
       </div>
 
-      {/* When a draft is selected for in-place editing */}
+      {/* In-place editor when active */}
       {activeDraft ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-xl">
