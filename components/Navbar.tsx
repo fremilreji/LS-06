@@ -10,16 +10,13 @@ import {
   BookmarkCheck, 
   Sparkles, 
   User as UserIcon, 
-  LogIn, 
-  LogOut,
-  Flame,
-  HardDrive
+  LogOut 
 } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/authContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, isFirebaseActive, signInGuest, signOut } = useAuth();
+  const { user, isFirebaseActive, signOut } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Overview', icon: ShieldCheck },
@@ -80,37 +77,21 @@ export default function Navbar() {
 
           {/* Right Action buttons: Auth + New Agreement */}
           <div className="flex items-center space-x-2.5">
-            {isFirebaseActive ? (
-              user ? (
-                <div className="flex items-center space-x-2 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs">
-                  <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="font-mono text-slate-300 max-w-[80px] truncate">
-                    {user.isAnonymous ? 'Guest' : user.email || 'User'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={signOut}
-                    title="Sign Out"
-                    className="text-slate-500 hover:text-rose-400 ml-1"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
+            {isFirebaseActive && user && (
+              <div className="flex items-center space-x-2 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs">
+                <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-mono text-slate-300 max-w-[80px] truncate">
+                  {user.isAnonymous ? 'Guest' : user.email || 'User'}
+                </span>
                 <button
                   type="button"
-                  onClick={signInGuest}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+                  onClick={signOut}
+                  title="Sign Out"
+                  className="text-slate-500 hover:text-rose-400 ml-1"
                 >
-                  <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Firebase Demo Login</span>
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
-              )
-            ) : (
-              <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
-                <HardDrive className="w-3 h-3 text-slate-400" />
-                <span>Local-First Mode</span>
-              </span>
+              </div>
             )}
 
             <Link
