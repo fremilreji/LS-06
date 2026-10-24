@@ -127,8 +127,11 @@ export async function extractTermsRuleBased(
   };
   let taxInclusiveStatus: 'INCLUSIVE' | 'EXCLUSIVE' | 'UNSPECIFIED' = 'UNSPECIFIED';
 
-  // Currency & amount patterns: ₹50,000, Rs. 50,000, Rs 50000, 50,000 INR, $5,000
-  const inrMatch = cleanedText.match(/(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)/i) || cleanedText.match(/([\d,]+(?:\.\d+)?)\s*(?:inr|rupees)/i);
+  // Currency & amount patterns: ₹50,000, Rs. 50,000, Rs 50000, 50,000 INR, $5,000, ?50000
+  const inrMatch = 
+    cleanedText.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)/i) || 
+    cleanedText.match(/([\d,]+(?:\.\d+)?)\s*(?:inr|rupees|\/-)/i) ||
+    cleanedText.match(/(?:for|amount of|total of|sum of)\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)/i);
   const usdMatch = cleanedText.match(/(?:\$|usd)\s*([\d,]+(?:\.\d+)?)/i);
 
   if (inrMatch) {
