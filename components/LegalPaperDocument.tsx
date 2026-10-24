@@ -133,11 +133,15 @@ export default function LegalPaperDocument({
         <div id="legal-doc-content" contentEditable suppressContentEditableWarning className="space-y-6 focus:outline-none">
           {/* Header & Double Line */}
           <div className="pb-3 border-b-4 border-double border-slate-300">
+            <div className="flex flex-wrap items-center justify-between text-[11px] font-sans text-slate-600 uppercase tracking-wider mb-1.5 pb-1 border-b border-slate-200">
+              <span className="font-semibold text-slate-800">Govt. MSME Samadhaan & Court Admissible Record</span>
+              <span className="font-mono text-blue-700 font-bold">Sec. 18 MSMED Act / Sec. 10A IT Act</span>
+            </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">
               {draft.title}
             </h2>
             <p className="text-xs text-slate-600 mt-1 font-sans">
-              Operational understanding recorded on <strong>{todayStr}</strong> between <strong>{partyAName}</strong> (First Party) and <strong>{partyBName}</strong> (Second Party).
+              Commercial memorandum recorded on <strong>{todayStr}</strong> between <strong>{partyAName}</strong> (First Party) and <strong>{partyBName}</strong> (Second Party).
             </p>
           </div>
 
@@ -152,7 +156,7 @@ export default function LegalPaperDocument({
                 The transaction concerns the provision of <strong>{draft.extractedData.scopeOrProducts.value}</strong>
                 {draft.extractedData.quantity.value && !draft.extractedData.quantity.value.includes('Unspecified')
                   ? ` (Agreed Quantity: ${draft.extractedData.quantity.value})`
-                  : ''}. Context: {draft.extractedData.businessContext || 'Commercial transaction'}.
+                  : ''}. Context: {draft.extractedData.businessContext || 'Commercial job-work & small business transaction'}.
               </p>
             </div>
 
@@ -187,31 +191,63 @@ export default function LegalPaperDocument({
               </p>
             </div>
 
-            {/* Clause 5: Governing Law & Jurisdiction */}
+            {/* Clause 5: Statutory Protection for Delayed Payments */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                5. DISPUTES & GOVERNING LAW
+                5. STATUTORY RECOVERY & MSMED ACT PROTECTION
               </h3>
               <p>
-                This agreement is governed by the laws of India. Any disputes arising in connection with this agreement shall be heard before the competent courts at <strong>{jurisdictionCity}</strong>.
+                In the event of delayed payment beyond the agreed schedule, the supplier retains statutory rights to file a delayed payment recovery claim before the <strong>Micro and Small Enterprises Facilitation Council (MSEFC)</strong> under <strong>Section 18 of the MSMED Act, 2006</strong> with compound interest payable at three times the RBI bank rate under <strong>Section 16</strong>.
+              </p>
+            </div>
+
+            {/* Clause 6: Governing Law & Jurisdiction */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
+                6. DISPUTES & GOVERNING LAW
+              </h3>
+              <p>
+                This agreement is governed by the laws of India. Any disputes arising in connection with this agreement shall be heard before the competent courts or MSEFC council at <strong>{jurisdictionCity}</strong>.
               </p>
             </div>
           </div>
 
-          {/* Signature Table */}
+          {/* Signature & Thumbprint Table */}
           <div className="pt-8 mt-6 border-t border-slate-300">
-            <div className="grid grid-cols-2 gap-8 text-xs font-sans text-slate-800">
-              <div>
-                <div className="border-t border-slate-900 pt-1 font-semibold">
-                  For {partyAName}
+            <div className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-700 mb-3">
+              Execution & Assent (Digital WhatsApp Assent OR Physical Signature / Left Thumb Impression)
+            </div>
+            <div className="grid grid-cols-2 gap-6 text-xs font-sans text-slate-800">
+              <div className="p-3 border border-slate-300 rounded bg-slate-50/50">
+                <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
+                  {partyAName}
                 </div>
-                <div className="text-slate-500 text-[11px] mt-0.5">Authorized Signatory</div>
+                <div className="text-slate-600 text-[11px] mt-0.5">Supplier / Service Provider</div>
+                <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-1">
+                  <div>Signature: __________________________</div>
+                  <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
+                </div>
               </div>
-              <div>
-                <div className="border-t border-slate-900 pt-1 font-semibold">
-                  For {partyBName}
+
+              <div className="p-3 border border-slate-300 rounded bg-slate-50/50">
+                <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
+                  {partyBName}
                 </div>
-                <div className="text-slate-500 text-[11px] mt-0.5">Authorized Signatory</div>
+                <div className="text-slate-600 text-[11px] mt-0.5">Buyer / Client</div>
+                <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-1">
+                  <div>Signature: __________________________</div>
+                  <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Independent Attestation Witness for Illiterate/Unlettered Signatories */}
+            <div className="mt-4 p-3 bg-slate-100 rounded text-[11px] text-slate-700 border border-slate-200 leading-relaxed font-sans">
+              <span className="font-bold text-slate-900">Attestation Witness (For Unlettered / Vernacular Signatories): </span>
+              I certify that this memorandum was read over and explained to the parties in their vernacular language, and they affixed their signature or thumb impression voluntarily.
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-[10px] text-slate-600">
+                <div>Witness 1: _____________________ Mobile: _________________</div>
+                <div>Witness 2: _____________________ Mobile: _________________</div>
               </div>
             </div>
           </div>

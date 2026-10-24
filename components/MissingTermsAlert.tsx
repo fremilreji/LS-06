@@ -157,7 +157,7 @@ export default function MissingTermsAlert({ missingTerms, ambiguousTerms }: Miss
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="space-y-1.5 flex-1">
+                  <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
@@ -168,45 +168,56 @@ export default function MissingTermsAlert({ missingTerms, ambiguousTerms }: Miss
                             : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         }`}
                       >
-                        {item.criticality}
+                        {item.criticality} RISK
                       </span>
                       <span className="text-[10px] font-mono text-slate-400 uppercase">
-                        Category: {item.category}
+                        WHERE IS THE GAP: {item.category}
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-semibold text-white mt-1">
-                      {item.issue}
-                    </h4>
+                    <div>
+                      <span className="text-xs font-bold text-amber-400 font-mono uppercase text-[10px] block">
+                        Issue Found in Chat
+                      </span>
+                      <h4 className="text-sm font-semibold text-white">
+                        {item.issue}
+                      </h4>
+                    </div>
 
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      <strong className="text-slate-300">Why it matters:</strong> {item.whyItMatters}
-                    </p>
+                    <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 text-xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block mb-0.5">
+                        How this hurts the small business / worker:
+                      </span>
+                      <p className="text-slate-300 leading-relaxed">
+                        {item.whyItMatters}
+                      </p>
+                    </div>
                   </div>
 
                   {/* WhatsApp / Chat Suggested Question & Copy Button */}
-                  <div className="sm:w-80 shrink-0 bg-slate-950/80 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                  <div className="sm:w-80 shrink-0 bg-slate-950/90 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 mb-1">
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="w-3 h-3 text-blue-400" /> Suggested message
+                        <span className="flex items-center gap-1 font-bold text-emerald-400">
+                          <MessageSquare className="w-3.5 h-3.5" /> How to solve it (Voice / WhatsApp)
                         </span>
                       </div>
-                      <p className="text-xs text-slate-200 italic line-clamp-3">
+                      <p className="text-xs text-slate-200 italic line-clamp-3 bg-emerald-950/30 p-2 rounded border border-emerald-900/40">
                         &ldquo;{item.suggestedQuestion}&rdquo;
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800 flex justify-end">
+                    <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-500">1-tap copy</span>
                       <button
                         type="button"
                         onClick={() => handleCopyQuestion(item.id, item.suggestedQuestion)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded bg-blue-600/90 hover:bg-blue-500 text-white transition-colors"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
                       >
                         {copiedId === item.id ? (
                           <>
-                            <Check className="w-3 h-3 text-emerald-300" />
-                            <span>Copied!</span>
+                            <Check className="w-3 h-3 text-white" />
+                            <span>Copied Prompt!</span>
                           </>
                         ) : (
                           <>
