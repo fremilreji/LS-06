@@ -53,6 +53,18 @@ Please reply 'Confirmed' to lock this version."`);
 
   // Test 3: Tech services development contract
   await testInput('Mobile App Contract', `Hey Alex, we can develop the mobile app for ₹1,50,000 plus GST. We will complete it within 30 days. Payment terms: 50% advance, balance on completion.`);
+
+  // Test 4: Master All-Aspects Corporate Agreement
+  await testInput('Master All-Aspects Agreement', `Seller: CloudCraft Solutions Pvt Ltd
+Buyer: Ramesh Kumar (Zenith Enterprises)
+Regarding the corporate order:
+• Scope: 150 Ergonomic Mesh Chairs with adjustable lumbar support (150 units)
+• Consideration: ₹75,000 INR (exclusive of 18% GST)
+• Delivery: within 14 days
+• Logistics: free shipping handled by seller
+• Payment: 30% advance, balance within 7 days of delivery
+• Inspection: inspection period 3 days upon delivery
+Please confirm so we can lock this agreement.`);
 }
 
 main();
