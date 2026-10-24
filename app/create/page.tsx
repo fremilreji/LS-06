@@ -6,13 +6,18 @@ import {
   AgreementDraft, 
   ConversationInputSchema 
 } from '@/types/agreement';
-import { SamplePreset, SAMPLE_CONVERSATIONS } from '@/lib/data/sampleConversations';
+import { SamplePreset } from '@/lib/data/sampleConversations';
 import { DraftStore } from '@/lib/storage/draftStore';
+import { checkStatutoryExclusions, StatutoryBlockResult } from '@/lib/analysis/statutoryBlocks';
+import { analyzeContractFormation, FormationAnalysis } from '@/lib/analysis/formationEngine';
 import SamplePresets from '@/components/SamplePresets';
 import ExtractedTermsView from '@/components/ExtractedTermsView';
 import MissingTermsAlert from '@/components/MissingTermsAlert';
 import AgreementEditor from '@/components/AgreementEditor';
 import EvidenceTraceability from '@/components/EvidenceTraceability';
+import StampDutyAdvisor from '@/components/StampDutyAdvisor';
+import BSACertificateViewer from '@/components/BSACertificateViewer';
+import TamperVerificationLab from '@/components/TamperVerificationLab';
 import { 
   Sparkles, 
   Send, 
@@ -23,8 +28,13 @@ import {
   AlertTriangle, 
   FileText, 
   FileCheck,
-  ShieldCheck,
-  RotateCcw
+  RotateCcw,
+  Scale,
+  FileCheck2,
+  Zap,
+  ShieldAlert,
+  HelpCircle,
+  X
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -40,11 +50,13 @@ export default function CreateAgreementPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [statutoryBlock, setStatutoryBlock] = useState<StatutoryBlockResult | null>(null);
 
   // Analysis result state
   const [extractedData, setExtractedData] = useState<ExtractedAgreementData | null>(null);
   const [draft, setDraft] = useState<AgreementDraft | null>(null);
-  const [activeTab, setActiveTab] = useState<'terms' | 'missing' | 'draft' | 'traceability'>('terms');
+  const [formationAnalysis, setFormationAnalysis] = useState<FormationAnalysis | null>(null);
+  const [activeTab, setActiveTab] = useState<'terms' | 'missing' | 'draft' | 'traceability' | 'stamp' | 'bsa' | 'tamper'>('terms');
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
   // Preset Selection
@@ -55,6 +67,7 @@ export default function CreateAgreementPage() {
     setRawConversation(preset.rawConversation);
     setValidationErrors([]);
     setApiError(null);
+    setStatutoryBlock(null);
   };
 
   // Submit Analysis
@@ -62,6 +75,14 @@ export default function CreateAgreementPage() {
     e.preventDefault();
     setValidationErrors([]);
     setApiError(null);
+    setStatutoryBlock(null);
+
+    // 1. Check Statutory Exclusions (First Schedule IT Act & Sec 17 Registration Act)
+    const blockCheck = checkStatutoryExclusions(rawConversation, title);
+    if (blockCheck.isBlocked) {
+      setStatutoryBlock(blockCheck);
+      return;
+    }
 
     const validation = ConversationInputSchema.safeParse({
       title,
@@ -78,6 +99,10 @@ export default function CreateAgreementPage() {
     setIsLoading(true);
 
     try {
+      // Run contract formation & chronology engine
+      const formation = analyzeContractFormation(rawConversation);
+      setFormationAnalysis(formation);
+
       const response = await fetch('/api/analyse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,10 +157,12 @@ export default function CreateAgreementPage() {
     if (confirm('Start a new agreement? Current analysis view will be cleared.')) {
       setExtractedData(null);
       setDraft(null);
+      setFormationAnalysis(null);
       setTitle('');
       setBusinessContext('');
       setRawConversation('');
       setSelectedPresetId(undefined);
+      setStatutoryBlock(null);
     }
   };
 
@@ -155,14 +182,14 @@ export default function CreateAgreementPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Create Agreement Draft
+                Create Agreement Draft & Evidence Pack
               </h1>
               <span className="text-xs font-mono px-2.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                LS-06 Pipeline
+                LS-06 Pipeline (BSA 2023 & ICA 1872)
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Paste informal correspondence from WhatsApp, email, or meeting transcripts to extract structured commercial terms.
+              Ingest informal correspondence from WhatsApp text and voice notes to formulate structured commercial terms, BSA Section 63 Schedule Certificates, and state stamp duty advisories.
             </p>
           </div>
 
@@ -184,6 +211,47 @@ export default function CreateAgreementPage() {
         onSelect={handleSelectPreset}
         selectedId={selectedPresetId}
       />
+
+      {/* Statutory Exclusion Hard-Block Modal/Banner */}
+      {statutoryBlock && (
+        <div className="bg-rose-950/60 border-2 border-rose-600 rounded-2xl p-6 text-white space-y-4 animate-in fade-in">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-xl bg-rose-600 text-white">
+                <ShieldAlert className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  FORMAL INSTRUMENT REQUIRED — SELF-SERVICE BLOCKED
+                </h3>
+                <p className="text-xs text-rose-200 mt-0.5 font-mono">
+                  {statutoryBlock.statutoryBasis}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStatutoryBlock(null)}
+              className="text-rose-300 hover:text-white p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="bg-slate-950/80 p-4 rounded-xl border border-rose-900/60 space-y-2 text-xs">
+            <p className="text-rose-200 leading-relaxed font-sans">
+              <strong>Statutory Finding:</strong> {statutoryBlock.reason}
+            </p>
+            <p className="text-amber-200/90 leading-relaxed font-sans pt-1 border-t border-rose-950">
+              <strong>Mandatory Protocol:</strong> {statutoryBlock.recommendedAction}
+            </p>
+          </div>
+
+          <div className="text-[11px] text-rose-300 italic">
+            DealProof AI strictly enforces statutory exclusion rules to prevent users from executing invalid real-estate transfers, wills, or negotiable instruments on informal chat channels.
+          </div>
+        </div>
+      )}
 
       {/* Input Form Section */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
@@ -223,7 +291,7 @@ export default function CreateAgreementPage() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-semibold text-slate-200">
-                Informal Business Conversation Text <span className="text-rose-400">*</span>
+                Informal Business Conversation Text (WhatsApp / Voice Note Transcripts) <span className="text-rose-400">*</span>
               </label>
               <span className="text-[11px] font-mono text-slate-500">
                 {rawConversation.length} / 15,000 chars
@@ -283,7 +351,7 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
           {/* Submit Action */}
           <div className="flex items-center justify-between pt-2">
             <div className="text-[11px] text-slate-500">
-              Deterministic rule engine runs locally; hybrid AI auto-activates when configured.
+              Evaluates Indian Contract Act Section 7 & 62, IT Act Section 10A, and BSA 2023 Section 63.
             </div>
 
             <button
@@ -294,7 +362,7 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  <span>Extracting Terms...</span>
+                  <span>Extracting Terms & Hashing...</span>
                 </>
               ) : (
                 <>
@@ -310,12 +378,36 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
       {/* Analysis Results View */}
       {extractedData && draft && (
         <div className="space-y-6 pt-4 animate-in fade-in duration-300">
-          {/* Navigation Tabs */}
+          {/* Doctrinal Contract Formation Banner */}
+          {formationAnalysis && (
+            <div className="p-4 rounded-xl bg-slate-900 border border-blue-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className={`px-2.5 py-1 rounded-full font-bold font-mono text-[10px] uppercase tracking-wider ${
+                  formationAnalysis.state === 'FORMATION_CONCLUDED'
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                    : formationAnalysis.state === 'POST_FORMATION_SECTION_62_ALTERATION'
+                    ? 'bg-blue-950 text-blue-300 border border-blue-700'
+                    : 'bg-amber-950 text-amber-300 border border-amber-700'
+                }`}>
+                  {formationAnalysis.stateLabel}
+                </span>
+                <p className="text-slate-300 font-sans">
+                  {formationAnalysis.doctrinalFinding}
+                </p>
+              </div>
+
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                {formationAnalysis.statutoryReference}
+              </span>
+            </div>
+          )}
+
+          {/* Navigation Tabs (7 Breakthrough Tabs) */}
           <div className="flex border-b border-slate-800 overflow-x-auto gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('terms')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
                 activeTab === 'terms'
                   ? 'border-blue-500 text-blue-400 bg-blue-950/20'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
@@ -331,14 +423,14 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
             <button
               type="button"
               onClick={() => setActiveTab('missing')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
                 activeTab === 'missing'
                   ? 'border-amber-500 text-amber-400 bg-amber-950/20'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
               }`}
             >
               <AlertTriangle className="w-4 h-4" />
-              <span>2. Missing & Ambiguous Gaps</span>
+              <span>2. Gaps & WhatsApp Prompts</span>
               {extractedData.missingTerms.length > 0 && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
                   {extractedData.missingTerms.length}
@@ -349,14 +441,14 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
             <button
               type="button"
               onClick={() => setActiveTab('draft')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
                 activeTab === 'draft'
                   ? 'border-emerald-500 text-emerald-400 bg-emerald-950/20'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
               }`}
             >
               <FileText className="w-4 h-4" />
-              <span>3. Agreement Draft & In-Place Editor</span>
+              <span>3. Agreement Draft</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
                 v{draft.version}.0
               </span>
@@ -365,14 +457,56 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
             <button
               type="button"
               onClick={() => setActiveTab('traceability')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
                 activeTab === 'traceability'
                   ? 'border-cyan-500 text-cyan-400 bg-cyan-950/20'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
               }`}
             >
               <FileCheck className="w-4 h-4" />
-              <span>4. Evidence & Traceability Audit</span>
+              <span>4. Evidence Audit</span>
+            </button>
+
+            {/* Breakthrough Tab 5: State Stamp Duty */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('stamp')}
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                activeTab === 'stamp'
+                  ? 'border-amber-500 text-amber-400 bg-amber-950/20'
+                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+              }`}
+            >
+              <Scale className="w-4 h-4" />
+              <span>5. Stamp Duty & Impounding</span>
+            </button>
+
+            {/* Breakthrough Tab 6: BSA Section 63 Certificate */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('bsa')}
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                activeTab === 'bsa'
+                  ? 'border-blue-500 text-blue-400 bg-blue-950/20'
+                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+              }`}
+            >
+              <FileCheck2 className="w-4 h-4" />
+              <span>6. BSA 2023 Certificate</span>
+            </button>
+
+            {/* Breakthrough Tab 7: Tamper Detection Sandbox */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('tamper')}
+              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                activeTab === 'tamper'
+                  ? 'border-purple-500 text-purple-400 bg-purple-950/20'
+                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>7. Tamper Lab</span>
             </button>
           </div>
 
@@ -399,6 +533,21 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
 
             {activeTab === 'traceability' && (
               <EvidenceTraceability draft={draft} />
+            )}
+
+            {activeTab === 'stamp' && (
+              <StampDutyAdvisor
+                dealPriceText={extractedData.price.value}
+                isGoodsOnly={extractedData.scopeOrProducts.value.toLowerCase().includes('chair') || extractedData.scopeOrProducts.value.toLowerCase().includes('cotton')}
+              />
+            )}
+
+            {activeTab === 'bsa' && (
+              <BSACertificateViewer draft={draft} />
+            )}
+
+            {activeTab === 'tamper' && (
+              <TamperVerificationLab draft={draft} />
             )}
           </div>
         </div>

@@ -11,7 +11,7 @@ export interface SamplePreset {
 export const SAMPLE_CONVERSATIONS: SamplePreset[] = [
   {
     id: 'chairs-ravi',
-    title: 'Procurement of 100 Office Chairs',
+    title: 'Procurement of 100 Office Chairs (Benchmark)',
     category: 'Furniture Supply / Goods',
     businessContext: 'Office setup procurement between vendor and commercial buyer',
     rawConversation: `Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver them within 10 days. You can pay after delivery. Please confirm.`,
@@ -25,7 +25,7 @@ export const SAMPLE_CONVERSATIONS: SamplePreset[] = [
   },
   {
     id: 'app-dev-priya',
-    title: 'Custom Mobile App Frontend Development',
+    title: 'Custom Mobile App Frontend Development (Novation Demo)',
     category: 'Software Services',
     businessContext: 'Freelance development engagement for a local retail mobile application',
     rawConversation: `Dear Priya,
@@ -57,6 +57,21 @@ Kindly confirm so we can block the inventory for you.`,
       'Explicitly detects freight is extra at actuals',
       'Highlights missing quality inspection window (fabric defect detection before cutting)',
       'Asks for GST inclusion confirmation',
+    ],
+  },
+  {
+    id: 'failure-edge-case',
+    title: 'Failure Edge Case: Vague Informal Banter (Section 29 ICA)',
+    category: 'Uncertainty / Void Contract',
+    businessContext: 'Casual WhatsApp exchange lacking essential terms',
+    rawConversation: `09:15 AM [Karan]: Bro send the usual items at last month's cash rate.
+09:18 AM [Sunil]: Done bro, will send.`,
+    description: 'Intellectual honesty demo: Refuses to hallucinate missing terms. Correctly flags deal as Void for Uncertainty under Section 29 of the Indian Contract Act, 1872.',
+    highlightedExpectations: [
+      'Refuses to fabricate prices, quantities, or product names',
+      'Flags scope and consideration as completely missing',
+      'Scores validity at 20% and warns agreement cannot be enforced in an Indian court',
+      'Drafts a WhatsApp clarification asking for explicit written terms before dispatch',
     ],
   },
 ];
