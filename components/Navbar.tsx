@@ -12,7 +12,8 @@ import {
   User as UserIcon, 
   LogIn, 
   LogOut,
-  Flame
+  Flame,
+  HardDrive
 } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/authContext';
 
@@ -105,7 +106,12 @@ export default function Navbar() {
                   <span>Firebase Demo Login</span>
                 </button>
               )
-            ) : null}
+            ) : (
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                <HardDrive className="w-3 h-3 text-slate-400" />
+                <span>Local-First Mode</span>
+              </span>
+            )}
 
             <Link
               href="/create"

@@ -49,8 +49,7 @@ export default function SavedDraftsPage() {
       }
 
       setDrafts(combined);
-      setIsLoaded(false);
-      setTimeout(() => setIsLoaded(true), 50);
+      setIsLoaded(true);
     }
 
     loadData();
