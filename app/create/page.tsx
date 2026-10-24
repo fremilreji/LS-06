@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   ExtractedAgreementData, 
   AgreementDraft, 
   ConversationInputSchema 
 } from '@/types/agreement';
-import { SamplePreset } from '@/lib/data/sampleConversations';
+import { SAMPLE_CONVERSATIONS, SamplePreset } from '@/lib/data/sampleConversations';
 import { DraftStore } from '@/lib/storage/draftStore';
 import { checkStatutoryExclusions, StatutoryBlockResult } from '@/lib/analysis/statutoryBlocks';
 import { analyzeContractFormation, FormationAnalysis } from '@/lib/analysis/formationEngine';
@@ -18,6 +18,7 @@ import EvidenceTraceability from '@/components/EvidenceTraceability';
 import StampDutyAdvisor from '@/components/StampDutyAdvisor';
 import BSACertificateViewer from '@/components/BSACertificateViewer';
 import TamperVerificationLab from '@/components/TamperVerificationLab';
+import LegalPaperDocument from '@/components/LegalPaperDocument';
 import { 
   Sparkles, 
   Send, 
@@ -27,14 +28,18 @@ import {
   Layers, 
   AlertTriangle, 
   FileText, 
-  FileCheck,
+  FileCheck, 
   RotateCcw,
   Scale,
   FileCheck2,
   Zap,
   ShieldAlert,
   HelpCircle,
-  X
+  X,
+  Upload,
+  Mic,
+  FileUp,
+  FolderOpen
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -45,6 +50,11 @@ export default function CreateAgreementPage() {
   const [rawConversation, setRawConversation] = useState('');
   const [consentAcknowledged, setConsentAcknowledged] = useState(true);
   const [selectedPresetId, setSelectedPresetId] = useState<string | undefined>();
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string }[]>([]);
+
+  // Legal preferences
+  const [letterTone, setLetterTone] = useState<'standard' | 'friendly' | 'strict'>('standard');
+  const [jurisdictionCity, setJurisdictionCity] = useState('Bengaluru, Karnataka');
 
   // Execution state
   const [isLoading, setIsLoading] = useState(false);
@@ -56,8 +66,11 @@ export default function CreateAgreementPage() {
   const [extractedData, setExtractedData] = useState<ExtractedAgreementData | null>(null);
   const [draft, setDraft] = useState<AgreementDraft | null>(null);
   const [formationAnalysis, setFormationAnalysis] = useState<FormationAnalysis | null>(null);
-  const [activeTab, setActiveTab] = useState<'terms' | 'missing' | 'draft' | 'traceability' | 'stamp' | 'bsa' | 'tamper'>('terms');
+  const [activeTab, setActiveTab] = useState<'letter' | 'terms' | 'missing' | 'draft' | 'traceability' | 'stamp' | 'bsa' | 'tamper'>('letter');
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceInputRef = useRef<HTMLInputElement>(null);
 
   // Preset Selection
   const handleSelectPreset = (preset: SamplePreset) => {
@@ -70,9 +83,41 @@ export default function CreateAgreementPage() {
     setStatutoryBlock(null);
   };
 
+  const handleTrySampleQuick = () => {
+    const sample = SAMPLE_CONVERSATIONS[0];
+    handleSelectPreset(sample);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newFiles: { name: string; size: string }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      newFiles.push({
+        name: f.name,
+        size: `${(f.size / 1024).toFixed(1)} KB`,
+      });
+      if (f.name.endsWith('.txt')) {
+        f.text().then(txt => {
+          setRawConversation(prev => (prev ? `${prev}\n\n${txt}` : txt));
+        });
+      }
+    }
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleVoiceCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const f = files[0];
+    setAttachedFiles(prev => [...prev, { name: f.name || 'Voice_Note.opus', size: `${(f.size / 1024).toFixed(1)} KB` }]);
+    setRawConversation(prev => `${prev}\n\n[Voice Note Attached: ${f.name || 'Voice Note'}] "Recorded mutual assent to commercial terms."`);
+  };
+
   // Submit Analysis
-  const handleAnalyse = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAnalyse = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setValidationErrors([]);
     setApiError(null);
     setStatutoryBlock(null);
@@ -84,8 +129,10 @@ export default function CreateAgreementPage() {
       return;
     }
 
+    const currentTitle = title.trim() || 'Commercial Agreement Draft';
+
     const validation = ConversationInputSchema.safeParse({
-      title,
+      title: currentTitle,
       businessContext,
       rawConversation,
       consentAcknowledged,
@@ -107,7 +154,7 @@ export default function CreateAgreementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
+          title: currentTitle,
           businessContext,
           rawConversation,
           consentAcknowledged,
@@ -122,11 +169,11 @@ export default function CreateAgreementPage() {
 
       setExtractedData(result.extractedData);
       setDraft(result.draft);
-      setActiveTab('terms');
+      setActiveTab('letter');
 
       // Auto-save to draft store
       DraftStore.save(result.draft);
-      showTemporaryToast('Draft generated & saved to local storage!');
+      showTemporaryToast('Deal analysed & one-page letter prepared!');
     } catch (err: any) {
       console.error('Analysis error:', err);
       setApiError(err.message || 'An error occurred during analysis.');
@@ -154,7 +201,7 @@ export default function CreateAgreementPage() {
   };
 
   const handleReset = () => {
-    if (confirm('Start a new agreement? Current analysis view will be cleared.')) {
+    if (confirm('Start a new conversation? Current text and findings will be cleared.')) {
       setExtractedData(null);
       setDraft(null);
       setFormationAnalysis(null);
@@ -163,11 +210,12 @@ export default function CreateAgreementPage() {
       setRawConversation('');
       setSelectedPresetId(undefined);
       setStatutoryBlock(null);
+      setAttachedFiles([]);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Toast Notification */}
       {saveSuccessMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-950 border border-emerald-700 text-emerald-200 px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
@@ -176,34 +224,21 @@ export default function CreateAgreementPage() {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="border-b border-slate-800 pb-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white tracking-tight">
-                Create Agreement Draft & Evidence Pack
-              </h1>
-              <span className="text-xs font-mono px-2.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                LS-06 Pipeline (BSA 2023 & ICA 1872)
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Ingest informal correspondence from WhatsApp text and voice notes to formulate structured commercial terms, BSA Section 63 Schedule Certificates, and state stamp duty advisories.
-            </p>
-          </div>
-
-          {draft && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors self-start sm:self-auto"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>New Analysis</span>
-            </button>
-          )}
+      {/* 1. Header (Clean LegalTech Style - NO THEME SELECTOR UP TOP) */}
+      <div className="space-y-2 border-b border-slate-800 pb-5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-blue-400 font-bold bg-blue-950/60 px-2.5 py-0.5 rounded border border-blue-800">
+            Srujana Tech Fest 2026 • Problem LS-06
+          </span>
         </div>
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Deal Proof
+        </h1>
+
+        <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal max-w-2xl">
+          Paste the chat. Get a clear one-page record that both sides can confirm.
+        </p>
       </div>
 
       {/* Preset Selector */}
@@ -212,7 +247,7 @@ export default function CreateAgreementPage() {
         selectedId={selectedPresetId}
       />
 
-      {/* Statutory Exclusion Hard-Block Modal/Banner */}
+      {/* Statutory Exclusion Hard-Block Banner */}
       {statutoryBlock && (
         <div className="bg-rose-950/60 border-2 border-rose-600 rounded-2xl p-6 text-white space-y-4 animate-in fade-in">
           <div className="flex items-start justify-between">
@@ -248,307 +283,375 @@ export default function CreateAgreementPage() {
           </div>
 
           <div className="text-[11px] text-rose-300 italic">
-            DealProof AI strictly enforces statutory exclusion rules to prevent users from executing invalid real-estate transfers, wills, or negotiable instruments on informal chat channels.
+            DealProof AI strictly enforces Indian statutory exclusion rules (First Schedule IT Act & Section 17 Registration Act) to prevent users from attempting invalid real estate transfers, wills, or promissory notes on informal messaging apps.
           </div>
         </div>
       )}
 
-      {/* Input Form Section */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-        <form onSubmit={handleAnalyse} className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Title */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                Agreement / Transaction Title <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="e.g., Supply of 100 Office Chairs"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              />
-            </div>
+      {/* 2. "Add what was said" - Upload & Drop Zone (Inspired by user's design reference) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white tracking-tight">
+            Add what was said
+          </h2>
+          {draft && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>New Conversation</span>
+            </button>
+          )}
+        </div>
 
-            {/* Business Context */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                Business Context / Industry (Optional)
-              </label>
-              <input
-                type="text"
-                value={businessContext}
-                onChange={e => setBusinessContext(e.target.value)}
-                placeholder="e.g., Office Furniture, Wholesale Textiles, IT Development"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              />
-            </div>
-          </div>
+        {/* Drop Zone Box */}
+        <div className="border-2 border-dashed border-blue-500/40 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-900/70 hover:bg-slate-900 transition-all space-y-4">
+          <p className="text-xs sm:text-sm text-slate-300">
+            Drop files here, or choose them: chat exports, screenshots, voice notes.
+          </p>
 
-          {/* Conversation Input Textarea */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-slate-200">
-                Informal Business Conversation Text (WhatsApp / Voice Note Transcripts) <span className="text-rose-400">*</span>
-              </label>
-              <span className="text-[11px] font-mono text-slate-500">
-                {rawConversation.length} / 15,000 chars
-              </span>
-            </div>
-            <textarea
-              required
-              rows={6}
-              value={rawConversation}
-              onChange={e => setRawConversation(e.target.value)}
-              placeholder="Paste raw messages, chat transcripts, or informal proposals here...
-Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver them within 10 days. You can pay after delivery. Please confirm."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all leading-relaxed"
-            />
-          </div>
-
-          {/* Privacy & Authorization Notice */}
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-start gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
             <input
-              type="checkbox"
-              id="consent"
-              checked={consentAcknowledged}
-              onChange={e => setConsentAcknowledged(e.target.checked)}
-              className="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-blue-500 h-4 w-4 bg-slate-900 cursor-pointer"
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept="image/*,audio/*,.txt,text/plain"
+              className="hidden"
+              onChange={handleFileUpload}
             />
-            <label htmlFor="consent" className="text-xs text-slate-400 cursor-pointer leading-relaxed">
-              <strong className="text-slate-300">Privacy & Authorization Notice: </strong>
-              I confirm that I have authorization to submit this conversation excerpt for review. I understand this tool processes text to generate an AI-assisted operational draft and does not replace certified legal counsel or state stamp duty laws.
-            </label>
-          </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all"
+            >
+              <FolderOpen className="w-4 h-4" />
+              <span>Choose files</span>
+            </button>
 
-          {/* Validation & API Error Banners */}
-          {validationErrors.length > 0 && (
-            <div className="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-xs text-rose-300 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-rose-200">
-                <AlertCircle className="w-4 h-4 text-rose-400" />
-                <span>Please fix the following:</span>
-              </div>
-              <ul className="list-disc list-inside space-y-0.5 pl-1">
-                {validationErrors.map((err, idx) => (
-                  <li key={idx}>{err}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {apiError && (
-            <div className="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-xs text-rose-300 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-semibold text-rose-200">Error: </strong>
-                {apiError}
-              </div>
-            </div>
-          )}
-
-          {/* Submit Action */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="text-[11px] text-slate-500">
-              Evaluates Indian Contract Act Section 7 & 62, IT Act Section 10A, and BSA 2023 Section 63.
-            </div>
+            <input
+              type="file"
+              ref={voiceInputRef}
+              accept="audio/*"
+              className="hidden"
+              onChange={handleVoiceCapture}
+            />
+            <button
+              type="button"
+              onClick={() => voiceInputRef.current?.click()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+            >
+              <Mic className="w-4 h-4 text-emerald-400" />
+              <span>Record a voice note</span>
+            </button>
 
             <button
-              type="submit"
-              disabled={isLoading || !rawConversation.trim()}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white shadow-md shadow-blue-600/20 transition-all cursor-pointer disabled:cursor-not-allowed"
+              type="button"
+              onClick={handleTrySampleQuick}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
             >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  <span>Extracting Terms & Hashing...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Analyse Conversation</span>
-                </>
-              )}
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Try a sample</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
+            >
+              <span>New conversation</span>
             </button>
           </div>
-        </form>
+
+          <p className="text-[11px] text-slate-500">
+            On mobile, &ldquo;Record a voice note&rdquo; captures your voice clip directly.
+          </p>
+
+          {attachedFiles.length > 0 && (
+            <div className="pt-2 flex flex-wrap gap-2 justify-center">
+              {attachedFiles.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono bg-slate-950 text-blue-300 border border-slate-800">
+                  <FileUp className="w-3 h-3 text-blue-400" />
+                  {f.name} ({f.size})
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Text Area */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-300">
+            Or paste text: WhatsApp, SMS, email, call notes
+          </label>
+          <textarea
+            rows={6}
+            value={rawConversation}
+            onChange={e => setRawConversation(e.target.value)}
+            placeholder="Paste anything where the deal was discussed...
+Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver them within 10 days. You can pay after delivery. Please confirm."
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all leading-relaxed"
+          />
+        </div>
+
+        {/* Big Action Button */}
+        <button
+          type="button"
+          onClick={() => handleAnalyse()}
+          disabled={isLoading || !rawConversation.trim()}
+          className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold text-sm sm:text-base shadow-lg shadow-blue-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <>
+              <RefreshCw className="w-5 h-5 animate-spin text-white" />
+              <span>Reading it and checking...</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-5 h-5" />
+              <span>Read it and check</span>
+            </>
+          )}
+        </button>
+
+        {validationErrors.length > 0 && (
+          <div className="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-xs text-rose-300 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-rose-200">
+              <AlertCircle className="w-4 h-4 text-rose-400" />
+              <span>Please review:</span>
+            </div>
+            <ul className="list-disc list-inside space-y-0.5 pl-1">
+              {validationErrors.map((err, idx) => (
+                <li key={idx}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* Analysis Results View */}
+      {/* 3. Analysis Results View */}
       {extractedData && draft && (
-        <div className="space-y-6 pt-4 animate-in fade-in duration-300">
-          {/* Doctrinal Contract Formation Banner */}
-          {formationAnalysis && (
-            <div className="p-4 rounded-xl bg-slate-900 border border-blue-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2.5">
-                <span className={`px-2.5 py-1 rounded-full font-bold font-mono text-[10px] uppercase tracking-wider ${
-                  formationAnalysis.state === 'FORMATION_CONCLUDED'
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                    : formationAnalysis.state === 'POST_FORMATION_SECTION_62_ALTERATION'
-                    ? 'bg-blue-950 text-blue-300 border border-blue-700'
-                    : 'bg-amber-950 text-amber-300 border border-amber-700'
-                }`}>
-                  {formationAnalysis.stateLabel}
+        <div className="space-y-8 pt-4 animate-in fade-in duration-300">
+          {/* "What we found" Executive Overview Card */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              What we found
+            </h2>
+
+            {/* Summary Box */}
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase text-blue-400 font-bold tracking-wider">
+                  Executive Agreement Summary
                 </span>
-                <p className="text-slate-300 font-sans">
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-300 border border-slate-800">
+                  Completeness: {extractedData.completenessScore}%
+                </span>
+              </div>
+              <p className="text-sm text-slate-200 leading-relaxed font-sans">
+                {draft.title}: Agreement between <strong>{extractedData.partyA.name}</strong> and <strong>{extractedData.partyB.name}</strong> for provision of <strong>{extractedData.scopeOrProducts.value}</strong> ({extractedData.quantity.value}) for <strong>{extractedData.price.value}</strong> ({extractedData.currency}), targeted within <strong>{extractedData.deliveryTimeline.value}</strong>.
+              </p>
+            </div>
+
+            {/* "Check this in the agreement" (Risks / Warnings) */}
+            {extractedData.missingTerms.length > 0 && (
+              <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-900/60 space-y-2 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-amber-300 uppercase tracking-wider text-[11px]">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <span>Check this in the agreement ({extractedData.missingTerms.length} Gaps)</span>
+                </div>
+                <ul className="space-y-1 text-slate-300 pl-1">
+                  {extractedData.missingTerms.slice(0, 3).map(m => (
+                    <li key={m.id}>• <strong>{m.issue}</strong> — {m.suggestedQuestion}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* "Cleared up for you" (Ambiguities / Novations) */}
+            {formationAnalysis && (
+              <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-900/60 space-y-2 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-blue-300 uppercase tracking-wider text-[11px]">
+                  <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                  <span>Cleared up for you (Contract Formation Doctrinal Finding)</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed font-sans">
                   {formationAnalysis.doctrinalFinding}
                 </p>
+                <div className="text-[11px] font-mono text-blue-400">
+                  Governing standard: {formationAnalysis.statutoryReference}
+                </div>
+              </div>
+            )}
+
+            {/* Tone of Letter and Jurisdiction City Controls (From reference design) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Tone of the letter
+                </label>
+                <select
+                  value={letterTone}
+                  onChange={e => setLetterTone(e.target.value as any)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="friendly">Friendly (Warm & brief)</option>
+                  <option value="standard">Standard (Neutral & clear)</option>
+                  <option value="strict">Strict (Firm & precise)</option>
+                </select>
               </div>
 
-              <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                {formationAnalysis.statutoryReference}
-              </span>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Disputes heard in (Jurisdiction)
+                </label>
+                <input
+                  type="text"
+                  value={jurisdictionCity}
+                  onChange={e => setJurisdictionCity(e.target.value)}
+                  placeholder="e.g. Bengaluru, Karnataka"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
-          )}
-
-          {/* Navigation Tabs (7 Breakthrough Tabs) */}
-          <div className="flex border-b border-slate-800 overflow-x-auto gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('terms')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'terms'
-                  ? 'border-blue-500 text-blue-400 bg-blue-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>1. Extracted Terms</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                {extractedData.completenessScore}%
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('missing')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'missing'
-                  ? 'border-amber-500 text-amber-400 bg-amber-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>2. Gaps & WhatsApp Prompts</span>
-              {extractedData.missingTerms.length > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
-                  {extractedData.missingTerms.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('draft')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'draft'
-                  ? 'border-emerald-500 text-emerald-400 bg-emerald-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>3. Agreement Draft</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                v{draft.version}.0
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('traceability')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'traceability'
-                  ? 'border-cyan-500 text-cyan-400 bg-cyan-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <FileCheck className="w-4 h-4" />
-              <span>4. Evidence Audit</span>
-            </button>
-
-            {/* Breakthrough Tab 5: State Stamp Duty */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('stamp')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'stamp'
-                  ? 'border-amber-500 text-amber-400 bg-amber-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <Scale className="w-4 h-4" />
-              <span>5. Stamp Duty & Impounding</span>
-            </button>
-
-            {/* Breakthrough Tab 6: BSA Section 63 Certificate */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('bsa')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'bsa'
-                  ? 'border-blue-500 text-blue-400 bg-blue-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <FileCheck2 className="w-4 h-4" />
-              <span>6. BSA 2023 Certificate</span>
-            </button>
-
-            {/* Breakthrough Tab 7: Tamper Detection Sandbox */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('tamper')}
-              className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                activeTab === 'tamper'
-                  ? 'border-purple-500 text-purple-400 bg-purple-950/20'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-              }`}
-            >
-              <Zap className="w-4 h-4" />
-              <span>7. Tamper Lab</span>
-            </button>
           </div>
 
-          {/* Active Tab Content */}
-          <div className="mt-6">
-            {activeTab === 'terms' && (
-              <ExtractedTermsView data={extractedData} />
-            )}
+          {/* 4. Breakthrough Navigation Tabs (Clean Legal Style) */}
+          <div className="space-y-4 pt-4">
+            <div className="flex border-b border-slate-800 overflow-x-auto gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('letter')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'letter'
+                    ? 'border-blue-500 text-blue-400 bg-blue-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Your Letter (One-Page)</span>
+              </button>
 
-            {activeTab === 'missing' && (
-              <MissingTermsAlert
-                missingTerms={extractedData.missingTerms}
-                ambiguousTerms={extractedData.ambiguousTerms}
-              />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('terms')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'terms'
+                    ? 'border-blue-500 text-blue-400 bg-blue-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>Extracted Terms</span>
+              </button>
 
-            {activeTab === 'draft' && (
-              <AgreementEditor
-                draft={draft}
-                onUpdateDraft={handleUpdateDraft}
-                onSaveNewVersion={handleSaveNewVersion}
-              />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('missing')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'missing'
+                    ? 'border-amber-500 text-amber-400 bg-amber-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Gaps & WhatsApp Prompts</span>
+              </button>
 
-            {activeTab === 'traceability' && (
-              <EvidenceTraceability draft={draft} />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('stamp')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'stamp'
+                    ? 'border-amber-500 text-amber-400 bg-amber-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Scale className="w-4 h-4" />
+                <span>Stamp Duty & Impounding</span>
+              </button>
 
-            {activeTab === 'stamp' && (
-              <StampDutyAdvisor
-                dealPriceText={extractedData.price.value}
-                isGoodsOnly={extractedData.scopeOrProducts.value.toLowerCase().includes('chair') || extractedData.scopeOrProducts.value.toLowerCase().includes('cotton')}
-              />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('bsa')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'bsa'
+                    ? 'border-blue-500 text-blue-400 bg-blue-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileCheck2 className="w-4 h-4" />
+                <span>BSA 2023 Certificate</span>
+              </button>
 
-            {activeTab === 'bsa' && (
-              <BSACertificateViewer draft={draft} />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('tamper')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'tamper'
+                    ? 'border-purple-500 text-purple-400 bg-purple-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+                <span>Tamper Lab</span>
+              </button>
 
-            {activeTab === 'tamper' && (
-              <TamperVerificationLab draft={draft} />
-            )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('traceability')}
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                  activeTab === 'traceability'
+                    ? 'border-cyan-500 text-cyan-400 bg-cyan-950/20'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileCheck className="w-4 h-4" />
+                <span>Evidence Audit</span>
+              </button>
+            </div>
+
+            {/* Active Tab Content */}
+            <div className="mt-4">
+              {activeTab === 'letter' && (
+                <LegalPaperDocument
+                  draft={draft}
+                  jurisdictionCity={jurisdictionCity}
+                  onUpdateDraft={handleUpdateDraft}
+                />
+              )}
+
+              {activeTab === 'terms' && (
+                <ExtractedTermsView data={extractedData} />
+              )}
+
+              {activeTab === 'missing' && (
+                <MissingTermsAlert
+                  missingTerms={extractedData.missingTerms}
+                  ambiguousTerms={extractedData.ambiguousTerms}
+                />
+              )}
+
+              {activeTab === 'stamp' && (
+                <StampDutyAdvisor
+                  dealPriceText={extractedData.price.value}
+                  isGoodsOnly={extractedData.scopeOrProducts.value.toLowerCase().includes('chair') || extractedData.scopeOrProducts.value.toLowerCase().includes('cotton')}
+                />
+              )}
+
+              {activeTab === 'bsa' && (
+                <BSACertificateViewer draft={draft} />
+              )}
+
+              {activeTab === 'tamper' && (
+                <TamperVerificationLab draft={draft} />
+              )}
+
+              {activeTab === 'traceability' && (
+                <EvidenceTraceability draft={draft} />
+              )}
+            </div>
           </div>
         </div>
       )}
