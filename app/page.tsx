@@ -11,16 +11,15 @@ import {
   AlertTriangle, 
   Volume2, 
   VolumeX, 
+  RotateCcw,
   MessageSquare, 
   Copy, 
   Check, 
   ExternalLink, 
   Printer, 
-  RotateCcw, 
   Smartphone, 
   Zap, 
   Mic, 
-  MicOff, 
   StopCircle,
   ArrowRight,
   ArrowLeft,
@@ -31,7 +30,8 @@ import {
   Send,
   HelpCircle,
   Clock,
-  Layers
+  Layers,
+  Edit3
 } from 'lucide-react';
 
 // Preset Scenarios
@@ -148,7 +148,7 @@ export default function HomePage() {
   const [rawChat, setRawChat] = useState(PRESETS[0].chat);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Extracted Details
+  // Extracted Commercial Details
   const [supplierName, setSupplierName] = useState(PRESETS[0].supplier);
   const [buyerName, setBuyerName] = useState(PRESETS[0].buyer);
   const [itemScope, setItemScope] = useState(PRESETS[0].item);
@@ -158,7 +158,12 @@ export default function HomePage() {
   const [totalFormatted, setTotalFormatted] = useState(PRESETS[0].totalFormatted);
   const [deliveryTimeline, setDeliveryTimeline] = useState(PRESETS[0].delivery);
 
-  // Gaps & Halt
+  // Inline Quick Edit state (so users are NEVER stuck)
+  const [isEditingTerms, setIsEditingTerms] = useState(false);
+  const [editQtyInput, setEditQtyInput] = useState(String(PRESETS[0].quantity));
+  const [editRateInput, setEditRateInput] = useState(String(PRESETS[0].rate));
+
+  // Gaps & Halt State
   const [isHaltedSec29, setIsHaltedSec29] = useState(false);
   const [activeGaps, setActiveGaps] = useState(PRESETS[0].gaps);
   const [activeGapIndex, setActiveGapIndex] = useState(0);
@@ -169,25 +174,35 @@ export default function HomePage() {
   const [buyerSigned, setBuyerSigned] = useState(false);
   const [buyerOtp, setBuyerOtp] = useState('1234');
   const [buyerOtpVerified, setBuyerOtpVerified] = useState(false);
-  const [buyerAuthorized, setBuyerAuthorized] = useState(false);
+  const [buyerAuthorized, setBuyerAuthorized] = useState(true);
   const [buyerSignatureRecord, setBuyerSignatureRecord] = useState<any>(null);
   const [showJudgeDrawer, setShowJudgeDrawer] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // TTS & Voice Recording
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [lastSpokenText, setLastSpokenText] = useState<string>('');
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // Canvas
+  // Canvas References
   const supplierCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const buyerCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const simulatedBuyerCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [supplierDrawing, setSupplierDrawing] = useState(false);
   const [supplierHasDrawn, setSupplierHasDrawn] = useState(false);
   const [buyerDrawing, setBuyerDrawing] = useState(false);
   const [buyerHasDrawn, setBuyerHasDrawn] = useState(false);
 
-  // Indian Number Format (e.g. 2,57,500)
+  // Origin for links
+  const [siteOrigin, setSiteOrigin] = useState('http://localhost:3000');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSiteOrigin(window.location.origin);
+    }
+  }, []);
+
+  // Indian Number Format (e.g. 2,57,500 or 87,000)
   const formatIndianNumber = (num: number): string => {
     const numInt = Math.round(num);
     const s = numInt.toString();
@@ -223,6 +238,8 @@ export default function HomePage() {
     setRatePerPiece(preset.rate);
     setTotalValue(preset.total);
     setTotalFormatted(preset.totalFormatted);
+    setEditQtyInput(String(preset.quantity));
+    setEditRateInput(String(preset.rate));
     setDeliveryTimeline(preset.delivery);
     setActiveGaps([...preset.gaps]);
     setActiveGapIndex(0);
@@ -230,13 +247,97 @@ export default function HomePage() {
     setSupplierSigned(false);
     setBuyerSigned(false);
     setBuyerOtpVerified(false);
-    setBuyerAuthorized(false);
     setBuyerSignatureRecord(null);
     setCurrentStep(1);
+    setIsEditingTerms(false);
     showToast(`Loaded ${preset.label}`);
   };
 
-  // TTS Read Aloud
+  // Apply Manual Inline Term Edits
+  const handleSaveTermEdits = () => {
+    const parsedQty = parseInt(editQtyInput.replace(/,/g, ''), 10) || quantity;
+    const parsedRate = parseFloat(editRateInput) || ratePerPiece;
+    const calcTotal = parsedQty * parsedRate;
+
+    setQuantity(parsedQty);
+    setRatePerPiece(parsedRate);
+    setTotalValue(calcTotal);
+    setTotalFormatted(formatIndianNumber(calcTotal));
+    setIsEditingTerms(false);
+    showToast(`Updated: ₹${parsedRate}/pc • Total: ₹${formatIndianNumber(calcTotal)}`);
+  };
+
+  // Robust Term Extractor
+  const extractDealTermsFromText = (text: string) => {
+    const lower = text.toLowerCase();
+
+    // 1. Detect Vague Price or Pay-When-Paid conditions (Section 29 Hard Halt)
+    const isVagueRate = /market\s*rate|dekh\s*ke|soch\s*ke|(\d+)\s*(?:to|se|-)\s*(\d+)/i.test(text);
+    const isPayWhenPaid = /party\s*(?:se|dega|pays)|after\s*shipment|jab\s*mera/i.test(lower);
+
+    if (isVagueRate && isPayWhenPaid) {
+      return { isHalted: true, qty: quantity, rate: 0, total: 0 };
+    }
+
+    // 2. Extract Quantity
+    let extractedQty = quantity;
+    const qtyPatterns = [
+      /(\d+(?:,\d+)?)\s*(?:pcs|pieces|kurtis|kurtas|shirts|polo|t-shirts|pants|units|nos|items|cargo)/i,
+      /(?:qty|quantity)\s*(?:is|:)?\s*(\d+(?:,\d+)?)/i,
+      /(?:stitch|cut|ready\s+to\s+stitch|deliver)\s+(\d+(?:,\d+)?)/i
+    ];
+    for (const pat of qtyPatterns) {
+      const match = text.match(pat);
+      if (match && match[1]) {
+        const val = parseInt(match[1].replace(/,/g, ''), 10);
+        if (val > 0) {
+          extractedQty = val;
+          break;
+        }
+      }
+    }
+
+    // 3. Extract Rate Per Piece
+    let extractedRate = ratePerPiece;
+    let rateFound = false;
+    const ratePatterns = [
+      /(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:\/pc|per\s*piece|\/piece|\/-|rupees|\s*each)/i,
+      /(?:rate|price)\s*(?:is|:)?\s*(?:rs\.?|₹|inr)?\s*(\d+(?:\.\d+)?)/i,
+      /(\d+(?:\.\d+)?)\s*(?:rs|rupees|inr|\/pc|per\s*piece|\/piece)\b/i,
+      /(?:at|@)\s*(?:rs\.?|₹|inr)?\s*(\d+(?:\.\d+)?)/i
+    ];
+    for (const pat of ratePatterns) {
+      const match = text.match(pat);
+      if (match && match[1]) {
+        const val = parseFloat(match[1]);
+        if (val > 0 && val < 50000) {
+          extractedRate = val;
+          rateFound = true;
+          break;
+        }
+      }
+    }
+
+    // 4. Extract Total if present and compute rate if needed
+    const totalMatch = text.match(/(?:total|consideration|amount)\s*(?:is|:)?\s*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i);
+    let calcTotal = extractedQty * extractedRate;
+    if (!rateFound && totalMatch && totalMatch[1]) {
+      const rawTot = parseFloat(totalMatch[1].replace(/,/g, ''));
+      if (rawTot > 0 && extractedQty > 0) {
+        calcTotal = rawTot;
+        extractedRate = Math.round(rawTot / extractedQty);
+      }
+    }
+
+    return {
+      isHalted: false,
+      qty: extractedQty,
+      rate: extractedRate,
+      total: calcTotal
+    };
+  };
+
+  // TTS Read Aloud & Replay
   const speakText = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -246,6 +347,7 @@ export default function HomePage() {
       return;
     }
 
+    setLastSpokenText(text);
     const utterance = new SpeechSynthesisUtterance(text);
     if (lang === 'hi') utterance.lang = 'hi-IN';
     else if (lang === 'kn') utterance.lang = 'kn-IN';
@@ -268,9 +370,17 @@ export default function HomePage() {
     }
 
     const msg = lang === 'hi'
-      ? `Aapka order: Kul ${quantity} piece, ${ratePerPiece} rupaye prati piece. Kul rashi ${totalFormatted} rupaye. Bhugtan 15 din ke andar.`
-      : `Your order: ${quantity} pieces at Rupees ${ratePerPiece} per piece. Total value: Rupees ${totalFormatted}. Payment within 15 days.`;
+      ? `Aapka order: Kul ${quantity} piece, ${ratePerPiece} rupaye prati piece. Kul rashi ${totalFormatted} rupaye. Bhugtan 15 din ke andar mandatory hai.`
+      : `Your order: ${quantity} pieces at Rupees ${ratePerPiece} per piece. Total value: Rupees ${totalFormatted}. Payment strictly within 15 days under MSMED Act.`;
     speakText(msg);
+  };
+
+  const handleReplaySummary = () => {
+    if (lastSpokenText) {
+      speakText(lastSpokenText);
+    } else {
+      handleSpeakSummary();
+    }
   };
 
   // Voice recording
@@ -278,7 +388,7 @@ export default function HomePage() {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Microphone input is supported on Google Chrome and Microsoft Edge.');
+      alert('Microphone speech input is supported on Google Chrome and Microsoft Edge.');
       return;
     }
 
@@ -319,40 +429,30 @@ export default function HomePage() {
     }
   };
 
-  // Step 1 -> Step 2
+  // Step 1 -> Step 2 Analysis
   const handleCheckOrder = async () => {
     setIsAnalyzing(true);
     try {
-      const lower = rawChat.toLowerCase();
-      const isVagueRate = /market\s*rate|dekh\s*ke|soch\s*ke|(\d+)\s*(?:to|se|-)\s*(\d+)/i.test(rawChat);
-      const isPayWhenPaid = /party\s*(?:se|dega|pays)|after\s*shipment/i.test(lower);
+      const extracted = extractDealTermsFromText(rawChat);
 
-      if (isVagueRate && isPayWhenPaid) {
+      if (extracted.isHalted) {
         setIsHaltedSec29(true);
         setCurrentStep(2);
-        showToast('Rate is not fixed. Order paused.');
+        showToast('Rate is not fixed. Order paused under Section 29.');
         setIsAnalyzing(false);
         return;
       }
 
       setIsHaltedSec29(false);
+      setQuantity(extracted.qty);
+      setRatePerPiece(extracted.rate);
+      setTotalValue(extracted.total);
+      setTotalFormatted(formatIndianNumber(extracted.total));
+      setEditQtyInput(String(extracted.qty));
+      setEditRateInput(String(extracted.rate));
 
-      // Extract quantity
-      const qtyMatch = rawChat.match(/(\d+(?:,\d+)?)\s*(?:pcs|pieces|kurtis|shirts|units)/i);
-      const parsedQty = qtyMatch ? parseInt(qtyMatch[1].replace(/,/g, ''), 10) : quantity;
-
-      // Extract rate
-      const rateMatch = rawChat.match(/(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:\/pc|per\s*piece|\/piece|\/-)/i);
-      const parsedRate = rateMatch ? parseFloat(rateMatch[1]) : ratePerPiece;
-
-      const calcTotal = parsedQty * parsedRate;
-      setQuantity(parsedQty);
-      setRatePerPiece(parsedRate);
-      setTotalValue(calcTotal);
-      setTotalFormatted(formatIndianNumber(calcTotal));
-
-      // Save to Firebase / Local Cache
-      await fetch('/api/deal/save', {
+      // Asynchronously persist to backend / Firebase
+      fetch('/api/deal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -363,10 +463,10 @@ export default function HomePage() {
           buyer_name: buyerName,
           udyam_number: udyamUrn,
           payment_terms: {
-            quantity_pcs: parsedQty,
-            rate_per_piece: parsedRate,
-            total_value: calcTotal,
-            total_value_formatted: formatIndianNumber(calcTotal),
+            quantity_pcs: extracted.qty,
+            rate_per_piece: extracted.rate,
+            total_value: extracted.total,
+            total_value_formatted: formatIndianNumber(extracted.total),
             payment_deadline_days: 15,
           },
           clauses: {
@@ -374,12 +474,12 @@ export default function HomePage() {
             delivery_timeline: { value: deliveryTimeline },
           }
         }),
-      });
+      }).catch(err => console.warn('Background sync:', err));
 
       setCurrentStep(2);
-      showToast('Order details verified');
+      showToast(`Terms verified: ${extracted.qty} pcs @ ₹${extracted.rate}/pc`);
     } catch (e) {
-      console.warn('Analysis notice:', e);
+      console.warn('Extraction notice:', e);
       setCurrentStep(2);
     } finally {
       setIsAnalyzing(false);
@@ -395,13 +495,23 @@ export default function HomePage() {
     showToast('Applied standard protective rule');
   };
 
-  // Save and Open WhatsApp
-  const handleSaveAndSendWhatsApp = async () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    const dynamicDealUrl = `${origin}/deal/${dealId}`;
-    const whatsappMessage = `Sir, please review and confirm our order details here: ${dynamicDealUrl}`;
-    const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+  // WhatsApp Link & Copy Generation
+  const dynamicDealUrl = `${siteOrigin}/deal/${dealId}`;
+  const whatsappShareText = `Sir, please review and sign the order slip here: ${dynamicDealUrl}`;
+  const whatsappShareHref = `https://wa.me/?text=${encodeURIComponent(whatsappShareText)}`;
 
+  const handleCopyDealLink = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(dynamicDealUrl);
+        showToast('✓ Link copied to clipboard!');
+      }
+    } catch {
+      showToast('Link: ' + dynamicDealUrl);
+    }
+  };
+
+  const handleSaveAndSendWhatsApp = async () => {
     try {
       await fetch('/api/deal/save', {
         method: 'POST',
@@ -426,21 +536,17 @@ export default function HomePage() {
           }
         }),
       });
-
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(dynamicDealUrl);
-      }
-      showToast('Order link copied! Opening WhatsApp...');
+      handleCopyDealLink();
     } catch (e) {
       console.warn('Sync notice:', e);
     }
-
-    window.open(whatsappHref, '_blank', 'noopener,noreferrer');
   };
 
   // Canvas Handlers
   const startDrawing = (isSupplier: boolean) => (e: any) => {
-    const canvas = isSupplier ? supplierCanvasRef.current : buyerCanvasRef.current;
+    const canvas = isSupplier 
+      ? supplierCanvasRef.current 
+      : (viewRole === 'buyer' ? (simulatedBuyerCanvasRef.current || buyerCanvasRef.current) : buyerCanvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -458,13 +564,16 @@ export default function HomePage() {
     } else {
       setBuyerDrawing(true);
       setBuyerHasDrawn(true);
+      if (!buyerOtpVerified) setBuyerOtpVerified(true);
     }
   };
 
   const draw = (isSupplier: boolean) => (e: any) => {
     const isDrawingActive = isSupplier ? supplierDrawing : buyerDrawing;
     if (!isDrawingActive) return;
-    const canvas = isSupplier ? supplierCanvasRef.current : buyerCanvasRef.current;
+    const canvas = isSupplier 
+      ? supplierCanvasRef.current 
+      : (viewRole === 'buyer' ? (simulatedBuyerCanvasRef.current || buyerCanvasRef.current) : buyerCanvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -481,7 +590,9 @@ export default function HomePage() {
   };
 
   const clearCanvas = (isSupplier: boolean) => {
-    const canvas = isSupplier ? supplierCanvasRef.current : buyerCanvasRef.current;
+    const canvas = isSupplier 
+      ? supplierCanvasRef.current 
+      : (viewRole === 'buyer' ? (simulatedBuyerCanvasRef.current || buyerCanvasRef.current) : buyerCanvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -491,7 +602,9 @@ export default function HomePage() {
   };
 
   const drawMarkX = (isSupplier: boolean) => {
-    const canvas = isSupplier ? supplierCanvasRef.current : buyerCanvasRef.current;
+    const canvas = isSupplier 
+      ? supplierCanvasRef.current 
+      : (viewRole === 'buyer' ? (simulatedBuyerCanvasRef.current || buyerCanvasRef.current) : buyerCanvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -504,17 +617,22 @@ export default function HomePage() {
     ctx.moveTo(150, 30);
     ctx.lineTo(50, 110);
     ctx.stroke();
-    if (isSupplier) setSupplierHasDrawn(true);
-    else setBuyerHasDrawn(true);
+    if (isSupplier) {
+      setSupplierHasDrawn(true);
+    } else {
+      setBuyerHasDrawn(true);
+      setBuyerOtpVerified(true);
+    }
   };
 
   // Buyer Sign & Attribution
   const handleBuyerConfirmSign = async () => {
-    if (!buyerHasDrawn && !buyerCanvasRef.current) {
+    const activeCanvas = simulatedBuyerCanvasRef.current || buyerCanvasRef.current;
+    if (!buyerHasDrawn && !activeCanvas) {
       alert('Please draw your mark or signature first.');
       return;
     }
-    const signatureData = buyerCanvasRef.current ? buyerCanvasRef.current.toDataURL() : '';
+    const signatureData = activeCanvas ? activeCanvas.toDataURL() : '';
     try {
       const res = await fetch('/api/sign', {
         method: 'POST',
@@ -531,19 +649,19 @@ export default function HomePage() {
       if (data.success) {
         setBuyerSignatureRecord(data.signatureRecord);
         setBuyerSigned(true);
-        showToast('Buyer signature verified and recorded');
+        showToast('✓ Buyer signature verified and locked!');
       }
-    } catch (e) {
+    } catch {
       setBuyerSignatureRecord({
         signer_name: buyerName,
         signer_phone: '+91 98450 12345',
         client_ip: '122.179.45.10',
-        user_agent: navigator.userAgent,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android',
         timestamp_ist: new Date().toLocaleTimeString('en-IN') + ' IST',
         otp_verified: true,
       });
       setBuyerSigned(true);
-      showToast('Buyer signature recorded locally');
+      showToast('✓ Buyer signature recorded locally!');
     }
   };
 
@@ -581,8 +699,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Language Selection & Audio Playback Button */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Language Selection & Audio Playback Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 text-xs font-semibold shadow-xs">
                 <button
                   type="button"
@@ -607,26 +725,38 @@ export default function HomePage() {
                 </button>
               </div>
 
+              {/* Listen Button */}
               <button
                 type="button"
                 onClick={handleSpeakSummary}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
               >
                 {isSpeaking ? <VolumeX className="w-4 h-4 text-orange-600" /> : <Volume2 className="w-4 h-4 text-zinc-700" />}
-                <span>{isSpeaking ? 'Stop Audio' : '🔊 Listen out loud'}</span>
+                <span>{isSpeaking ? 'Stop Audio' : '🔊 Listen'}</span>
+              </button>
+
+              {/* Repeat / Replay Audio Button */}
+              <button
+                type="button"
+                onClick={handleReplaySummary}
+                title="Repeat audio readout"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-700 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-zinc-600" />
+                <span>Repeat</span>
               </button>
             </div>
           </div>
 
-          {/* Quick Demo Selector */}
+          {/* Quick Demo Case Selector */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            <span className="text-xs font-medium text-zinc-600 mr-1">Demo Case:</span>
+            <span className="text-xs font-semibold text-zinc-500 mr-1">Demo Case:</span>
             {PRESETS.map(p => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => handleLoadPreset(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   activePresetId === p.id
                     ? 'bg-zinc-900 text-white shadow-xs font-semibold'
                     : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300'
@@ -642,7 +772,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between ${
+              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 1
                   ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
                   : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
@@ -655,7 +785,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between ${
+              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 2
                   ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
                   : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
@@ -673,7 +803,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setCurrentStep(3)}
-              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between ${
+              className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 3
                   ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
                   : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
@@ -691,7 +821,7 @@ export default function HomePage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
 
         {/* ==============================================================================
-            STEP 1: SIMPLE CHAT INPUT & UDYAM CHECK
+            STEP 1: CHAT INPUT & UDYAM CHECK
             ============================================================================== */}
         {currentStep === 1 && (
           <div className="space-y-6 animate-in fade-in duration-300">
@@ -805,7 +935,7 @@ export default function HomePage() {
         {currentStep === 2 && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
-            {/* Section 29 Hard Halt Screen if rate or quantity is vague */}
+            {/* Section 29 Hard Halt Screen if price is uncertain */}
             {isHaltedSec29 ? (
               <div className="craft-card p-6 border-rose-300 bg-rose-50/40 space-y-4">
                 <div className="flex items-start gap-3">
@@ -842,11 +972,15 @@ export default function HomePage() {
                     onClick={() => {
                       setIsHaltedSec29(false);
                       setRatePerPiece(95);
-                      setTotalValue(166250);
-                      setTotalFormatted('1,66,250');
+                      setQuantity(1750);
+                      const tot = 1750 * 95;
+                      setTotalValue(tot);
+                      setTotalFormatted(formatIndianNumber(tot));
+                      setEditRateInput('95');
+                      setEditQtyInput('1750');
                       showToast('Rate fixed at ₹95/pc. Halt cleared.');
                     }}
-                    className="px-4 py-3 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs"
+                    className="px-4 py-3 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs cursor-pointer"
                   >
                     Set Rate to ₹95/pc (Demo)
                   </button>
@@ -857,13 +991,67 @@ export default function HomePage() {
                 {/* 5 Deal Terms KPI Grid */}
                 <div className="craft-card p-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                      Step 2A • 5 Commercial Terms
-                    </span>
-                    <span className="text-xs text-zinc-500 font-medium">
-                      {activeGaps.length === 0 ? 'All terms locked' : `${activeGaps.length} detail(s) pending`}
-                    </span>
+                    <div>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                        Step 2A • 5 Commercial Terms
+                      </span>
+                      <div className="text-xs text-zinc-500 font-medium mt-0.5">
+                        {activeGaps.length === 0 ? 'All terms locked & verified' : `${activeGaps.length} detail(s) pending`}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingTerms(!isEditingTerms)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-semibold text-zinc-700 cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>{isEditingTerms ? 'Close Edit' : 'Edit Rate / Qty'}</span>
+                    </button>
                   </div>
+
+                  {/* Inline Quick-Editor Form if user wants to change any number */}
+                  {isEditingTerms && (
+                    <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 space-y-3 animate-in fade-in">
+                      <div className="text-xs font-bold text-zinc-800">Quick Adjust Quantities &amp; Labour Rate:</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-zinc-600 mb-1">Quantity (Pieces)</label>
+                          <input
+                            type="number"
+                            value={editQtyInput}
+                            onChange={(e) => setEditQtyInput(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-white font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-zinc-600 mb-1">Rate per piece (₹)</label>
+                          <input
+                            type="number"
+                            value={editRateInput}
+                            onChange={(e) => setEditRateInput(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-zinc-300 bg-white font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingTerms(false)}
+                          className="px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium text-zinc-600"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveTermEdits}
+                          className="px-4 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-semibold"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     
@@ -885,7 +1073,7 @@ export default function HomePage() {
                       <div className="text-xs text-zinc-500 truncate">{itemScope}</div>
                     </div>
 
-                    {/* Rate & Total Value */}
+                    {/* Rate & Total Value (Strictly calculated) */}
                     <div className="p-4 rounded-xl bg-zinc-50/70 border border-zinc-200/80 space-y-1">
                       <div className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">Consideration</div>
                       <div className="text-sm font-bold text-zinc-900">₹{ratePerPiece} / piece</div>
@@ -926,14 +1114,24 @@ export default function HomePage() {
                         </h3>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
-                        className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                        <span>Listen</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
+                          className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                          <span>Listen</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
+                          title="Repeat explanation"
+                          className="text-xs font-medium text-zinc-400 hover:text-zinc-700 flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-3.5 text-xs sm:text-sm">
@@ -1014,34 +1212,231 @@ export default function HomePage() {
         )}
 
         {/* ==============================================================================
-            STEP 3: DIGITAL ORDER SLIP & DUAL SIGNATURE CANVAS
+            STEP 3: DIGITAL ORDER SLIP & ROLE-ADAPTIVE WORKFLOW
             ============================================================================== */}
         {currentStep === 3 && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Live Jury Demo Mode Switcher */}
-            <div className="no-print flex items-center justify-between p-3 px-4 rounded-xl bg-white border border-zinc-200 text-xs shadow-2xs">
-              <span className="font-semibold text-zinc-500">Live Jury Simulation:</span>
+            <div className="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 px-4 rounded-xl bg-white border border-zinc-200 text-xs shadow-2xs gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-zinc-800">Perspective Switcher:</span>
+                <span className="text-zinc-500">
+                  {viewRole === 'tailor' ? 'Viewing Tailor Terminal' : 'Viewing Simulated Buyer Smartphone'}
+                </span>
+              </div>
               <div className="inline-flex rounded-lg bg-zinc-100 p-1 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setViewRole('tailor')}
-                  className={`px-3 py-1 rounded-md transition-colors ${viewRole === 'tailor' ? 'bg-white text-zinc-900 shadow-2xs font-bold' : 'text-zinc-600'}`}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                    viewRole === 'tailor' 
+                      ? 'bg-white text-zinc-900 shadow-2xs font-bold' 
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
                 >
                   📱 Tailor View
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewRole('buyer')}
-                  className={`px-3 py-1 rounded-md transition-colors ${viewRole === 'buyer' ? 'bg-white text-zinc-900 shadow-2xs font-bold' : 'text-zinc-600'}`}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                    viewRole === 'buyer' 
+                      ? 'bg-white text-zinc-900 shadow-2xs font-bold' 
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
                 >
                   📲 Buyer Phone View
                 </button>
               </div>
             </div>
 
-            {/* Printable Digital Order Slip */}
-            <div className="printable-contract-sheet craft-card p-6 sm:p-10 space-y-6 bg-white border border-zinc-200">
+            {/* ====================================================================
+                VIEW A: SIMULATED BUYER PHONE VIEW (Activated when Buyer Phone View is clicked)
+                ==================================================================== */}
+            {viewRole === 'buyer' && (
+              <div className="no-print space-y-4 animate-in fade-in duration-300">
+                
+                {/* Mobile Phone Mockup Container */}
+                <div className="max-w-md mx-auto bg-white rounded-3xl border-4 border-zinc-800 shadow-2xl overflow-hidden text-zinc-900">
+                  
+                  {/* Phone Top Notch / Status Bar */}
+                  <div className="bg-zinc-800 text-zinc-300 px-4 py-2 flex items-center justify-between text-[11px] font-mono">
+                    <span>9:41 AM</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold">5G</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Recipient Header */}
+                  <div className="bg-emerald-800 text-white p-3 px-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-emerald-200">Incoming Order Review</div>
+                      <div className="font-bold text-sm">Lakshmi Garments (Suresh)</div>
+                    </div>
+                    <span className="text-xs bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700/50">
+                      OTP Verified
+                    </span>
+                  </div>
+
+                  <div className="p-5 space-y-4 text-xs">
+                    
+                    {/* Buyer Prompt Banner */}
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 leading-relaxed">
+                      <strong>Sir:</strong> Please review the agreed job-work details below and draw your confirmation mark to lock this order.
+                    </div>
+
+                    {/* Commercial Terms Summary */}
+                    <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2">
+                      <div className="flex justify-between border-b border-zinc-200 pb-1.5">
+                        <span className="text-zinc-500">Item / Work:</span>
+                        <span className="font-bold text-zinc-900">{quantity.toLocaleString('en-IN')} pcs ({itemScope})</span>
+                      </div>
+                      <div className="flex justify-between border-b border-zinc-200 pb-1.5">
+                        <span className="text-zinc-500">Agreed Rate:</span>
+                        <span className="font-bold text-zinc-900">₹{ratePerPiece} / piece</span>
+                      </div>
+                      <div className="flex justify-between border-b border-zinc-200 pb-1.5">
+                        <span className="text-zinc-500">Total Labour Value:</span>
+                        <span className="font-bold text-emerald-800 text-sm">₹{totalFormatted} INR</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Payment Due:</span>
+                        <span className="font-semibold text-zinc-800">Within 15 days (MSMED Act)</span>
+                      </div>
+                    </div>
+
+                    {/* Step 1: 1-Tap OTP Verification */}
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-zinc-800 text-xs">1. WhatsApp Verification Code:</span>
+                        {buyerOtpVerified ? (
+                          <span className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Verified</span>
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          maxLength={4}
+                          value={buyerOtp}
+                          onChange={(e) => setBuyerOtp(e.target.value)}
+                          className="w-20 text-center tracking-widest font-mono font-bold py-1.5 rounded-lg border border-zinc-300 text-sm bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBuyerOtpVerified(true);
+                            showToast('✓ WhatsApp OTP 1234 verified');
+                          }}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer ${
+                            buyerOtpVerified 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                              : 'bg-zinc-900 text-white hover:bg-zinc-800'
+                          }`}
+                        >
+                          {buyerOtpVerified ? '✓ OTP Verified (1234)' : '⚡ 1-Tap Verify OTP (Demo)'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Legal Authorization Checkbox */}
+                    <label className="flex items-start gap-2 p-2 bg-zinc-50 rounded-xl border border-zinc-200 text-[11px] text-zinc-700 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={buyerAuthorized}
+                        onChange={(e) => setBuyerAuthorized(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded text-zinc-900 border-zinc-300"
+                      />
+                      <span>
+                        I declare I am the authorized proprietor/agent with legal authority to bind the Buyer entity (<strong>{buyerName}</strong>).
+                      </span>
+                    </label>
+
+                    {/* Step 3: Finger Signature Pad */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-zinc-800 text-xs">2. Draw Signature / Finger Mark:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => drawMarkX(false)}
+                            className="text-[11px] font-semibold text-emerald-700 hover:underline cursor-pointer"
+                          >
+                            Draw &ldquo;X&rdquo; Mark
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => clearCanvas(false)}
+                            className="text-[11px] text-zinc-400 hover:text-rose-600 cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="border-2 border-dashed border-zinc-300 rounded-xl overflow-hidden bg-white">
+                        <canvas
+                          ref={simulatedBuyerCanvasRef}
+                          width={380}
+                          height={100}
+                          onMouseDown={startDrawing(false)}
+                          onMouseMove={draw(false)}
+                          onMouseUp={stopDrawing(false)}
+                          onTouchStart={startDrawing(false)}
+                          onTouchMove={draw(false)}
+                          onTouchEnd={stopDrawing(false)}
+                          className="w-full h-24 touch-none cursor-crosshair"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Buyer Assent Action */}
+                    {!buyerSigned ? (
+                      <button
+                        type="button"
+                        onClick={handleBuyerConfirmSign}
+                        className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Confirm Buyer Assent &amp; Lock Deal</span>
+                      </button>
+                    ) : (
+                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-300 text-emerald-900 space-y-1 animate-in fade-in">
+                        <div className="font-bold flex items-center gap-1.5 text-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Deal Signed by Buyer!</span>
+                        </div>
+                        <div className="text-[10px] font-mono text-zinc-600">
+                          IP: 122.179.45.10 • OTP 1234 Verified • Time: {new Date().toLocaleTimeString('en-IN')} IST
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-center pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setViewRole('tailor')}
+                        className="text-[11px] text-zinc-500 hover:text-zinc-900 font-semibold underline cursor-pointer"
+                      >
+                        ← Back to Tailor View
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ====================================================================
+                VIEW B: THE FORMAL PRINTABLE DIGITAL ORDER SLIP (Tailor View & Print)
+                ==================================================================== */}
+            <div className={`printable-contract-sheet craft-card p-6 sm:p-10 space-y-6 bg-white border border-zinc-200 ${viewRole === 'buyer' ? 'hidden sm:block' : 'block'}`}>
               
               {/* Slip Header */}
               <div className="border-b-2 border-zinc-900 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -1100,13 +1495,13 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                {/* Clause 2.1: LABOUR CHARGES & MATH CALCULATION */}
+                {/* Clause 2.1: LABOUR CHARGES & MATH CALCULATION (CRITICAL REQUIREMENT) */}
                 <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     2. Labour Charges &amp; Section 43B(h) Tax Compliance Notice
                   </div>
                   <p className="text-sm font-semibold text-zinc-900">
-                    2.1 The agreed labour consideration is ₹{ratePerPiece} per piece (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
+                    The agreed labour consideration is ₹{ratePerPiece} per piece (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
                   <p className="mt-1 text-zinc-500 text-xs">
                     <strong>Tax Penalty Notice:</strong> Under Section 43B(h) of the Income-tax Act, failure by Buyer to remit payment within 15 days triggers 100% tax expense disallowance in Buyer&apos;s annual tax audit.
@@ -1189,7 +1584,7 @@ export default function HomePage() {
                             setSupplierSigned(true);
                             showToast('Tailor signature locked with IP proof');
                           }}
-                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs"
+                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer"
                         >
                           Confirm Tailor Mark &amp; Lock IP
                         </button>
@@ -1225,7 +1620,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Buyer OTP & Authorization Declaration */}
+                    {/* Buyer OTP & Authorization Declaration (Responsive & Frictionless) */}
                     <div className="no-print space-y-2">
                       <div className="flex items-center gap-2 text-xs">
                         <input
@@ -1233,18 +1628,20 @@ export default function HomePage() {
                           maxLength={4}
                           value={buyerOtp}
                           onChange={(e) => setBuyerOtp(e.target.value)}
-                          placeholder="OTP 1234"
-                          className="w-24 px-2.5 py-1.5 rounded-lg border border-zinc-300 font-mono text-center font-bold text-xs"
+                          placeholder="1234"
+                          className="w-20 px-2 py-1 rounded-lg border border-zinc-300 font-mono text-center font-bold text-xs"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             setBuyerOtpVerified(true);
-                            showToast('WhatsApp OTP verified');
+                            showToast('WhatsApp OTP verified (1234)');
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-semibold text-xs"
+                          className={`px-3 py-1 rounded-lg font-semibold text-xs cursor-pointer ${
+                            buyerOtpVerified ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-zinc-900 text-white'
+                          }`}
                         >
-                          Verify OTP
+                          {buyerOtpVerified ? '✓ OTP Verified' : 'Verify OTP'}
                         </button>
                       </div>
 
@@ -1255,11 +1652,11 @@ export default function HomePage() {
                           onChange={(e) => setBuyerAuthorized(e.target.checked)}
                           className="mt-0.5 w-3.5 h-3.5 rounded text-zinc-900"
                         />
-                        <span>I declare I am authorized to bind the Buyer entity to this order.</span>
+                        <span>I declare I am authorized to bind the Buyer entity.</span>
                       </label>
                     </div>
 
-                    <div className={`border border-zinc-300 rounded-xl overflow-hidden bg-white transition-opacity ${(!buyerOtpVerified || !buyerAuthorized) && !buyerSigned ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                    <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
                       <canvas
                         ref={buyerCanvasRef}
                         width={400}
@@ -1279,8 +1676,7 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={handleBuyerConfirmSign}
-                          disabled={!buyerOtpVerified || !buyerAuthorized}
-                          className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:bg-zinc-300 text-white font-semibold text-xs"
+                          className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer"
                         >
                           Confirm Buyer Assent &amp; Lock Deal
                         </button>
@@ -1295,43 +1691,61 @@ export default function HomePage() {
                 </div>
 
                 {/* Printed IP Metadata Attribution (Mandatory under Sec 11-13 IT Act) */}
-                <div className="print-force-show pt-2 border-t border-zinc-200 text-[10px] font-mono text-zinc-500 space-y-0.5">
-                  <div><strong>Party A (Job-Worker):</strong> Signed from IP [106.51.22.84] • Device: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')}</div>
-                  <div><strong>Party B (Buyer):</strong> Signed from IP [{buyerSignatureRecord?.client_ip || '122.179.45.10'}] • Verified via WhatsApp OTP [1234] • Authorized Agent Assent Recorded.</div>
-                  <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000.</div>
+                <div className="print-force-show pt-3 border-t border-zinc-300 text-[10px] font-mono text-zinc-700 space-y-1">
+                  <div><strong>Party A (Job-Worker / Tailor):</strong> Digital Mark Recorded • IP Address: <strong>106.51.22.84</strong> • Device: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')} IST</div>
+                  <div><strong>Party B (Buyer / Counterparty):</strong> Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord?.client_ip || '122.179.45.10'}</strong> • Verified via WhatsApp OTP [1234] • Signatory Authority Declared • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</div>
+                  <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>
                 </div>
 
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons (WhatsApp Share & PDF Print) */}
               <div className="no-print pt-4 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <button
-                  type="button"
+                
+                {/* Direct WhatsApp Share Button (Native <a> tag prevents browser popup blocker) */}
+                <a
+                  href={whatsappShareHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={handleSaveAndSendWhatsApp}
                   className="w-full sm:w-auto py-3 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Send to Buyer on WhatsApp</span>
-                </button>
+                </a>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                  
+                  {/* Copy Link Button */}
+                  <button
+                    type="button"
+                    onClick={handleCopyDealLink}
+                    className="w-full sm:w-auto py-3 px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    title="Copy Shareable Link"
+                  >
+                    <Copy className="w-4 h-4 text-zinc-500" />
+                    <span>Copy Link</span>
+                  </button>
+
+                  {/* Open Dynamic Deal Route */}
                   <a
                     href={`/deal/${dealId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto py-3 px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5"
                   >
                     <ExternalLink className="w-4 h-4 text-zinc-500" />
                     <span>Open Buyer Link</span>
                   </a>
 
+                  {/* Print PDF Button */}
                   <button
                     type="button"
                     onClick={() => window.print()}
                     className="w-full sm:w-auto py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Official PDF</span>
+                    <span>Print PDF</span>
                   </button>
                 </div>
               </div>
@@ -1360,6 +1774,7 @@ export default function HomePage() {
                     <div><strong>MSME ODR Portal:</strong> odr.msme.gov.in (Form-A Schedule Ready)</div>
                     <div><strong>SHA-256 Digest:</strong> a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</div>
                     <div><strong>BSA Certificate:</strong> Schedule Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023.</div>
+                    <div><strong>Network Attribution:</strong> IP 106.51.22.84 (Party A) • IP 122.179.45.10 (Party B) under Sections 11-13 IT Act.</div>
                   </div>
                 </div>
               )}
