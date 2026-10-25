@@ -78,15 +78,19 @@ export async function POST(req: NextRequest) {
           };
         }
       }
-      if (garmentAnalysis.payment_terms?.agreed_price_inr) {
-        const rate = garmentAnalysis.payment_terms.rate_per_piece;
-        const total = garmentAnalysis.payment_terms.agreed_price_inr;
-        const rateLabel = rate ? `@ ₹${rate}/pc ` : '';
-        extractedData.price = {
-          value: `₹${total.toLocaleString('en-IN')} (${rateLabel}Total Consideration)`,
-          isExplicit: true,
-          confidence: 'HIGH',
-        };
+      if (garmentAnalysis.payment_terms) {
+        const pt = garmentAnalysis.payment_terms;
+        const total = pt.total_value || pt.agreed_price_inr;
+        const rate = pt.rate_per_piece || pt.rate_per_piece_inr;
+        const totalFormatted = pt.total_value_formatted || (total ? total.toLocaleString('en-IN') : '');
+        const rateDisplay = rate ? `@ ₹${rate}/pc ` : '';
+        if (total) {
+          extractedData.price = {
+            value: `₹${totalFormatted} (${rateDisplay}Total Consideration)`,
+            isExplicit: true,
+            confidence: 'HIGH',
+          };
+        }
       }
       if (garmentAnalysis.clauses?.delivery_timeline?.value) {
         extractedData.deliveryTimeline = {

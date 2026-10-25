@@ -106,4 +106,15 @@ Please reply 'Confirmed' to lock this version."`;
     expect(willResult.isBlocked).toBe(true);
     expect(willResult.category).toBe('FIRST_SCHEDULE_WILL');
   });
+
+  it('calculates total labour value as quantity * rate_per_piece and formats with Indian comma system', async () => {
+    const kurtiChat = `10:15 AM [Raghavendra - Apex Exports]: Namaskara Manjunath, bulk order of 2,500 pieces Ladies Rayon Printed Anarkali Kurtis.
+10:22 AM [Manjunath - Sri Manjunatha Garments]: Per piece job-work rate will be ₹85 per piece. Total labour cost will be ₹2,12,500. Delivery by November 15.
+02:40 PM [Manjunath - Sri Manjunatha Garments]: Rate will increase by +₹18 per piece (total ₹103/piece) for embroidery.`;
+
+    const result = await extractTermsRuleBased(kurtiChat, 'Kurti Stitching Lot');
+    expect(result.quantity.value).toContain('2,500');
+    // Total should be 2,500 * 103 = 2,57,500
+    expect(result.price.value).toBe('₹2,57,500');
+  });
 });

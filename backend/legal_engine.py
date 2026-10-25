@@ -387,6 +387,26 @@ def parse_chat_messages(raw_text: str) -> List[ChatMessage]:
     return messages
 
 
+def format_indian_currency(num: float | int | None) -> str:
+    """Format an integer or float using the Indian comma numbering system (e.g. 2,57,500)."""
+    if num is None:
+        return "0"
+    num_int = int(round(float(num)))
+    s = str(num_int)
+    if len(s) <= 3:
+        return s
+    last3 = s[-3:]
+    rest = s[:-3]
+    parts = []
+    while len(rest) > 2:
+        parts.append(rest[-2:])
+        rest = rest[:-2]
+    if rest:
+        parts.append(rest)
+    parts.reverse()
+    return ",".join(parts) + "," + last3
+
+
 def analyze_garment_contract(
     raw_chat: str,
     supplier_name: Optional[str] = None,
@@ -462,6 +482,8 @@ def analyze_garment_contract(
     # --- Step 3: Extract Commercial Terms ---
     quantity_pcs: Optional[int] = None
     rate_per_piece: Optional[float] = None
+    total_value: Optional[float] = None
+    total_value_formatted: str = "0"
     agreed_price_inr: Optional[float] = None
     delivery_timeline = "Within 14 business days of fabric delivery"
     payment_days = 15
@@ -472,18 +494,31 @@ def analyze_garment_contract(
         quantity_pcs = int(qty_matches[-1].replace(",", ""))
 
     # Rate per piece parsing
-    rate_match = re.search(r"(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:/pc|per piece|each|\/-)", lower_chat)
-    if not rate_match:
-        rate_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:per\s*piece|/pc|rupees\s*per)", lower_chat)
-    if rate_match:
-        rate_per_piece = float(rate_match.group(1))
+    updated_rate_match = re.search(r"total\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(?:\/|\s*per\s*)(?:piece|pc)", lower_chat)
+    if updated_rate_match:
+        rate_per_piece = float(updated_rate_match.group(1))
+    else:
+        all_rates = re.findall(r"(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:/pc|per\s*piece|/piece|each|\/-)", lower_chat)
+        if not all_rates:
+            all_rates = re.findall(r"(\d+(?:\.\d+)?)\s*(?:per\s*piece|/pc|/piece|rupees\s*per)", lower_chat)
+        if all_rates:
+            rate_per_piece = float(all_rates[-1])
 
-    # Total consideration parsing
-    total_match = re.search(r"(?:total|consideration|sum of|amount of)\s*(?:inr|rs\.?|₹)?\s*([\d,]+(?:\.\d+)?)", lower_chat)
-    if total_match:
-        agreed_price_inr = float(total_match.group(1).replace(",", ""))
-    elif quantity_pcs and rate_per_piece:
-        agreed_price_inr = quantity_pcs * rate_per_piece
+    # Calculate total consideration (quantity * rate_per_piece)
+    if quantity_pcs and rate_per_piece:
+        total_value = float(quantity_pcs * rate_per_piece)
+        agreed_price_inr = total_value
+    else:
+        total_match = re.search(r"(?:total\s*labour\s*cost|total\s*cost|total\s*amount|total\s*consideration|total)\s*(?:will\s*be|is|of)?\s*(?:inr|rs\.?|₹)?\s*([\d,]+(?:\.\d+)?)(?!\s*(?:\/|\s*per)\s*(?:piece|pc|unit))", lower_chat)
+        if total_match:
+            total_value = float(total_match.group(1).replace(",", ""))
+            agreed_price_inr = total_value
+        else:
+            total_value = agreed_price_inr or 0.0
+
+    total_value_formatted = format_indian_currency(total_value)
+    rate_display = f"{int(rate_per_piece)}" if (rate_per_piece is not None and rate_per_piece.is_integer()) else f"{rate_per_piece or 0}"
+    clause_2_1_text = f"The agreed labour consideration is ₹{rate_display} per piece (Total Consideration: ₹{total_value_formatted} INR), exclusive of applicable GST."
 
     # Delivery timeline parsing
     del_match = re.search(r"(?:delivery|dispatch|complete)\s*(?:within|by|on)?\s*([A-Za-z0-9\s,-]+?)(?:\.|\n|$)", raw_chat, re.IGNORECASE)
@@ -619,6 +654,11 @@ def analyze_garment_contract(
         agreed_price_inr=agreed_price_inr,
         rate_per_piece_inr=rate_per_piece,
         quantity_pcs=quantity_pcs,
+        quantity=quantity_pcs,
+        rate_per_piece=rate_per_piece,
+        total_value=total_value,
+        total_value_formatted=total_value_formatted,
+        clause_2_1_text=clause_2_1_text,
         currency="INR",
         tax_status=tax_status,
         payment_due_days=payment_days,
@@ -682,7 +722,7 @@ def analyze_garment_contract(
         ),
         "price_and_tax": ExtractedClause(
             field_name="price_and_tax",
-            value=f"INR {agreed_price_inr:,.2f} (@ INR {rate_per_piece or 0}/pc, {tax_status})" if agreed_price_inr else "Unstated/Ambiguous",
+            value=f"INR {total_value_formatted} (@ INR {rate_display}/pc, {tax_status})" if agreed_price_inr else "Unstated/Ambiguous",
             status="clear" if agreed_price_inr and not sec_29_halts else "ambiguous",
             source_msg_ids=[m.msg_id for m in parsed_msgs if "₹" in m.content or "rs" in m.content.lower() or "rate" in m.content.lower()],
             confidence_note="Agreed stitching rate per piece with Section 43B(h) buyer tax disallowance notice.",
@@ -723,7 +763,7 @@ def analyze_garment_contract(
         f"   Latent Defects: The tailor is NOT liable for latent fabric defects (color bleeding, yarn flaw, shrinkage).\n"
         f"   Particular Lien: Preserved under Section 170 ICA on finished goods until labour charges are paid in full.\n\n"
         f"3. LABOUR CHARGES & TAXES (Sec 43B(h) IT Act):\n"
-        f"   Rate: INR {rate_per_piece or 0}/pc | Total Consideration: INR {agreed_price_inr or 0:,.2f} ({tax_status})\n"
+        f"   {clause_2_1_text}\n"
         f"   Buyer Tax Warning: Delayed payment beyond 15/45 days triggers 100% expense disallowance in Form 3CD.\n\n"
         f"4. DELIVERY & QUALITY INSPECTION (Sec 41-42 SOGA & Sec 2(b) MSMED Act):\n"
         f"   Target Completion: {delivery_timeline}\n"

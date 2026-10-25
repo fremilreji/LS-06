@@ -2,6 +2,22 @@ import { ExtractedAgreementData, ConfidenceLevel, PartyInfo, ExtractedTermItem }
 import { detectMissingAndAmbiguousTerms } from './detectMissingTerms';
 import { computeSha256, generateAgreementSignaturePayload } from '../crypto/hash';
 
+function formatIndianCurrency(num: number): string {
+  const numInt = Math.round(num);
+  const s = numInt.toString();
+  if (s.length <= 3) return s;
+  const last3 = s.slice(-3);
+  let rest = s.slice(0, -3);
+  const parts: string[] = [];
+  while (rest.length > 2) {
+    parts.push(rest.slice(-2));
+    rest = rest.slice(0, -2);
+  }
+  if (rest.length > 0) parts.push(rest);
+  parts.reverse();
+  return parts.join(',') + ',' + last3;
+}
+
 /**
  * Deterministic Rule-Based Extraction Engine.
  * Formulates structured agreement terms from raw informal conversation text
@@ -227,10 +243,34 @@ export async function extractTermsRuleBased(
   // Explicit consideration line e.g. "• Consideration: ₹50,000 (INR)"
   const considerationLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:consideration|price|amount|cost|fee|total)s?\s*:\s*([^\n]+)/i);
 
-  // Currency & amount patterns: ₹50,000, Rs. 50,000, Rs 50000, 50,000 INR, $5,000, ?50000
-  const totalAmountMatch = cleanedText.match(/(?:total|labour\s*cost|total\s*cost|total\s*amount)\s*(?:will\s*be|is)?\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)/i);
+  // Parse quantity number if available (e.g. 2,500)
+  const qtyNumMatch = quantity.value.match(/(\d+(?:,\d+)?)/);
+  const quantityNumber = qtyNumMatch ? parseInt(qtyNumMatch[1].replace(/,/g, ''), 10) : null;
+
+  // Rate per piece detection (e.g. ₹85/pc, total ₹103/piece)
+  const updatedRateMatch = cleanedText.match(/total\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(?:\/|\s*per\s*)(?:piece|pc)/i);
+  let ratePerPiece: number | null = null;
+  if (updatedRateMatch) {
+    ratePerPiece = parseFloat(updatedRateMatch[1]);
+  } else {
+    const allRates = Array.from(cleanedText.matchAll(/(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:\/pc|per\s*piece|\/piece|each|\/-)/gi));
+    if (allRates.length > 0) {
+      ratePerPiece = parseFloat(allRates[allRates.length - 1][1]);
+    } else {
+      const perPieceMatch = cleanedText.match(/(\d+(?:\.\d+)?)\s*(?:per\s*piece|\/pc|\/piece|rupees\s*per)/i);
+      if (perPieceMatch) {
+        ratePerPiece = parseFloat(perPieceMatch[1]);
+      }
+    }
+  }
+
+  // Calculate total if quantity and rate per piece are both known
+  const calculatedTotal = (quantityNumber && ratePerPiece) ? (quantityNumber * ratePerPiece) : null;
+
+  // Total consideration patterns (negative lookahead ensures per-piece rates like "total ₹103/piece" are excluded)
+  const totalAmountMatch = cleanedText.match(/(?:total\s*labour\s*cost|total\s*cost|total\s*amount|total\s*consideration|total)\s*(?:will\s*be|is|of)?\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)(?!\s*(?:\/|\s*per)\s*(?:piece|pc|unit|item))/i);
   const inrMatch = 
-    cleanedText.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)/i) || 
+    cleanedText.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)(?!\s*(?:\/|\s*per)\s*(?:piece|pc|unit|item))/i) || 
     cleanedText.match(/([\d,]+(?:\.\d+)?)\s*(?:inr|rupees|\/-)/i) ||
     cleanedText.match(/(?:for|amount of|total of|sum of)\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)/i);
   const usdMatch = cleanedText.match(/(?:\$|usd)\s*([\d,]+(?:\.\d+)?)/i);
@@ -263,6 +303,14 @@ export async function extractTermsRuleBased(
         excerpt: considerationLineMatch[0],
       };
     }
+  } else if (calculatedTotal) {
+    currency = 'INR';
+    price = {
+      value: `₹${formatIndianCurrency(calculatedTotal)}`,
+      isExplicit: true,
+      confidence: 'HIGH',
+      excerpt: `Agreed labour consideration: ₹${ratePerPiece}/pc for ${quantityNumber?.toLocaleString('en-IN')} pieces`,
+    };
   } else if (totalAmountMatch) {
     currency = 'INR';
     price = {

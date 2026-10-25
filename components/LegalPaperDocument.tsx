@@ -69,8 +69,57 @@ export default function LegalPaperDocument({
     ? `${window.location.origin}/create?deal=${dealId}&role=buyer`
     : `http://localhost:3000/create?deal=${dealId}&role=buyer`;
 
+  // 1. Extract quantity and rate_per_piece
+  const quantityNum = garmentData?.payment_terms?.quantity 
+    || garmentData?.payment_terms?.quantity_pcs
+    || (parseInt(String(draft.extractedData.quantity.value).replace(/[^0-9]/g, ''), 10) || 2500);
+
+  const rawRate = garmentData?.payment_terms?.rate_per_piece
+    || garmentData?.payment_terms?.rate_per_piece_inr;
+
+  let ratePerPieceNum = rawRate;
+  if (!ratePerPieceNum) {
+    const rateInPriceMatch = String(draft.extractedData.price.value).match(/(?:@|₹|\b)(\d+(?:\.\d+)?)\s*(?:\/pc|per\s*piece|\/piece)/i);
+    const updatedRateMatch = garmentData?.raw_chat?.match(/(?:total\s*)?(?:₹|rs\.?|inr|\?)?\s*(\d+(?:\.\d+)?)\s*(?:\/|\s*per\s*)(?:piece|pc)/i);
+    if (rateInPriceMatch) {
+      ratePerPieceNum = parseFloat(rateInPriceMatch[1]);
+    } else if (updatedRateMatch) {
+      ratePerPieceNum = parseFloat(updatedRateMatch[1]);
+    } else {
+      ratePerPieceNum = 103;
+    }
+  }
+
+  // 2. Calculate total_value (quantity * rate_per_piece)
+  const calculatedTotalValue = garmentData?.payment_terms?.total_value
+    || (quantityNum * ratePerPieceNum);
+
+  // 3. Format total_value using the Indian comma numbering system (e.g., "2,57,500")
+  const formatIndianNumber = (num: number): string => {
+    const numInt = Math.round(num);
+    const s = numInt.toString();
+    if (s.length <= 3) return s;
+    const last3 = s.slice(-3);
+    let rest = s.slice(0, -3);
+    const parts: string[] = [];
+    while (rest.length > 2) {
+      parts.push(rest.slice(-2));
+      rest = rest.slice(0, -2);
+    }
+    if (rest.length > 0) parts.push(rest);
+    parts.reverse();
+    return parts.join(',') + ',' + last3;
+  };
+
+  const totalValueFormatted = garmentData?.payment_terms?.total_value_formatted
+    || formatIndianNumber(calculatedTotalValue);
+
+  const ratePerPieceDisplay = Number.isInteger(ratePerPieceNum)
+    ? String(ratePerPieceNum)
+    : String(ratePerPieceNum);
+
   const whatsappBuyerShare = `Namaste ${partyBFirstName} ji,\n` +
-    `Sri Manjunatha Garments has digitally signed & sealed the Garment Job-Work Memorandum #${dealId} (${draft.extractedData.quantity.value} Kurtis @ ₹85/pc).\n\n` +
+    `Sri Manjunatha Garments has digitally signed & sealed the Garment Job-Work Memorandum #${dealId} (${draft.extractedData.quantity.value} Kurtis @ ₹${ratePerPieceDisplay}/pc).\n\n` +
     `Please review and lock your digital assent with your network IP:\n` +
     `${buyerAssentUrl}\n\n` +
     `Reply 'Confirmed' or click link to execute under Section 10A IT Act.`;
@@ -79,7 +128,7 @@ export default function LegalPaperDocument({
     ? garmentData.whatsapp_nudge_text
     : `${partyBFirstName}, so we're on the same page regarding our agreement:\n` +
       `• Scope: ${draft.extractedData.scopeOrProducts.value} (${draft.extractedData.quantity.value})\n` +
-      `• Consideration: ${draft.extractedData.price.value} (${draft.extractedData.currency})\n` +
+      `• Consideration: ₹${ratePerPieceDisplay}/pc (Total: ₹${totalValueFormatted} INR)\n` +
       `• Delivery: ${draft.extractedData.deliveryTimeline.value}\n` +
       `• Payment: ${draft.extractedData.paymentTerms.value}\n\n` +
       `Please reply "Confirmed" to lock this version.`;
@@ -263,7 +312,7 @@ export default function LegalPaperDocument({
                 2. LABOUR CHARGES &amp; SECTION 43B(h) TAX COMPLIANCE NOTICE
               </h3>
               <p>
-                2.1 The agreed total labour consideration is <strong>{draft.extractedData.price.value}</strong> ({draft.extractedData.currency}), exclusive of applicable GST.
+                2.1 The agreed labour consideration is <strong>₹{ratePerPieceDisplay}</strong> per piece (Total Consideration: <strong>₹{totalValueFormatted} INR</strong>), exclusive of applicable GST.
               </p>
               <p className="mt-1 text-slate-700 bg-amber-50 p-2 rounded border border-amber-200 text-[11px] font-sans">
                 <strong>Statutory Income Tax Warning:</strong> Under Section 43B(h) of the Income-tax Act, 1961 (and Sec 37(2)(g) of Income-tax Act, 2025), failure by the Buyer to remit payment within 15 days (or agreed 45 days) triggers <strong>100% tax expense disallowance</strong> and penalties in the Buyer&apos;s Tax Audit Form 3CD.
@@ -734,7 +783,7 @@ export default function LegalPaperDocument({
               </div>
               <div className="flex justify-between items-center text-slate-300">
                 <span>Job-Work Consideration:</span>
-                <span className="font-bold text-emerald-400">{draft.extractedData.price.value}</span>
+                <span className="font-bold text-emerald-400">₹{totalValueFormatted} (@ ₹{ratePerPieceDisplay}/pc)</span>
               </div>
               <div className="flex justify-between items-center text-slate-300">
                 <span>Supplier Status:</span>
@@ -799,7 +848,7 @@ export default function LegalPaperDocument({
                   className="mt-0.5 w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-slate-900"
                 />
                 <span className="text-xs text-slate-300 leading-relaxed">
-                  I, <strong>{buyerSignerName || 'Raghavendra'}</strong>, on behalf of Apex Exports, hereby acknowledge and confirm commercial assent to the <strong>{draft.extractedData.quantity.value} kurtis</strong> job-work order at <strong>₹85/pc</strong> under MSMED Act 2006 terms, and accept the 2.5% cutting tolerance, Section 170 bailee lien, and 72-hour visual inspection window.
+                  I, <strong>{buyerSignerName || 'Raghavendra'}</strong>, on behalf of Apex Exports, hereby acknowledge and confirm commercial assent to the <strong>{draft.extractedData.quantity.value} kurtis</strong> job-work order at <strong>₹{ratePerPieceDisplay}/pc</strong> (Total: ₹{totalValueFormatted} INR) under MSMED Act 2006 terms, and accept the 2.5% cutting tolerance, Section 170 bailee lien, and 72-hour visual inspection window.
                 </span>
               </label>
             </div>
