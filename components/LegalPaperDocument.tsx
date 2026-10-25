@@ -55,6 +55,7 @@ export default function LegalPaperDocument({
   const [buyerPhone, setBuyerPhone] = useState('+91 98450 12345');
   const [buyerConsentGiven, setBuyerConsentGiven] = useState(true);
   const [copiedBuyerLink, setCopiedBuyerLink] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   const todayStr = new Date(draft.updatedAt).toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -82,6 +83,67 @@ export default function LegalPaperDocument({
       `• Delivery: ${draft.extractedData.deliveryTimeline.value}\n` +
       `• Payment: ${draft.extractedData.paymentTerms.value}\n\n` +
       `Please reply "Confirmed" to lock this version.`;
+
+  const showFeedback = (msg: string) => {
+    setShareFeedback(msg);
+    setTimeout(() => setShareFeedback(null), 4500);
+  };
+
+  const handleSendWhatsApp = (text: string, phone?: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+      }
+    } catch (e) {
+      console.error('Clipboard copy failed', e);
+    }
+
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
+    // Universal WhatsApp Web / Mobile API - does not fail with invalid number errors
+    const url = cleanPhone
+      ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showFeedback('✓ Message copied to clipboard & opened in WhatsApp!');
+  };
+
+  const handleSendSms = (text: string, phone?: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+      }
+    } catch (e) {
+      console.error('Clipboard copy failed', e);
+    }
+
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      const smsUrl = cleanPhone
+        ? `sms:${cleanPhone}?body=${encodeURIComponent(text)}`
+        : `sms:?body=${encodeURIComponent(text)}`;
+      window.location.href = smsUrl;
+      showFeedback('✓ Opening native SMS app with assent link...');
+    } else {
+      // On Windows / Desktop PCs: SMS protocol is typically not configured, so copy and guide clearly
+      showFeedback('✓ SMS text copied! (On mobile, this opens Messages. On PC, paste into your messaging app)');
+    }
+  };
+
+  const handleCopyAssentLink = () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(buyerAssentUrl);
+      }
+      setCopiedBuyerLink(true);
+      showFeedback('✓ Assent link copied! Open in new browser tab / incognito to test.');
+      setTimeout(() => setCopiedBuyerLink(false), 3000);
+    } catch (e) {
+      console.error('Clipboard copy failed', e);
+    }
+  };
 
   const handleCopyDoc = () => {
     const docElement = document.getElementById('legal-doc-content');
@@ -341,45 +403,88 @@ export default function LegalPaperDocument({
                     <div className="text-[10px] text-emerald-700 font-bold">✓ BINDING STATUTORY CONTRACT SEALED</div>
                   </div>
                 ) : (
-                  <div className="mt-3 p-2.5 bg-blue-50/90 rounded border border-blue-200 text-xs text-blue-950 font-sans space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-blue-900 flex items-center gap-1.5 text-[11px]">
-                        <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-                        <span>Step 2: Awaiting Buyer Digital Assent</span>
+                  <div className="mt-3 p-3.5 bg-blue-50/95 rounded-xl border border-blue-200 text-xs text-blue-950 font-sans space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-blue-200/80">
+                      <span className="font-bold text-blue-900 flex items-center gap-2 text-xs">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                        </span>
+                        <span>Step 2: Awaiting Counterparty Assent</span>
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-mono font-medium">
+                        Sec. 10A IT Act
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-600 leading-tight">
-                      Supplier locked their IP. Share link with buyer on WhatsApp so they can review and lock their own network IP:
+
+                    <p className="text-[11px] text-slate-700 leading-snug">
+                      Supplier locked IP (106.51.22.84). The buyer can now review terms and lock their own network IP:
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 pt-0.5">
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(whatsappBuyerShare)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors"
-                      >
-                        <MessageSquare className="w-3 h-3" />
-                        <span>WhatsApp Link</span>
-                      </a>
+                    {/* Primary Simulation Action (Full Width, Clear, Uncramped) */}
+                    <button
+                      type="button"
+                      onClick={() => setIsBuyerModalOpen(true)}
+                      className="w-full py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      <span>Open Buyer Portal (Simulate IP Lock)</span>
+                    </button>
 
-                      <a
-                        href={`sms:?body=${encodeURIComponent(whatsappBuyerShare)}`}
-                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
-                      >
-                        <Smartphone className="w-3 h-3 text-blue-400" />
-                        <span>SMS Link</span>
-                      </a>
+                    {/* Counterparty Mobile Sharing Actions */}
+                    <div className="pt-2 border-t border-blue-200/80 space-y-2">
+                      <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
+                        Or send assent link to Buyer:
+                      </div>
 
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSendWhatsApp(whatsappBuyerShare)}
+                          className="w-full py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="Open WhatsApp and copy message"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                          <span>WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendSms(whatsappBuyerShare)}
+                          className="w-full py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-100 font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="Send SMS or copy text"
+                        >
+                          <Smartphone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <span>SMS Text</span>
+                        </button>
+                      </div>
+
+                      {/* Direct Copy Link Button */}
                       <button
                         type="button"
-                        onClick={() => setIsBuyerModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-colors cursor-pointer"
+                        onClick={handleCopyAssentLink}
+                        className="w-full py-1.5 px-2.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-[11px] font-medium text-slate-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <ExternalLink className="w-3 h-3" />
-                        <span>Open Buyer Portal (Simulate Buyer IP Lock)</span>
+                        {copiedBuyerLink ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700 font-bold">Link Copied to Clipboard!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Copy Assent Link (Open in new tab / phone)</span>
+                          </>
+                        )}
                       </button>
                     </div>
+
+                    {/* Instant Feedback Notice */}
+                    {shareFeedback && (
+                      <div className="p-2 rounded-lg bg-emerald-100/90 border border-emerald-300 text-emerald-900 text-[11px] font-medium text-center animate-in fade-in">
+                        {shareFeedback}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -462,25 +567,25 @@ export default function LegalPaperDocument({
           </span>
 
           <div className="flex items-center gap-2">
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm"
-              title="Open directly in WhatsApp"
+            <button
+              type="button"
+              onClick={() => handleSendWhatsApp(whatsappMessage)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm cursor-pointer"
+              title="Open directly in WhatsApp & copy message"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span>Send via WhatsApp</span>
-            </a>
+            </button>
 
-            <a
-              href={`sms:?body=${encodeURIComponent(whatsappMessage)}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors shadow-sm"
-              title="Send via native SMS"
+            <button
+              type="button"
+              onClick={() => handleSendSms(whatsappMessage)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors shadow-sm cursor-pointer"
+              title="Send via native SMS or copy text"
             >
               <Smartphone className="w-3.5 h-3.5 text-blue-400" />
               <span>Send via SMS</span>
-            </a>
+            </button>
 
             <button
               type="button"
@@ -703,12 +808,8 @@ export default function LegalPaperDocument({
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
               <button
                 type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(buyerAssentUrl);
-                  setCopiedBuyerLink(true);
-                  setTimeout(() => setCopiedBuyerLink(false), 2000);
-                }}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition-colors"
+                onClick={handleCopyAssentLink}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
               >
                 {copiedBuyerLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedBuyerLink ? 'Link Copied!' : 'Copy Assent Link'}</span>
