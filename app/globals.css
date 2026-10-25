@@ -53,6 +53,36 @@ body {
   border-bottom: 1.5px dashed rgba(212, 212, 216, 0.9);
 }
 
+/* Hide scrollbar for clean horizontal chip swipe on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile Touch & iOS Form Optimization */
+@media (max-width: 640px) {
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+button, a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area inset support for modern iPhone home indicators */
+.mobile-safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 /* Clean Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
