@@ -82,9 +82,16 @@ body {
     margin: 8mm 12mm;
   }
 
-  /* Prevent elements from breaking across pages */
+  /* Allow the printable container and clauses wrapper to break naturally across pages */
+  .printable-contract-sheet,
+  .printable-contract-sheet > div {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Only prevent page breaks INSIDE individual clause cards and the dual signature block */
+  .printable-clause-card,
   .dual-signature-block,
-  .printable-contract-sheet > div,
   .print-break-inside-avoid {
     break-inside: avoid !important;
     page-break-inside: avoid !important;

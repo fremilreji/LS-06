@@ -1959,7 +1959,7 @@ export default function HomePage() {
               </div>
 
               {/* Contracting Parties */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50/70 p-4 rounded-xl border border-zinc-200/80 text-xs">
+              <div className="printable-clause-card print-break-inside-avoid grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50/70 p-4 rounded-xl border border-zinc-200/80 text-xs">
                 <div>
                   <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor:</div>
                   <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
@@ -1985,7 +1985,7 @@ export default function HomePage() {
               <div className="space-y-4 text-xs text-zinc-700 leading-relaxed font-sans">
                 
                 {/* Clause 1: Scope */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
+                <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     1. Scope of Work, Bailment Standard &amp; Contractual 72-Hour Inspection Protocol
                   </div>
@@ -1999,7 +1999,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Clause 2: Labour Charges & Tax Notice */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
+                <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     2. Labour Charges &amp; MSME Tax Deduction Notice (Sec 37(2)(g) Income-tax Act, 2025)
                   </div>
@@ -2012,7 +2012,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Clause 3: Delivery */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
+                <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     3. Delivery Timeline &amp; Fabric Delay Shield
                   </div>
@@ -2022,7 +2022,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Clause 4: Payment */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
+                <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     4. Agreed Payment Terms &amp; MSMED Act Conditional Statutory Notice
                   </div>
@@ -2039,7 +2039,7 @@ export default function HomePage() {
 
                 {/* Clause 5: Statutory Risk Audit & Chat Mistakes Neutralized */}
                 {detectedGaps.length > 0 && (
-                  <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/60 space-y-2.5">
+                  <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-amber-300 bg-amber-50/60 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
