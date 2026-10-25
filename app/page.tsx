@@ -204,9 +204,12 @@ export default function HomePage() {
   const [tailorSignatureRecord, setTailorSignatureRecord] = useState<any>(null);
   const [sha256Digest, setSha256Digest] = useState<string>('7243edc4302d0cceeffa756d5dce58ff67f6e97f969b8c27c6164bc42cf9c126');
 
+  const [canonicalPayloadText, setCanonicalPayloadText] = useState<string>('');
+
   // Compute canonical SHA-256 digest across contract terms and assent records
   useEffect(() => {
     const canonicalPayload = `DealProof|${dealId}|${supplierName}|${buyerName}|${quantity}|${ratePerPiece}|${totalValue}|${tailorSignatureRecord?.client_ip || ''}|${buyerSignatureRecord?.client_ip || ''}|${buyerSignatureRecord?.timestamp_ist || ''}`;
+    setCanonicalPayloadText(canonicalPayload);
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoder = new TextEncoder();
       crypto.subtle.digest('SHA-256', encoder.encode(canonicalPayload))
@@ -1935,7 +1938,8 @@ export default function HomePage() {
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Valid Sec 10A IT Act</span>
                   </span>
-                  <div className="text-[11px] text-zinc-500 mt-1 font-medium">Karnataka Stamp Act: ₹100 Nominal (Curable under In Re: Interplay, 2023)</div>
+                  <div className="text-[10px] text-amber-800 font-semibold mt-1">Stamp Duty: Unstamped Electronic Memorandum</div>
+                  <div className="text-[9.5px] text-zinc-500 font-sans">Karnataka Stamp Act Art. 5: ~₹100 Works Contract Duty (Curable under <em>In Re: Interplay, 2023</em>)</div>
                 </div>
               </div>
 
@@ -1944,11 +1948,13 @@ export default function HomePage() {
                 <div>
                   <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor:</div>
                   <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
-                  <div className="text-zinc-500 mt-0.5">Udyam No: <strong className="text-zinc-800 font-mono">{udyamUrn || 'Pending Registration'}</strong></div>
+                  <div className="text-zinc-500 mt-0.5">Udyam Registration: <strong className="text-zinc-800 font-mono">{udyamUrn || 'Pending Registration'}</strong></div>
                   {udyamUrn ? (
-                    <div className="text-emerald-700 font-medium mt-0.5">✓ Registered Micro-Enterprise — MSMED Act Protected</div>
+                    <div className="text-emerald-700 font-medium mt-0.5">✓ Active Udyam Registration — Eligible under <em>Silpi Industries</em> for MSMED Act Provisions</div>
                   ) : (
-                    <div className="text-amber-700 font-medium mt-0.5">⚠️ Self-Declared Micro Unit (URN Verification Pending for MSEFC Tribunal Jurisdiction)</div>
+                    <div className="text-amber-800 font-medium mt-0.5 text-[11px] leading-tight">
+                      ⚠️ Registration Pending: Self-declared micro unit. Under <em>Silpi Industries (2021)</em>, statutory MSMED Act remedies require active registration on date of contract/supply; enforced as contractual covenant under Contract Act.
+                    </div>
                   )}
                 </div>
 
@@ -1956,7 +1962,7 @@ export default function HomePage() {
                   <div className="text-[10px] uppercase font-bold text-zinc-400">2. Customer / Boutique:</div>
                   <div className="font-bold text-zinc-900 text-sm">{buyerName}</div>
                   <div className="text-zinc-500 mt-0.5">{buyerPhone ? `Contact: ${buyerPhone}` : 'Direct WhatsApp Assent Channel'}</div>
-                  <div className="text-zinc-500 mt-0.5">Registered Procurement Principal</div>
+                  <div className="text-zinc-500 mt-0.5">Signatory Authority: Declared Principal (Independent Corporate Verification Pending)</div>
                 </div>
               </div>
 
@@ -1964,29 +1970,29 @@ export default function HomePage() {
               <div className="space-y-4 text-xs text-zinc-700 leading-relaxed font-sans">
                 
                 {/* Clause 1: Scope */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
+                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    1. Scope of Work &amp; Agreed 72-Hour Inspection Window
+                    1. Scope of Work, Bailment Standard &amp; Contractual 72-Hour Inspection Protocol
                   </div>
                   <p>1.1 <strong>Scope of Work:</strong> Stitching &amp; Finishing of {itemScope.replace(/^Stitching\s+(?:&\s+Finishing\s+)?of\s+/i, '')} — <strong>Total Confirmed Quantity: {quantity.toLocaleString('en-IN')} units</strong>.</p>
-                  <p className="mt-1 text-zinc-600">
-                    1.2 <strong>Bailment of Fabric (Sec 150–152 Indian Contract Act):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes ordinary prudence in workmanship and safe custody of materials, but is not liable for pre-existing fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
+                  <p className="text-zinc-600">
+                    1.2 <strong>Bailment of Fabric (Sec 150–152 Indian Contract Act, 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes a statutory duty of ordinary prudence and safe custody (Section 151 ICA), but is not liable for pre-existing latent fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
                   </p>
-                  <p className="mt-1 text-emerald-800 font-medium">
-                    1.3 <strong>Contractual 72-Hour Inspection &amp; Rectification Window:</strong> Pursuant to Section 42 of the Sale of Goods Act, 1930 (defining reasonable examination period), the parties agree to a 72-hour inspection window from delivery. Buyer shall notify Job-Worker in writing of observable stitching defects within 72 hours for prompt cure/rectification. Retention beyond 72 hours without written objection constitutes deemed acceptance, barring arbitrary debit notes.
+                  <p className="text-zinc-700 leading-relaxed">
+                    1.3 <strong>Contractual 72-Hour Inspection &amp; Rework Protocol:</strong> Defining a reasonable examination period under Section 42 of the Sale of Goods Act, 1930, the parties agree to a contractual inspection window of 72 hours from physical delivery for observable stitching defects. The Buyer shall notify the Job-Worker in writing with photo/sample evidence within 72 hours. Upon timely notification, the Job-Worker shall have an exclusive right of 7 business days to cure, rework, or rectify defective units at Job-Worker&apos;s cost. Retention of goods beyond 72 hours without written objection constitutes deemed acceptance of observable workmanship, barring arbitrary unilateral debit notes, without prejudice to statutory remedies for latent fabric defects.
                   </p>
                 </div>
 
-                {/* Clause 2: Labour Charges & MSME Tax Compliance Notice */}
+                {/* Clause 2: Labour Charges & Tax Notice */}
                 <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    2. Labour Charges &amp; MSME Tax Compliance Notice
+                    2. Labour Charges &amp; MSME Tax Deduction Notice (Sec 37(2)(g) Income-tax Act, 2025)
                   </div>
                   <p className="text-sm font-semibold text-zinc-900">
                     The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
                   <p className="mt-1 text-zinc-600 text-xs leading-relaxed">
-                    <strong>Tax Compliance Notice:</strong> Timely payment within the agreed 15-day period is required for Buyer&apos;s business tax deduction. Under applicable MSME tax provisions (Income-tax Act Section 43B(h) / Section 37(2)(g) of the Income-tax Act, 2025), overdue payments to registered micro/small enterprises beyond the agreed MSMED Act timeline are disallowed as deductible business expenses in the financial year of incurrence and deferred until the tax year of actual payment.
+                    <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business expense deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds valid micro/small enterprise registration at the date of supply (*Silpi Industries*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
                   </p>
                 </div>
 
@@ -2001,15 +2007,15 @@ export default function HomePage() {
                 </div>
 
                 {/* Clause 4: Payment */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
+                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    4. Agreed Payment Terms &amp; MSMED Act Section 15–16 Mandate
+                    4. Agreed Payment Terms &amp; MSMED Act Conditional Statutory Notice
                   </div>
                   <p>
-                    4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>15 days</strong> of delivery, as agreed by both parties (well within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
+                    4.1 <strong>Contractual Payment Timeline:</strong> Payment is due strictly within <strong>15 days</strong> of delivery, as agreed between the parties (well within the statutory 45-day maximum outer limit permitted under Section 15 of the MSMED Act, 2006).
                   </p>
-                  <p className="mt-1 text-rose-800 text-xs font-semibold">
-                    4.2 <strong>Statutory Interest on Delayed Payment:</strong> Under Section 16 of the MSMED Act, 2006, delayed payment beyond the agreed timeline mandates compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> from the appointed day until full discharge.
+                  <p className="text-zinc-700 text-xs leading-relaxed">
+                    4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration at the time of supply (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed 15-day timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 of the MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC). Pending verified registration, failure to remit payment within 15 days constitutes a breach of contract entitling the Job-Worker to ordinary contractual interest and damages under Section 73 of the Indian Contract Act, 1872.
                   </p>
                 </div>
 
@@ -2052,7 +2058,7 @@ export default function HomePage() {
               </div>
 
               {/* Dual Signature Section */}
-              <div className="pt-4 border-t border-zinc-200 space-y-4">
+              <div className="pt-4 border-t border-zinc-200 space-y-4 dual-signature-block print-break-inside-avoid">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                   
                   {/* Tailor Signature Box */}
@@ -2093,7 +2099,7 @@ export default function HomePage() {
 
                     {/* Left Legal Declaration */}
                     <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 select-none flex items-center min-h-[38px]">
-                      <span className="truncate">I declare I am authorized to bind Job-Worker entity (<strong>{supplierName}</strong>).</span>
+                      <span className="truncate">Signatory Authority: Self-Declared by Tailor (<strong>{supplierName}</strong>)</span>
                     </div>
 
                     {/* Left Canvas Pad */}
@@ -2203,7 +2209,7 @@ export default function HomePage() {
                       </label>
                     ) : (
                       <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 select-none flex items-center min-h-[38px]">
-                        <span className="truncate">✓ Authorized Signatory Verified under Section 10A IT Act</span>
+                        <span className="truncate">✓ Signatory Authority Declared under Section 10A IT Act (Entity Authority Verification Pending)</span>
                       </div>
                     )}
 
@@ -2259,11 +2265,11 @@ export default function HomePage() {
                 </div>
 
                 {/* Printed IP Metadata Attribution (Mandatory under Sec 11-13 IT Act) */}
-                <div className="print-force-show pt-3 border-t border-zinc-300 text-[10px] font-mono text-zinc-700 space-y-1">
+                <div className="print-force-show pt-3 border-t border-zinc-300 text-[10px] font-mono text-zinc-700 space-y-1.5">
                   <div>
                     <strong>Party A (Job-Worker / Tailor):</strong>{' '}
                     {supplierSigned && tailorSignatureRecord ? (
-                      <>Digital Mark Recorded • IP Address: <strong>{tailorSignatureRecord.client_ip}</strong> • Device: {tailorSignatureRecord.user_agent ? tailorSignatureRecord.user_agent.split(' ')[0] : 'Browser'} (Peenya) • Time: {tailorSignatureRecord.timestamp_ist}</>
+                      <>Digital Mark Recorded • Terminal IP: <strong>{tailorSignatureRecord.client_ip}</strong> • Device: {tailorSignatureRecord.user_agent ? tailorSignatureRecord.user_agent.split(' ')[0] : 'Browser'} (Peenya Workshop Terminal) • Time: {tailorSignatureRecord.timestamp_ist} • Authority: Self-Declared</>
                     ) : (
                       <span className="text-zinc-500 font-sans italic">[Pending Job-Worker Signature on Canvas]</span>
                     )}
@@ -2271,14 +2277,40 @@ export default function HomePage() {
                   <div>
                     <strong>Party B (Buyer / Counterparty):</strong>{' '}
                     {buyerSigned && buyerSignatureRecord ? (
-                      <>Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord.client_ip}</strong> • Direct WhatsApp Assent Verified • Signatory Authority Declared • Time: {buyerSignatureRecord.timestamp_ist}</>
+                      <>
+                        Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord.client_ip}</strong>
+                        {supplierSigned && tailorSignatureRecord && buyerSignatureRecord.client_ip === tailorSignatureRecord.client_ip ? (
+                          <span className="text-amber-800 font-sans font-semibold ml-1">[⚠️ Shared Local IP / Demo Simulation — Remote Link Required for Independent IP Attribution]</span>
+                        ) : (
+                          <span className="text-emerald-800 font-sans font-semibold ml-1">[✓ Remote Counterparty Assent via WhatsApp Link]</span>
+                        )}
+                        {' '}• {buyerPhone ? `Delivered to WhatsApp: ${buyerPhone} • ` : 'Channel: Direct WhatsApp Link • '}Signatory Authority: Declared by Signatory • Time: {buyerSignatureRecord.timestamp_ist}
+                      </>
                     ) : (
                       <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                     )}
                   </div>
-                  <div><strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the Information Technology Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 when accompanied by the platform certificate. Canonical Electronic Record SHA-256 Digest: <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>.</div>
+                  <div className="pt-0.5">
+                    <strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the IT Act, 2000. Admissibility in court or MSEFC proceedings requires production of an accompanying certificate under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (BSA) / Section 65B Indian Evidence Act certifying system integrity.
+                  </div>
+                  <div className="pt-0.5 text-[9.5px] leading-relaxed">
+                    <strong>Canonical Electronic Record SHA-256 Digest:</strong> <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>
+                    <span className="text-zinc-500 block mt-0.5 font-sans">
+                      (Cryptographic digest calculated over underlying structured JSON deal data: Deal ID, Contracting Parties, Quantity, Rate, Total Consideration, Timestamps, and Network IP logs. Note: The binary hash of the downloaded PDF file differs because print rendering embeds variable font streams and page pagination).
+                    </span>
+                  </div>
                 </div>
 
+              </div>
+
+              {/* Legal Operational & Stamping Notice */}
+              <div className="pt-4 border-t border-zinc-200 text-[10px] text-zinc-600 leading-normal space-y-1">
+                <div>
+                  <strong>Legal Operational &amp; Stamping Notice:</strong> This document is an unstamped electronic transaction memorandum executed under Section 10A of the Information Technology Act, 2000. Under Article 5 of the Karnataka Stamp Act, 1957, garment job-work contracts attract an estimated ₹100 nominal stamp duty. Pursuant to the 7-judge Constitution Bench ruling of the Supreme Court in <em>In Re: Interplay (2023)</em>, non-stamping or deficient stamping is a curable procedural defect that does not void the underlying contract; however, this instrument must be impounded and regularized with payment of the requisite duty and penalty before being admitted in evidence in court or arbitration.
+                </div>
+                <div>
+                  <strong>MSME Qualification Disclosure (Silpi Industries Precedent):</strong> In accordance with the Supreme Court judgment in <em>Silpi Industries v. Kerala State Road Transport Corporation (2021)</em>, statutory delayed-payment remedies under Sections 15–18 of the MSMED Act, 2006 and the jurisdiction of the Micro and Small Enterprises Facilitation Council (MSEFC) require the supplier to possess an active Udyam registration on or prior to the date of contract / supply. Where registration is pending or unverified, agreed payment terms remain enforceable as binding contractual covenants under the Indian Contract Act, 1872.
+                </div>
               </div>
 
               {/* Action Buttons (WhatsApp Share & PDF Print) */}
@@ -2352,11 +2384,20 @@ export default function HomePage() {
 
               {showJudgeDrawer && (
                 <div className="pt-3 border-t border-zinc-100 space-y-3 animate-in fade-in text-xs font-mono text-zinc-600">
-                  <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-1">
-                    <div><strong>MSME ODR Portal:</strong> odr.msme.gov.in (Form-A Schedule Ready)</div>
-                    <div><strong>Canonical Record SHA-256:</strong> {sha256Digest}</div>
-                    <div><strong>Evidentiary Admissibility:</strong> Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 &amp; Section 65B Indian Evidence Act generated on record export.</div>
-                    <div><strong>Network Attribution:</strong> IP {supplierSigned && tailorSignatureRecord ? tailorSignatureRecord.client_ip : (detectedClientIp || 'Dynamic Network IP')} (Party A) • IP {buyerSigned && buyerSignatureRecord ? buyerSignatureRecord.client_ip : 'Awaiting Buyer Assent'} (Party B) under Sections 11-13 IT Act.</div>
+                  <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2">
+                    <div><strong>Micro and Small Enterprises Facilitation Council (MSEFC):</strong> odr.msme.gov.in (Form-A Schedule Ready)</div>
+                    <div><strong>Canonical Record SHA-256:</strong> <code className="text-zinc-900 font-bold bg-white px-1.5 py-0.5 rounded border border-zinc-300">{sha256Digest}</code></div>
+                    <div><strong>Evidentiary Admissibility:</strong> Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 (BSA) &amp; Section 65B Indian Evidence Act generated on record export.</div>
+                    <div><strong>Network Attribution:</strong> IP {supplierSigned && tailorSignatureRecord ? tailorSignatureRecord.client_ip : (detectedClientIp || 'Dynamic Network IP')} (Party A) • IP {buyerSigned && buyerSignatureRecord ? buyerSignatureRecord.client_ip : 'Awaiting Buyer Assent'} (Party B) under Sections 11–13 IT Act.</div>
+                    <div className="pt-2 border-t border-zinc-200">
+                      <div className="font-bold text-zinc-800 mb-1">Canonical Payload Verifier (SHA-256 Raw String):</div>
+                      <div className="bg-zinc-900 text-zinc-100 p-2 rounded text-[11px] break-all select-all font-mono">
+                        {canonicalPayloadText || 'DealProof|...'}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 mt-1 font-sans">
+                        Tip for Judges: Paste this string into any SHA-256 calculator (e.g. `echo -n 'payload' | sha256sum`) to verify the digest above.
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

@@ -345,7 +345,8 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                 <span>Sec 10A IT Act Valid</span>
               </span>
-              <div className="text-[10px] text-zinc-500 mt-1 font-medium">Karnataka Stamp Act: ₹100 Nominal (Curable under In Re: Interplay, 2023)</div>
+              <div className="text-[10px] text-amber-800 font-semibold mt-1">Stamp Duty: Unstamped Electronic Memorandum</div>
+              <div className="text-[9.5px] text-zinc-500 font-sans">Karnataka Stamp Act Art. 5: ~₹100 Works Contract Duty (Curable under <em>In Re: Interplay, 2023</em>)</div>
             </div>
           </div>
 
@@ -354,18 +355,20 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             <div>
               <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor (First Party)</div>
               <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
-              <div className="text-zinc-600 mt-0.5">Udyam No: <strong className="text-zinc-900 font-mono">{udyamNumber || 'Pending Registration'}</strong></div>
+              <div className="text-zinc-600 mt-0.5">Udyam Registration: <strong className="text-zinc-900 font-mono">{udyamNumber || 'Pending Registration'}</strong></div>
               {udyamNumber ? (
-                <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ MSMED Act Sec 15 Protected Micro-Unit</div>
+                <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ Active Udyam Registration — Eligible under <em>Silpi Industries</em> for MSMED Act Provisions</div>
               ) : (
-                <div className="text-[11px] text-amber-700 font-semibold mt-0.5">⚠️ Self-Declared Micro Unit (URN Verification Pending for MSEFC Jurisdiction)</div>
+                <div className="text-amber-800 font-medium mt-0.5 text-[11px] leading-tight">
+                  ⚠️ Registration Pending: Self-declared micro unit. Under <em>Silpi Industries (2021)</em>, statutory MSMED Act remedies require active registration on date of contract/supply; enforced as contractual covenant under Contract Act.
+                </div>
               )}
             </div>
             <div>
               <div className="text-[10px] uppercase font-bold text-zinc-400">2. Customer / Boutique Buyer (Second Party)</div>
               <div className="font-bold text-zinc-900 text-sm">{buyerName}</div>
               <div className="text-zinc-600 mt-0.5">{buyerPhone ? `Mobile: ${buyerPhone}` : 'Direct Electronic Assent Channel'}</div>
-              <div className="text-[11px] text-zinc-500 mt-0.5">Registered Procurement Counterparty</div>
+              <div className="text-[11px] text-zinc-500 mt-0.5">Signatory Authority: Declared Principal (Independent Corporate Verification Pending)</div>
             </div>
           </div>
 
@@ -373,31 +376,31 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
           <div className="space-y-4 text-xs text-zinc-800 leading-relaxed font-sans">
             
             {/* Clause 1: Scope & Inspection Rule */}
-            <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
+            <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80 space-y-1.5">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                1. SCOPE OF JOB-WORK &amp; AGREED 72-HR INSPECTION WINDOW
+                1. SCOPE OF JOB-WORK, BAILMENT STANDARD &amp; CONTRACTUAL 72-HOUR INSPECTION PROTOCOL
               </h3>
               <p>
                 1.1 <strong>Scope:</strong> Stitching &amp; Finishing of {scope.replace(/^Stitching\s+(?:&\s+Finishing\s+)?of\s+/i, '')} — <strong>Total Confirmed Quantity: {quantity.toLocaleString('en-IN')} units</strong>.
               </p>
-              <p className="mt-1 text-zinc-600">
-                1.2 <strong>Bailment of Fabric (Sec 150–152 ICA 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes ordinary prudence in workmanship and safe custody, but is not liable for pre-existing fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
+              <p className="text-zinc-600">
+                1.2 <strong>Bailment of Fabric (Sec 150–152 ICA 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes a statutory duty of ordinary prudence and safe custody (Section 151 ICA), but is not liable for pre-existing latent fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
               </p>
-              <p className="mt-1 text-emerald-800 font-medium">
-                1.3 <strong>Contractual 72-Hour Inspection &amp; Rectification Window:</strong> Pursuant to Section 42 of the Sale of Goods Act, 1930 (defining reasonable examination period), the parties agree to a 72-hour inspection window from delivery. Buyer shall notify Job-Worker in writing of observable stitching defects within 72 hours for prompt cure/rectification. Retention beyond 72 hours without written objection constitutes deemed acceptance, barring arbitrary debit notes.
+              <p className="text-zinc-700 leading-relaxed">
+                1.3 <strong>Contractual 72-Hour Inspection &amp; Rework Protocol:</strong> Defining a reasonable examination period under Section 42 of the Sale of Goods Act, 1930, the parties agree to a contractual inspection window of 72 hours from physical delivery for observable stitching defects. The Buyer shall notify the Job-Worker in writing with photo/sample evidence within 72 hours. Upon timely notification, the Job-Worker shall have an exclusive right of 7 business days to cure, rework, or rectify defective units at Job-Worker&apos;s cost. Retention of goods beyond 72 hours without written objection constitutes deemed acceptance of observable workmanship, barring arbitrary unilateral debit notes, without prejudice to statutory remedies for latent fabric defects.
               </p>
             </div>
 
             {/* Clause 2: Labour Charges & MSME Tax Compliance Notice */}
             <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                2. LABOUR CHARGES &amp; MSME TAX COMPLIANCE NOTICE
+                2. LABOUR CHARGES &amp; MSME TAX DEDUCTION NOTICE (SEC 37(2)(g) IT ACT, 2025)
               </h3>
               <p className="text-sm font-semibold text-zinc-900">
                 The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalValueFormatted} INR), exclusive of applicable GST.
               </p>
               <p className="mt-1 text-zinc-600 text-[11px] leading-relaxed">
-                <strong>Tax Compliance Notice:</strong> Timely payment within the agreed 15-day period is required for Buyer&apos;s business tax deduction. Under applicable MSME tax provisions (Income-tax Act Section 43B(h) / Section 37(2)(g) of the Income-tax Act, 2025), overdue payments to registered micro/small enterprises beyond the agreed MSMED Act timeline are disallowed as deductible business expenses in the financial year of incurrence and deferred until the tax year of actual payment.
+                <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business tax deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds valid micro/small enterprise registration at the date of supply (*Silpi Industries*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
               </p>
             </div>
 
@@ -412,15 +415,15 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             </div>
 
             {/* Clause 4: Payment Terms */}
-            <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
+            <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80 space-y-1">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                4. AGREED PAYMENT TERMS &amp; MSMED ACT SECTION 15–16 MANDATE
+                4. AGREED PAYMENT TERMS &amp; MSMED ACT CONDITIONAL STATUTORY NOTICE
               </h3>
               <p>
-                4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>{paymentDays} days</strong> of delivery, as agreed by both parties (within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
+                4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>{paymentDays} days</strong> of delivery, as agreed between the parties (within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
               </p>
-              <p className="mt-1 text-rose-800 text-[11px] font-semibold">
-                4.2 <strong>Statutory Interest on Delayed Payment:</strong> Under Section 16 MSMED Act, 2006, delayed payment beyond the agreed timeline mandates compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> from the appointed day until full discharge.
+              <p className="text-zinc-700 text-[11px] leading-relaxed">
+                4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration at the time of supply (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC). Pending verified registration, failure to remit payment constitutes breach of contract entitling the Job-Worker to ordinary contractual interest and damages under Section 73 of the Indian Contract Act, 1872.
               </p>
             </div>
 
@@ -439,7 +442,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
               </div>
               <div className="text-[11px] text-zinc-700 space-y-1.5">
                 <div className="p-2 bg-white rounded border border-amber-200">
-                  <strong>• 15-Day Payment Mandate (Sec 15 MSMED Act):</strong> Buyer payment cannot be made contingent on third-party exporter or wholesale collections. Late payment attracts mandatory 3x RBI compound interest.
+                  <strong>• 15-Day Payment Timeline (Sec 15 MSMED Act / Sec 73 ICA):</strong> Buyer payment cannot be made contingent on third-party exporter or wholesale collections. Conditional upon valid Udyam registration under *Silpi Industries*, mandatory 3x RBI compound interest applies; otherwise standard contractual damages apply.
                 </div>
                 <div className="p-2 bg-white rounded border border-amber-200">
                   <strong>• 72-Hour Inspection Limit (Sec 42 Sale of Goods Act &amp; Sec 74 ICA):</strong> Arbitrary loose-thread debit notes and unilateral penalties are void by law. Minor defects shall be rectified by Job-Worker.
@@ -453,7 +456,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
           </div>
 
           {/* Buyer Assent & Verification Section */}
-          <div className="pt-4 border-t-2 border-zinc-200 space-y-4">
+          <div className="pt-4 border-t-2 border-zinc-200 space-y-4 dual-signature-block print-break-inside-avoid">
             
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wide">
@@ -577,7 +580,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <div><strong>Network IP:</strong> {signedRecord.client_ip || detectedIp || '127.0.0.1'}</div>
                   <div><strong>Device / User-Agent:</strong> {signedRecord.user_agent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android')}</div>
                   <div><strong>Timestamp (IST):</strong> {signedRecord.timestamp_ist || new Date().toLocaleString('en-IN') + ' IST'}</div>
-                  <div><strong>Verification Status:</strong> Direct WhatsApp Assent Channel Verified • Electronic Attribution locked under Sections 11–13 of IT Act, 2000.</div>
+                  <div><strong>Verification Status:</strong> Direct WhatsApp Assent Channel Verified • Signatory Authority Declared under Section 10A IT Act (Entity Authority Verification Pending) • Electronic Attribution locked under Sections 11–13 of IT Act, 2000.</div>
                 </div>
               </div>
             )}
@@ -595,19 +598,40 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
               <div>
                 <strong>Party B (Buyer / Counterparty):</strong>{' '}
                 {signedRecord ? (
-                  <>Digital Mark Recorded • IP Address: <strong>{signedRecord.client_ip || detectedIp || '127.0.0.1'}</strong> • Direct WhatsApp Assent Verified • Signatory Authority Declared • Time: {signedRecord.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</>
+                  <>
+                    Digital Mark Recorded • IP Address: <strong>{signedRecord.client_ip || detectedIp || '127.0.0.1'}</strong>
+                    {deal?.signatures?.supplier && (deal.signatures.supplier.client_ip === (signedRecord.client_ip || detectedIp)) ? (
+                      <span className="text-amber-800 font-sans font-semibold ml-1">[⚠️ Shared Local IP / Demo Simulation — Remote Link Required for Independent IP Attribution]</span>
+                    ) : (
+                      <span className="text-emerald-800 font-sans font-semibold ml-1">[✓ Remote Counterparty Assent via WhatsApp Channel]</span>
+                    )}
+                    {' '}• Direct WhatsApp Assent Channel • Signatory Authority: Declared by Signatory • Time: {signedRecord.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}
+                  </>
                 ) : (
                   <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                 )}
               </div>
-              <div><strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 when accompanied by the platform certificate. Canonical Electronic Record SHA-256 Digest: <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>.</div>
+              <div className="pt-0.5">
+                <strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the IT Act, 2000. Admissibility in court or MSEFC proceedings requires production of an accompanying certificate under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (BSA) / Section 65B Indian Evidence Act certifying system integrity.
+              </div>
+              <div className="pt-0.5 text-[9.5px] leading-relaxed">
+                <strong>Canonical Electronic Record SHA-256 Digest:</strong> <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>
+                <span className="text-zinc-500 block mt-0.5 font-sans">
+                  (Cryptographic digest calculated over underlying structured JSON deal data: Deal ID, Contracting Parties, Quantity, Rate, Total Consideration, Timestamps, and Network IP logs. Note: The binary hash of the downloaded PDF file differs because print rendering embeds variable font streams and page pagination).
+                </span>
+              </div>
             </div>
 
           </div>
 
-          {/* Legal Operational Notice */}
-          <div className="pt-4 border-t border-zinc-200 text-[10px] text-zinc-500 leading-normal">
-            <strong>Legal Operational Notice:</strong> This Digital Order Slip is an electronic record formed under Section 10A of the Information Technology Act, 2000. Under Article 5 of the Karnataka Stamp Act, 1957, job-work agreements attract a nominal ₹100 stamp duty; non-stamping or deficit stamping is a curable procedural defect under the Supreme Court of India 7-judge Constitution Bench precedent in <em>In Re: Interplay (2023)</em>. In the event of dispute, this record is admissible before the MSME ODR Portal (MSEFC) under Section 18 of the MSMED Act, 2006.
+          {/* Legal Operational & Stamping Notice */}
+          <div className="pt-4 border-t border-zinc-200 text-[10px] text-zinc-600 leading-normal space-y-1">
+            <div>
+              <strong>Legal Operational &amp; Stamping Notice:</strong> This document is an unstamped electronic transaction memorandum executed under Section 10A of the Information Technology Act, 2000. Under Article 5 of the Karnataka Stamp Act, 1957, garment job-work contracts attract an estimated ₹100 nominal stamp duty. Pursuant to the 7-judge Constitution Bench ruling of the Supreme Court in <em>In Re: Interplay (2023)</em>, non-stamping or deficient stamping is a curable procedural defect that does not void the underlying contract; however, this instrument must be impounded and regularized with payment of the requisite duty and penalty before being admitted in evidence in court or arbitration.
+            </div>
+            <div>
+              <strong>MSME Qualification Disclosure (Silpi Industries Precedent):</strong> In accordance with the Supreme Court judgment in <em>Silpi Industries v. Kerala State Road Transport Corporation (2021)</em>, statutory delayed-payment remedies under Sections 15–18 of the MSMED Act, 2006 and the jurisdiction of the Micro and Small Enterprises Facilitation Council (MSEFC) require the supplier to possess an active Udyam registration on or prior to the date of contract / supply. Where registration is pending or unverified, agreed payment terms remain enforceable as binding contractual covenants under the Indian Contract Act, 1872.
+            </div>
           </div>
 
         </div>
