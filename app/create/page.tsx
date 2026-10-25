@@ -39,7 +39,10 @@ import {
   Upload,
   Mic,
   FileUp,
-  FolderOpen
+  FolderOpen,
+  MessageSquare,
+  Copy,
+  Check
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -70,6 +73,7 @@ export default function CreateAgreementPage() {
   const [udyamUrn, setUdyamUrn] = useState('UDYAM-KR-03-0128945');
   const [isSec29Halted, setIsSec29Halted] = useState(false);
   const [sec29Reasons, setSec29Reasons] = useState<string[]>([]);
+  const [copiedSec29, setCopiedSec29] = useState(false);
   const [activeTab, setActiveTab] = useState<'letter' | 'terms' | 'missing' | 'draft' | 'traceability' | 'stamp' | 'bsa' | 'tamper'>('letter');
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
@@ -474,6 +478,47 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
               <p className="text-emerald-300 pt-2 border-t border-amber-950 font-sans">
                 <strong>Protective Action:</strong> Ask the buyer to confirm an exact piece count and definite per-piece stitching rate before cutting fabric.
               </p>
+
+              <div className="pt-2 border-t border-amber-950/80 space-y-2">
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
+                  1-Tap WhatsApp Clarification Message (Hinglish):
+                </span>
+                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 text-xs text-slate-200 font-mono italic">
+                  &ldquo;Bhaiya, cutting shuru karne se pehle exact piece count aur final stitching rate/pc confirm kar lijiye, taaki payment aur fabric hisab me koi dispute na ho.&rdquo;
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent('Bhaiya, cutting shuru karne se pehle exact piece count aur final stitching rate/pc confirm kar lijiye, taaki payment aur fabric hisab me koi dispute na ho.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Send via WhatsApp</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText('Bhaiya, cutting shuru karne se pehle exact piece count aur final stitching rate/pc confirm kar lijiye, taaki payment aur fabric hisab me koi dispute na ho.');
+                      setCopiedSec29(true);
+                      setTimeout(() => setCopiedSec29(false), 2500);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                  >
+                    {copiedSec29 ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Copied Prompt!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Prompt</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

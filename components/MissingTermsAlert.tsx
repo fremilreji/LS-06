@@ -207,25 +207,38 @@ export default function MissingTermsAlert({ missingTerms, ambiguousTerms }: Miss
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-500">1-tap copy</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyQuestion(item.id, item.suggestedQuestion)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
-                      >
-                        {copiedId === item.id ? (
-                          <>
-                            <Check className="w-3 h-3 text-white" />
-                            <span>Copied Prompt!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copy for WhatsApp</span>
-                          </>
-                        )}
-                      </button>
+                    <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between gap-1.5">
+                      <span className="text-[10px] text-slate-500">1-tap action</span>
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(item.suggestedQuestion)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm"
+                          title="Open directly in WhatsApp"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          <span>WhatsApp</span>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyQuestion(item.id, item.suggestedQuestion)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                          title="Copy text"
+                        >
+                          {copiedId === item.id ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

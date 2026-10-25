@@ -287,28 +287,41 @@ export default function LegalPaperDocument({
           {whatsappMessage}
         </div>
 
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <span className="text-[11px] text-slate-500">
-            Formatted for 1-click WhatsApp copy-paste
+            Send directly to buyer via WhatsApp to secure Section 10A IT Act assent
           </span>
 
-          <button
-            type="button"
-            onClick={handleCopyAsk}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
-          >
-            {copiedAsk ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-white" />
-                <span>Copied Message!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy Message for WhatsApp</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm"
+              title="Open directly in WhatsApp"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Send via WhatsApp</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={handleCopyAsk}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+            >
+              {copiedAsk ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Text</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
