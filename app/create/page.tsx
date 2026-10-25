@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ExtractedAgreementData, 
   AgreementDraft, 
@@ -42,7 +42,9 @@ import {
   FolderOpen,
   MessageSquare,
   Copy,
-  Check
+  Check,
+  Square,
+  Radio
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -79,6 +81,102 @@ export default function CreateAgreementPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const voiceInputRef = useRef<HTMLInputElement>(null);
+
+  // Live In-Browser Voice Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechLang, setSpeechLang] = useState<'en-IN' | 'hi-IN' | 'kn-IN' | 'ta-IN'>('en-IN');
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recognitionRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
+
+  const startVoiceRecording = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Live speech recording is supported in Google Chrome, Microsoft Edge, and Chrome on Android. Please use Chrome or Edge to speak directly.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = speechLang;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setRecordingSeconds(0);
+        timerRef.current = setInterval(() => {
+          setRecordingSeconds(s => s + 1);
+        }, 1000);
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            transcript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (transcript.trim()) {
+          setRawConversation(prev => {
+            const trimmed = prev.trim();
+            return trimmed ? `${trimmed}\n${transcript.trim()}` : transcript.trim();
+          });
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error !== 'no-speech') {
+          stopVoiceRecording();
+        }
+      };
+
+      recognition.onend = () => {
+        stopVoiceRecording();
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Speech recognition start failed:', err);
+      setIsRecording(false);
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRecording(false);
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   // Preset Selection
   const handleSelectPreset = (preset: SamplePreset) => {
@@ -360,20 +458,27 @@ export default function CreateAgreementPage() {
               <span>Choose files</span>
             </button>
 
-            <input
-              type="file"
-              ref={voiceInputRef}
-              accept="audio/*"
-              className="hidden"
-              onChange={handleVoiceCapture}
-            />
+            {/* Live In-Browser Voice Recording Button */}
             <button
               type="button"
-              onClick={() => voiceInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+              onClick={toggleRecording}
+              className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-sm ${
+                isRecording
+                  ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-600/30'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              }`}
             >
-              <Mic className="w-4 h-4 text-emerald-400" />
-              <span>Record a voice note</span>
+              {isRecording ? (
+                <>
+                  <Square className="w-3.5 h-3.5 fill-white text-white" />
+                  <span>Stop Recording ({String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:{String(recordingSeconds % 60).padStart(2, '0')})</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 text-white" />
+                  <span>Record Voice Note</span>
+                </>
+              )}
             </button>
 
             <button
@@ -394,8 +499,47 @@ export default function CreateAgreementPage() {
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-500">
-            On mobile, &ldquo;Record a voice note&rdquo; captures your voice clip directly.
+          {/* Voice Language Selector & Live Recording Indicator */}
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <Radio className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-[11px] font-medium">Voice Language:</span>
+              <div className="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-800">
+                {(
+                  [
+                    { code: 'en-IN', label: 'English (IN)' },
+                    { code: 'hi-IN', label: 'हिन्दी (Hindi)' },
+                    { code: 'kn-IN', label: 'ಕನ್ನಡ (Kannada)' },
+                    { code: 'ta-IN', label: 'தமிழ் (Tamil)' },
+                  ] as const
+                ).map(lang => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    disabled={isRecording}
+                    onClick={() => setSpeechLang(lang.code)}
+                    className={`px-2 py-0.5 text-[10px] font-semibold rounded-md transition-colors ${
+                      speechLang === lang.code
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {isRecording && (
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-950 text-rose-300 border border-rose-800 text-[11px] font-mono animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                <span>Listening live... Speak now</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[11px] text-slate-400">
+            Click <strong>&ldquo;Record Voice Note&rdquo;</strong> to speak directly in your preferred language — your words are transcribed live into the contract box below without leaving the site.
           </p>
 
           {attachedFiles.length > 0 && (
