@@ -350,7 +350,7 @@ export default function CreateAgreementPage() {
       <div className="space-y-2.5 border-b border-slate-800 pb-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-mono uppercase tracking-widest text-blue-400 font-bold bg-blue-950/60 px-2.5 py-0.5 rounded border border-blue-800">
-            Srujana Tech Fest 2026 • Problem LS-06
+            Jan-Karar • Garment Job-Work
           </span>
           <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-800">
             ₹0 Cost for Micro-Enterprises & Artisans

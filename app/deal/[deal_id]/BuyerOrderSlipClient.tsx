@@ -36,6 +36,14 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [detectedIp, setDetectedIp] = useState<string>('');
+
+  useEffect(() => {
+    fetch('/api/ip')
+      .then(r => r.json())
+      .then(d => { if (d?.ip) setDetectedIp(d.ip); })
+      .catch(() => {});
+  }, []);
 
   // Math calculation for Clause 2.1
   const quantity = deal?.payment_terms?.quantity_pcs 
@@ -195,7 +203,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
       setSignedRecord({
         signer_name: signerName,
         signer_phone: buyerPhone,
-        client_ip: '122.179.45.10',
+        client_ip: detectedIp || '127.0.0.1',
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android',
         timestamp_ist: new Date().toLocaleTimeString('en-IN') + ' IST',
         otp_verified: true,
@@ -489,7 +497,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 </div>
                 <div className="text-[11px] text-zinc-700 font-mono space-y-1 bg-white p-3 rounded-lg border border-emerald-100">
                   <div><strong>Signatory:</strong> {signedRecord.signer_name} ({signedRecord.signer_phone})</div>
-                  <div><strong>Network IP:</strong> {signedRecord.client_ip || '122.179.45.10'}</div>
+                  <div><strong>Network IP:</strong> {signedRecord.client_ip || detectedIp || '127.0.0.1'}</div>
                   <div><strong>Device / User-Agent:</strong> {signedRecord.user_agent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android')}</div>
                   <div><strong>Timestamp (IST):</strong> {signedRecord.timestamp_ist || new Date().toLocaleString('en-IN') + ' IST'}</div>
                   <div><strong>Verification Status:</strong> OTP 1234 Verified • Electronic Attribution locked under Sections 11–13 of IT Act, 2000.</div>
@@ -499,8 +507,22 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
 
             {/* Printed IP Metadata Attribution (Mandatory under Sec 11-13 IT Act) */}
             <div className="print-force-show pt-3 border-t border-zinc-300 text-[10px] font-mono text-zinc-700 space-y-1">
-              <div><strong>Party A (Job-Worker / Tailor):</strong> Digital Mark Recorded • IP Address: <strong>106.51.22.84</strong> • Device: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')} IST</div>
-              <div><strong>Party B (Buyer / Counterparty):</strong> Digital Mark Recorded • IP Address: <strong>{signedRecord?.client_ip || '122.179.45.10'}</strong> • Verified via WhatsApp OTP [1234] • Signatory Authority Declared • Time: {signedRecord?.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</div>
+              <div>
+                <strong>Party A (Job-Worker / Tailor):</strong>{' '}
+                {deal?.signatures?.supplier ? (
+                  <>Digital Mark Recorded • IP Address: <strong>{deal.signatures.supplier.client_ip || detectedIp || '127.0.0.1'}</strong> • Time: {deal.signatures.supplier.timestamp_ist || 'Executed'}</>
+                ) : (
+                  <>Digital Mark Recorded by Job-Worker • Direct Order Memorandum</>
+                )}
+              </div>
+              <div>
+                <strong>Party B (Buyer / Counterparty):</strong>{' '}
+                {signedRecord ? (
+                  <>Digital Mark Recorded • IP Address: <strong>{signedRecord.client_ip || detectedIp || '127.0.0.1'}</strong> • Verified via WhatsApp OTP [1234] • Signatory Authority Declared • Time: {signedRecord.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</>
+                ) : (
+                  <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
+                )}
+              </div>
               <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>
             </div>
 

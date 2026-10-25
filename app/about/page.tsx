@@ -20,10 +20,10 @@ export default function AboutPage() {
       <div className="border-b border-slate-800 pb-8 space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/50">
           <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-          <span>Srujana Tech Fest 2026 • Legal Services Theme</span>
+          <span>Jan-Karar • Micro-Unit Legal Protection</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-          Problem LS-06: From Handshake to Contract
+          From Handshake to Contract
         </h1>
         <p className="text-base text-slate-300 max-w-3xl leading-relaxed">
           Official problem statement context, technical architecture, 4-member engineering division, and legal tech disclosures.

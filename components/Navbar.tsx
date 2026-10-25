@@ -16,7 +16,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Wizard', icon: PlusCircle },
-    { href: '/about', label: 'LS-06 Guide', icon: FileText },
+    { href: '/about', label: 'Legal Guide', icon: FileText },
     { href: '/drafts', label: 'Saved Drafts', icon: BookmarkCheck },
   ];
 
@@ -40,13 +40,6 @@ export default function Navbar() {
                 </span>
               </div>
             </Link>
-
-            <div className="hidden md:flex items-center ml-3 pl-3 border-l border-zinc-200">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                <Sparkles className="w-3 h-3 text-zinc-500" />
-                Srujana 2026 • LS-06
-              </span>
-            </div>
           </div>
 
           {/* Navigation Links */}

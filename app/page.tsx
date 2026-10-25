@@ -139,33 +139,33 @@ export default function HomePage() {
   // Language: 'en' | 'hi' | 'kn'
   const [lang, setLang] = useState<'en' | 'hi' | 'kn'>('en');
 
-  // Active Deal Data
-  const [activePresetId, setActivePresetId] = useState<string>('preset_1');
+  // Active Deal Data (Clean blank state by default on launch)
+  const [activePresetId, setActivePresetId] = useState<string>('');
   const [dealId, setDealId] = useState('LOT-20261025-01');
-  const [title, setTitle] = useState(PRESETS[0].title);
-  const [udyamUrn, setUdyamUrn] = useState('UDYAM-KR-03-0128945');
-  const [hasUdyam, setHasUdyam] = useState(true);
-  const [rawChat, setRawChat] = useState(PRESETS[0].chat);
+  const [title, setTitle] = useState('Garment Job-Work Order Memorandum');
+  const [udyamUrn, setUdyamUrn] = useState('');
+  const [hasUdyam, setHasUdyam] = useState(false);
+  const [rawChat, setRawChat] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Extracted Commercial Details
-  const [supplierName, setSupplierName] = useState(PRESETS[0].supplier);
-  const [buyerName, setBuyerName] = useState(PRESETS[0].buyer);
-  const [itemScope, setItemScope] = useState(PRESETS[0].item);
-  const [quantity, setQuantity] = useState(PRESETS[0].quantity);
-  const [ratePerPiece, setRatePerPiece] = useState(PRESETS[0].rate);
-  const [totalValue, setTotalValue] = useState(PRESETS[0].total);
-  const [totalFormatted, setTotalFormatted] = useState(PRESETS[0].totalFormatted);
-  const [deliveryTimeline, setDeliveryTimeline] = useState(PRESETS[0].delivery);
+  // Extracted Commercial Details (Initialized to 0 until user types or loads demo)
+  const [supplierName, setSupplierName] = useState('Suresh - Lakshmi Garments');
+  const [buyerName, setBuyerName] = useState('Raghav - Apex Boutique');
+  const [itemScope, setItemScope] = useState('Stitching of Garments');
+  const [quantity, setQuantity] = useState(0);
+  const [ratePerPiece, setRatePerPiece] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+  const [totalFormatted, setTotalFormatted] = useState('0');
+  const [deliveryTimeline, setDeliveryTimeline] = useState('Within 14 business days of fabric delivery');
 
   // Inline Quick Edit state (so users are NEVER stuck)
   const [isEditingTerms, setIsEditingTerms] = useState(false);
-  const [editQtyInput, setEditQtyInput] = useState(String(PRESETS[0].quantity));
-  const [editRateInput, setEditRateInput] = useState(String(PRESETS[0].rate));
+  const [editQtyInput, setEditQtyInput] = useState('0');
+  const [editRateInput, setEditRateInput] = useState('0');
 
   // Gaps & Halt State
   const [isHaltedSec29, setIsHaltedSec29] = useState(false);
-  const [activeGaps, setActiveGaps] = useState(PRESETS[0].gaps);
+  const [activeGaps, setActiveGaps] = useState<any[]>([]);
   const [activeGapIndex, setActiveGapIndex] = useState(0);
 
   // Signatures & Demo Switcher
@@ -194,11 +194,28 @@ export default function HomePage() {
   const [buyerDrawing, setBuyerDrawing] = useState(false);
   const [buyerHasDrawn, setBuyerHasDrawn] = useState(false);
 
-  // Origin for links
+  // Dynamic Client IP & Attribution State
+  const [detectedClientIp, setDetectedClientIp] = useState<string>('');
+  const [detectedUserAgent, setDetectedUserAgent] = useState<string>('');
+  const [tailorSignatureRecord, setTailorSignatureRecord] = useState<any>(null);
+
+  // Origin for links & live IP detection
   const [siteOrigin, setSiteOrigin] = useState('http://localhost:3000');
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSiteOrigin(window.location.origin);
+      // Dynamically detect the user's actual network IP
+      fetch('/api/ip')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.ip) {
+            setDetectedClientIp(data.ip);
+            setDetectedUserAgent(data.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome'));
+          }
+        })
+        .catch(() => {
+          setDetectedClientIp('');
+        });
     }
   }, []);
 
@@ -251,6 +268,30 @@ export default function HomePage() {
     setCurrentStep(1);
     setIsEditingTerms(false);
     showToast(`Loaded ${preset.label}`);
+  };
+
+  // Reset to Clean Blank Text Box
+  const handleResetToBlank = () => {
+    setActivePresetId('');
+    setTitle('Garment Job-Work Order Memorandum');
+    setRawChat('');
+    setUdyamUrn('');
+    setHasUdyam(false);
+    setQuantity(0);
+    setRatePerPiece(0);
+    setTotalValue(0);
+    setTotalFormatted('0');
+    setEditQtyInput('0');
+    setEditRateInput('0');
+    setActiveGaps([]);
+    setIsHaltedSec29(false);
+    setSupplierSigned(false);
+    setBuyerSigned(false);
+    setBuyerOtpVerified(false);
+    setBuyerSignatureRecord(null);
+    setCurrentStep(1);
+    setIsEditingTerms(false);
+    showToast('Reset to blank text box');
   };
 
   // Apply Manual Inline Term Edits
@@ -361,6 +402,14 @@ export default function HomePage() {
   };
 
   const handleSpeakSummary = () => {
+    if (!rawChat.trim() || (quantity === 0 && ratePerPiece === 0)) {
+      const msg = lang === 'hi'
+        ? 'Dealproof mein aapka swagat hai. Kripya apna WhatsApp chat paste kijiye ya upar demo case chuniye.'
+        : 'Welcome to Dealproof. Please paste your WhatsApp negotiation messages or select a demo case above to begin.';
+      speakText(msg);
+      return;
+    }
+
     if (isHaltedSec29) {
       const msg = lang === 'hi'
         ? 'Dhyan dijiye! Yeh order ruka hua hai kyunki rate pakka nahi hai. Pehle buyer se exact rate puchiye.'
@@ -431,6 +480,10 @@ export default function HomePage() {
 
   // Step 1 -> Step 2 Analysis
   const handleCheckOrder = async () => {
+    if (!rawChat.trim()) {
+      showToast('Please paste chat messages or select a Demo Case above.');
+      return;
+    }
     setIsAnalyzing(true);
     try {
       const extracted = extractDealTermsFromText(rawChat);
@@ -625,6 +678,29 @@ export default function HomePage() {
     }
   };
 
+  // Tailor Sign & Dynamic IP Locking
+  const handleTailorConfirmSign = () => {
+    const nowIst = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }) + ' IST';
+    const clientIp = detectedClientIp || '127.0.0.1';
+    setTailorSignatureRecord({
+      signer_name: supplierName,
+      client_ip: clientIp,
+      user_agent: detectedUserAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android'),
+      timestamp_ist: nowIst,
+    });
+    setSupplierSigned(true);
+    showToast(`✓ Tailor signature locked with IP: ${clientIp}`);
+  };
+
   // Buyer Sign & Attribution
   const handleBuyerConfirmSign = async () => {
     const activeCanvas = simulatedBuyerCanvasRef.current || buyerCanvasRef.current;
@@ -646,22 +722,41 @@ export default function HomePage() {
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setBuyerSignatureRecord(data.signatureRecord);
+      if (data.success && data.signatureRecord) {
+        const finalIp = (data.signatureRecord.client_ip && data.signatureRecord.client_ip !== '127.0.0.1')
+          ? data.signatureRecord.client_ip
+          : (detectedClientIp || '127.0.0.1');
+
+        setBuyerSignatureRecord({
+          ...data.signatureRecord,
+          client_ip: finalIp,
+        });
         setBuyerSigned(true);
-        showToast('✓ Buyer signature verified and locked!');
+        showToast(`✓ Buyer signature verified! IP: ${finalIp}`);
       }
     } catch {
+      const nowIst = new Date().toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }) + ' IST';
+
+      const clientIp = detectedClientIp || '127.0.0.1';
       setBuyerSignatureRecord({
         signer_name: buyerName,
         signer_phone: '+91 98450 12345',
-        client_ip: '122.179.45.10',
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android',
-        timestamp_ist: new Date().toLocaleTimeString('en-IN') + ' IST',
+        client_ip: clientIp,
+        user_agent: detectedUserAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android'),
+        timestamp_ist: nowIst,
         otp_verified: true,
       });
       setBuyerSigned(true);
-      showToast('✓ Buyer signature recorded locally!');
+      showToast(`✓ Buyer signature recorded with IP: ${clientIp}`);
     }
   };
 
@@ -765,6 +860,17 @@ export default function HomePage() {
                 {p.label}
               </button>
             ))}
+            {activePresetId && (
+              <button
+                type="button"
+                onClick={handleResetToBlank}
+                className="px-2.5 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-zinc-900 border border-dashed border-zinc-300 hover:bg-zinc-100 transition-all cursor-pointer flex items-center gap-1"
+                title="Reset to blank text box"
+              >
+                <span>✕</span>
+                <span>Reset to Blank</span>
+              </button>
+            )}
           </div>
 
           {/* Clean Stepper Tabs */}
@@ -905,7 +1011,7 @@ export default function HomePage() {
                 rows={6}
                 value={rawChat}
                 onChange={(e) => setRawChat(e.target.value)}
-                placeholder="Paste informal messages here..."
+                placeholder="Type or paste your WhatsApp messages here (e.g. Suresh: Ready to stitch 1,500 Rayon Kurtis at Rs 58 per piece. Raghav: Done Suresh, rate is fine...)..."
                 className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/40 text-sm font-mono text-zinc-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 leading-relaxed resize-none"
               />
 
@@ -1412,7 +1518,7 @@ export default function HomePage() {
                           <span>Deal Signed by Buyer!</span>
                         </div>
                         <div className="text-[10px] font-mono text-zinc-600">
-                          IP: 122.179.45.10 • OTP 1234 Verified • Time: {new Date().toLocaleTimeString('en-IN')} IST
+                          IP: {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'} • OTP {buyerOtp} Verified • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       </div>
                     )}
@@ -1580,17 +1686,14 @@ export default function HomePage() {
                       {!supplierSigned ? (
                         <button
                           type="button"
-                          onClick={() => {
-                            setSupplierSigned(true);
-                            showToast('Tailor signature locked with IP proof');
-                          }}
+                          onClick={handleTailorConfirmSign}
                           className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer"
                         >
                           Confirm Tailor Mark &amp; Lock IP
                         </button>
                       ) : (
                         <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
-                          ✓ Signed: Suresh (Tailor) • IP: 106.51.22.84 • Time: {new Date().toLocaleTimeString('en-IN')} IST
+                          ✓ Signed: Suresh (Tailor) • IP: {tailorSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'} • Time: {tailorSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       )}
                     </div>
@@ -1682,7 +1785,7 @@ export default function HomePage() {
                         </button>
                       ) : (
                         <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
-                          ✓ Signed: {buyerName} • IP: {buyerSignatureRecord?.client_ip || '122.179.45.10'} • OTP 1234 Verified • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
+                          ✓ Signed: {buyerName} • IP: {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'} • OTP {buyerOtp} Verified • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       )}
                     </div>
@@ -1692,8 +1795,22 @@ export default function HomePage() {
 
                 {/* Printed IP Metadata Attribution (Mandatory under Sec 11-13 IT Act) */}
                 <div className="print-force-show pt-3 border-t border-zinc-300 text-[10px] font-mono text-zinc-700 space-y-1">
-                  <div><strong>Party A (Job-Worker / Tailor):</strong> Digital Mark Recorded • IP Address: <strong>106.51.22.84</strong> • Device: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')} IST</div>
-                  <div><strong>Party B (Buyer / Counterparty):</strong> Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord?.client_ip || '122.179.45.10'}</strong> • Verified via WhatsApp OTP [1234] • Signatory Authority Declared • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</div>
+                  <div>
+                    <strong>Party A (Job-Worker / Tailor):</strong>{' '}
+                    {supplierSigned && tailorSignatureRecord ? (
+                      <>Digital Mark Recorded • IP Address: <strong>{tailorSignatureRecord.client_ip}</strong> • Device: {tailorSignatureRecord.user_agent ? tailorSignatureRecord.user_agent.split(' ')[0] : 'Browser'} (Peenya) • Time: {tailorSignatureRecord.timestamp_ist}</>
+                    ) : (
+                      <span className="text-zinc-500 font-sans italic">[Pending Job-Worker Signature on Canvas]</span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>Party B (Buyer / Counterparty):</strong>{' '}
+                    {buyerSigned && buyerSignatureRecord ? (
+                      <>Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord.client_ip}</strong> • Verified via WhatsApp OTP [{buyerOtp}] • Signatory Authority Declared • Time: {buyerSignatureRecord.timestamp_ist}</>
+                    ) : (
+                      <span className="text-zinc-500 font-sans italic">[Pending Buyer Digital Assent via WhatsApp OTP]</span>
+                    )}
+                  </div>
                   <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>
                 </div>
 
@@ -1774,7 +1891,7 @@ export default function HomePage() {
                     <div><strong>MSME ODR Portal:</strong> odr.msme.gov.in (Form-A Schedule Ready)</div>
                     <div><strong>SHA-256 Digest:</strong> a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</div>
                     <div><strong>BSA Certificate:</strong> Schedule Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023.</div>
-                    <div><strong>Network Attribution:</strong> IP 106.51.22.84 (Party A) • IP 122.179.45.10 (Party B) under Sections 11-13 IT Act.</div>
+                    <div><strong>Network Attribution:</strong> IP {supplierSigned && tailorSignatureRecord ? tailorSignatureRecord.client_ip : (detectedClientIp || 'Dynamic Network IP')} (Party A) • IP {buyerSigned && buyerSignatureRecord ? buyerSignatureRecord.client_ip : 'Awaiting Buyer Assent'} (Party B) under Sections 11-13 IT Act.</div>
                   </div>
                 </div>
               )}
