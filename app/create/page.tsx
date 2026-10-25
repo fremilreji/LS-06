@@ -745,6 +745,7 @@ Example: Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver th
               {activeTab === 'letter' && (
                 <LegalPaperDocument
                   draft={draft}
+                  garmentData={garmentData}
                   jurisdictionCity={jurisdictionCity}
                   onUpdateDraft={handleUpdateDraft}
                 />

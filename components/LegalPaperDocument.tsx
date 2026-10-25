@@ -18,12 +18,14 @@ import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
 interface LegalPaperDocumentProps {
   draft: AgreementDraft;
+  garmentData?: any;
   jurisdictionCity?: string;
   onUpdateDraft?: (updated: AgreementDraft) => void;
 }
 
 export default function LegalPaperDocument({
   draft,
+  garmentData,
   jurisdictionCity = 'Bengaluru, Karnataka',
   onUpdateDraft,
 }: LegalPaperDocumentProps) {
@@ -46,12 +48,14 @@ export default function LegalPaperDocument({
     year: 'numeric',
   });
 
-  const whatsappMessage = `${partyBFirstName}, so we're on the same page regarding our agreement:\n` +
-    `• Scope: ${draft.extractedData.scopeOrProducts.value} (${draft.extractedData.quantity.value})\n` +
-    `• Consideration: ${draft.extractedData.price.value} (${draft.extractedData.currency})\n` +
-    `• Delivery: ${draft.extractedData.deliveryTimeline.value}\n` +
-    `• Payment: ${draft.extractedData.paymentTerms.value}\n\n` +
-    `Please reply "Confirmed" to lock this version.`;
+  const whatsappMessage = garmentData?.whatsapp_nudge_text
+    ? garmentData.whatsapp_nudge_text
+    : `${partyBFirstName}, so we're on the same page regarding our agreement:\n` +
+      `• Scope: ${draft.extractedData.scopeOrProducts.value} (${draft.extractedData.quantity.value})\n` +
+      `• Consideration: ${draft.extractedData.price.value} (${draft.extractedData.currency})\n` +
+      `• Delivery: ${draft.extractedData.deliveryTimeline.value}\n` +
+      `• Payment: ${draft.extractedData.paymentTerms.value}\n\n` +
+      `Please reply "Confirmed" to lock this version.`;
 
   const handleCopyDoc = () => {
     const docElement = document.getElementById('legal-doc-content');

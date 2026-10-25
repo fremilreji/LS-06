@@ -45,6 +45,65 @@ export async function POST(req: NextRequest) {
       // FastAPI fallback continues smoothly with local deterministic rules
     }
 
+    // Merge statutory garment analysis into extracted data for uniform UI display
+    if (garmentAnalysis) {
+      if (garmentAnalysis.supplier_name && !garmentAnalysis.supplier_name.includes('First Party')) {
+        extractedData.partyA = {
+          name: garmentAnalysis.supplier_name,
+          role: 'Supplier',
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+      }
+      if (garmentAnalysis.buyer_name && !garmentAnalysis.buyer_name.includes('Counterparty')) {
+        extractedData.partyB = {
+          name: garmentAnalysis.buyer_name,
+          role: 'Buyer',
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+      }
+      if (garmentAnalysis.clauses?.scope?.value) {
+        extractedData.scopeOrProducts = {
+          value: garmentAnalysis.job_work_terms?.job_work_type || garmentAnalysis.clauses.scope.value,
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+        const pieceCount = garmentAnalysis.payment_terms?.quantity_pcs;
+        if (pieceCount) {
+          extractedData.quantity = {
+            value: `${pieceCount.toLocaleString('en-IN')} pieces`,
+            isExplicit: true,
+            confidence: 'HIGH',
+          };
+        }
+      }
+      if (garmentAnalysis.payment_terms?.agreed_price_inr) {
+        const rate = garmentAnalysis.payment_terms.rate_per_piece;
+        const total = garmentAnalysis.payment_terms.agreed_price_inr;
+        const rateLabel = rate ? `@ ₹${rate}/pc ` : '';
+        extractedData.price = {
+          value: `₹${total.toLocaleString('en-IN')} (${rateLabel}Total Consideration)`,
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+      }
+      if (garmentAnalysis.clauses?.delivery_timeline?.value) {
+        extractedData.deliveryTimeline = {
+          value: garmentAnalysis.clauses.delivery_timeline.value,
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+      }
+      if (garmentAnalysis.clauses?.payment_terms?.value) {
+        extractedData.paymentTerms = {
+          value: garmentAnalysis.clauses.payment_terms.value,
+          isExplicit: true,
+          confidence: 'HIGH',
+        };
+      }
+    }
+
     // Generate initial plain-language draft with [Needs confirmation] tags
     const draft = await generateAgreementDraft(extractedData);
 

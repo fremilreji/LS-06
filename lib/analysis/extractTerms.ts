@@ -20,13 +20,27 @@ export async function extractTermsRuleBased(
   const partyALabelMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:seller|supplier|provider|vendor|party\s*a)\s*:\s*([^\n]+)/i);
   const partyBLabelMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:buyer|client|counterparty|party\s*b|customer)\s*:\s*([^\n]+)/i);
 
-  // Greetings e.g. "Hi Ravi", "Dear Ramesh", "Hey Alex" OR direct address e.g. '"Ravi, so we\'re on the same page' or 'Ravi,'
+  // Check WhatsApp chat message headers e.g. "10:15 AM [Raghavendra - Apex Exports, Bommanahalli]: ..."
+  const headerSenderMatches = Array.from(cleanedText.matchAll(/^(?:\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*)?(?:\[(.*?)\]|([A-Za-z0-9_\s\+\-]+?))\s*:\s*(.*)$/gm));
+  let headerSupplier = '';
+  let headerBuyer = '';
+  for (const m of headerSenderMatches) {
+    const sender = (m[1] || m[2] || '').trim();
+    const sLower = sender.toLowerCase();
+    if (/(?:tailor|stitching|garment|supplier|worker|lakshmi|manjunath|apparels|workshop|craft)/i.test(sLower)) {
+      headerSupplier = sender;
+    } else if (/(?:buyer|export|apex|kumar|raghavendra|client|merchant|sourcing)/i.test(sLower)) {
+      headerBuyer = sender;
+    }
+  }
+
+  // Greetings e.g. "Hi Ravi", "Dear Ramesh", "Namaskara Manjunath", "Namaste Raghavendra"
   const greetingMatch =
-    cleanedText.match(/(?:hi|hello|hey|dear)\s+([A-Z][a-zA-Z0-9_\s]{1,20}?)(?:,|\.|\n|$)/i) ||
+    cleanedText.match(/(?:hi|hello|hey|dear|namaskara|namaste|vanakkam)\s+([A-Z][a-zA-Z0-9_\s]{1,20}?)(?:,|\.|\n|$)/i) ||
     cleanedText.match(/^["']?\s*([A-Z][a-zA-Z0-9_]{1,20})(?:,|\.|\s+so\b|\s+please\b)/im);
 
-  const addresseeName = partyBLabelMatch ? partyBLabelMatch[1].trim() : (greetingMatch ? greetingMatch[1].trim() : '');
-  const explicitSenderName = partyALabelMatch ? partyALabelMatch[1].trim() : '';
+  const addresseeName = partyBLabelMatch ? partyBLabelMatch[1].trim() : (headerBuyer || (greetingMatch ? greetingMatch[1].trim() : ''));
+  const explicitSenderName = partyALabelMatch ? partyALabelMatch[1].trim() : (headerSupplier || '');
 
   // Determine roles based on verbs like "I can supply", "I can build", "We will provide" vs "Can you provide"
   const isSenderOffering = /(?:i can supply|i can provide|i can deliver|we can supply|we can provide|we can build|i will create|i will develop)/i.test(lowerText);
@@ -136,9 +150,23 @@ export async function extractTermsRuleBased(
     const chairPattern = cleanedText.match(/(\d+)\s*(?:[a-zA-Z-]+\s+){0,3}(office\s*chairs?|chairs?|tables?|desks?|workstations?|furniture)/i);
     const devPattern = cleanedText.match(/(mobile\s*app|application|website|software|e-commerce\s*app|crm|portal)/i);
     const fabricPattern = cleanedText.match(/(\d+)\s*(meters?|mtrs?|rolls?)\s*(?:of\s*)?([a-zA-Z\s]{3,30})/i);
-    const quantityWithProductMatch = cleanedText.match(/(\b\d+(?:,\d+)?(?:\.\d+)?\s*(?:units?|chairs?|pieces?|pcs?|meters?|mtrs?|boxes?|kg|tons?|laptops?|items?|hours?|pages?)?(?:\s+[a-zA-Z0-9\s-]{2,40})?)/i);
+    const garmentPattern = cleanedText.match(/(\d+(?:,\d+)?)\s*(?:pieces?|pcs?|kurtis?|shirts?|t-shirts?|pants?|units?)\s*(?:of\s+)?([a-zA-Z0-9\s-]+?)(?:\s+for|\s+at|\.|\n|,|$)/i);
+    const quantityWithProductMatch = cleanedText.match(/(\b\d+(?:,\d+)?(?:\.\d+)?\s+(?:units?|chairs?|pieces?|pcs?|meters?|mtrs?|boxes?|kg|tons?|laptops?|items?|hours?|pages?)(?:\s+[a-zA-Z0-9\s-]{2,40})?)/i);
 
-    if (chairPattern) {
+    if (garmentPattern) {
+      quantity = {
+        value: `${garmentPattern[1]} pieces`,
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: garmentPattern[0],
+      };
+      scopeOrProducts = {
+        value: garmentPattern[2].trim(),
+        isExplicit: true,
+        confidence: 'HIGH',
+        excerpt: garmentPattern[0],
+      };
+    } else if (chairPattern) {
       quantity = {
         value: chairPattern[1] + ' units',
         isExplicit: true,
@@ -200,6 +228,7 @@ export async function extractTermsRuleBased(
   const considerationLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:consideration|price|amount|cost|fee|total)s?\s*:\s*([^\n]+)/i);
 
   // Currency & amount patterns: ₹50,000, Rs. 50,000, Rs 50000, 50,000 INR, $5,000, ?50000
+  const totalAmountMatch = cleanedText.match(/(?:total|labour\s*cost|total\s*cost|total\s*amount)\s*(?:will\s*be|is)?\s*(?:₹|rs\.?|inr|\?)?\s*([\d,]+(?:\.\d+)?)/i);
   const inrMatch = 
     cleanedText.match(/(?:₹|rs\.?|inr|\?)\s*([\d,]+(?:\.\d+)?)/i) || 
     cleanedText.match(/([\d,]+(?:\.\d+)?)\s*(?:inr|rupees|\/-)/i) ||
@@ -234,6 +263,14 @@ export async function extractTermsRuleBased(
         excerpt: considerationLineMatch[0],
       };
     }
+  } else if (totalAmountMatch) {
+    currency = 'INR';
+    price = {
+      value: `₹${totalAmountMatch[1]}`,
+      isExplicit: true,
+      confidence: 'HIGH',
+      excerpt: totalAmountMatch[0],
+    };
   } else if (inrMatch) {
     currency = 'INR';
     price = {
@@ -273,6 +310,7 @@ export async function extractTermsRuleBased(
   const payAfterDelivery = cleanedText.match(/(?:you\s*can\s*pay\s*after\s*delivery|pay\s*after\s*delivery|payment\s*upon\s*delivery|cod)/i);
   const advancePayment = cleanedText.match(/(\d{1,3}%\s*advance|\d{1,3}%\s*upfront|advance\s*of\s*[\d,]+|token\s*advance)/i);
   const milestonePayment = cleanedText.match(/(milestone\s*based|milestones?|on\s*completion|net\s*\d+\s*days?)/i);
+  const delayedPayment = cleanedText.match(/(?:payment\s*(?:will\s*be\s*released|kab\s*milega|terms?|hoga)?\s*(?:after|within|around)?\s*[^,\n.]*?(?:\d+\s*days?|baad\s*mein|consignment|delivery))/i);
 
   if (paymentLineMatch) {
     const rawPay = paymentLineMatch[1].trim();
@@ -308,6 +346,13 @@ export async function extractTermsRuleBased(
       confidence: 'MEDIUM',
       excerpt: milestonePayment[0],
     };
+  } else if (delayedPayment) {
+    paymentTerms = {
+      value: delayedPayment[0].trim(),
+      isExplicit: true,
+      confidence: 'MEDIUM',
+      excerpt: delayedPayment[0],
+    };
   }
 
   // 5. Delivery Timeline
@@ -320,7 +365,7 @@ export async function extractTermsRuleBased(
   const deliveryLineMatch = cleanedText.match(/(?:^[•\-*]|\n[•\-*]|\b)\s*(?:delivery|timeline|schedule|lead\s*time)s?\s*:\s*([^\n]+)/i);
 
   const deliveryMatch = cleanedText.match(/(?:deliver(?:y|ed)?(?:\s*them)?\s*(?:within|in|by)?\s*(\d+\s*(?:days?|weeks?|months?|business days?))|(?:within|in)\s*(\d+\s*(?:days?|weeks?|months?)))/i);
-  const specificDateMatch = cleanedText.match(/(?:by|before|on)\s*(\d{1,2}(?:st|nd|rd|th)?\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(?:\d{2,4})?)/i);
+  const specificDateMatch = cleanedText.match(/(?:by|before|on|delivery\s*by|deadline\s*is)\s*(?:the\s*)?((?:\d{1,2}(?:st|nd|rd|th)?\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*\d{1,2}(?:st|nd|rd|th)?)(?:\s*,?\s*\d{2,4})?)/i);
 
   if (deliveryLineMatch) {
     const rawDel = deliveryLineMatch[1].trim();
