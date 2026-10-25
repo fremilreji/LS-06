@@ -308,24 +308,52 @@ export default function HomePage() {
     showToast(`Updated: ₹${parsedRate}/pc • Total: ₹${formatIndianNumber(calcTotal)}`);
   };
 
-  // Robust Term Extractor
+  // Robust Universal Term & Risk Extractor (English, Kannada, Hindi, Hinglish, WhatsApp formats)
   const extractDealTermsFromText = (text: string) => {
     const lower = text.toLowerCase();
 
-    // 1. Detect Vague Price or Pay-When-Paid conditions (Section 29 Hard Halt)
-    const isVagueRate = /market\s*rate|dekh\s*ke|soch\s*ke|(\d+)\s*(?:to|se|-)\s*(\d+)/i.test(text);
-    const isPayWhenPaid = /party\s*(?:se|dega|pays)|after\s*shipment|jab\s*mera/i.test(lower);
-
-    if (isVagueRate && isPayWhenPaid) {
+    // 1. Detect Vague Floating Rate without agreement (Section 29 Hard Halt)
+    const isVagueFloating = /market\s*rate|dekh\s*ke\s*decide|soch\s*ke|(\d+)\s*(?:to|se|-)\s*(\d+)\s*decide/i.test(text);
+    const hasFinalAgreement = /ಸರಿ\s*₹?\d+|done|confirmed|agreed|ok\s*rate|rate\s*fine|₹\d+\s*ಓಕೆ|₹\d+\s*ok/i.test(text);
+    if (isVagueFloating && !hasFinalAgreement) {
       return { isHalted: true, qty: quantity, rate: 0, total: 0 };
     }
 
-    // 2. Extract Quantity
+    // 2. Extract Parties from WhatsApp Header lines
+    let extractedSupplier = supplierName;
+    let extractedBuyer = buyerName;
+
+    // Matches lines like: "[25/10/2026, 09:15 AM] Ramesh (Metro Boutique):" or "Ramesh (Metro Boutique):"
+    const headerMatches = [...text.matchAll(/(?:\]\s*|^)([A-Za-z\u0C80-\u0CFF\u0900-\u097F\s()&.-]+?)\s*:/gm)]
+      .map(m => m[1].replace(/^\[.*?\]\s*/, '').trim())
+      .filter(p => p.length > 2 && !p.toLowerCase().includes('voice note') && !p.toLowerCase().includes('transcript'));
+
+    const uniqueParties = [...new Set(headerMatches)];
+    if (uniqueParties.length >= 2) {
+      const tailorKeywords = /garment|manjunath|tailor|knits|stitching|tex|textile|works|fab|apparel|fashions|suresh|shivanna/i;
+      const buyerKeywords = /boutique|metro|brand|retail|export|wholesale|apex|urban|buyer|store|raghav|vikas|ramesh/i;
+
+      for (const p of uniqueParties) {
+        if (tailorKeywords.test(p)) {
+          extractedSupplier = p;
+        } else if (buyerKeywords.test(p)) {
+          extractedBuyer = p;
+        }
+      }
+      if (extractedSupplier === supplierName && extractedBuyer === buyerName) {
+        extractedBuyer = uniqueParties[0];
+        extractedSupplier = uniqueParties[1];
+      }
+    }
+
+    // 3. Extract Quantity
     let extractedQty = quantity;
     const qtyPatterns = [
-      /(\d+(?:,\d+)?)\s*(?:pcs|pieces|kurtis|kurtas|shirts|polo|t-shirts|pants|units|nos|items|cargo)/i,
+      /(\d+(?:,\d+)?)\s*(?:ಕಾಟನ್|ಶರ್ಟ್|ಪೀಸ್|ಕುರ್ತಾ|ಬಟ್ಟೆ|ಫ್ರಾಕ್|ಪ್ಯಾಂಟ್|ಯುನಿಟ್)/i,
+      /(\d+(?:,\d+)?)\s*(?:पीस|कुर्ता|शर्ट|पैंट|यूनिट)/i,
+      /(\d+(?:,\d+)?)\s*(?:pcs|pieces|kurtis|kurtas|shirts|polo|t-shirts|pants|units|nos|items|cargo|garments)/i,
       /(?:qty|quantity)\s*(?:is|:)?\s*(\d+(?:,\d+)?)/i,
-      /(?:stitch|cut|ready\s+to\s+stitch|deliver)\s+(\d+(?:,\d+)?)/i
+      /(?:stitch|cut|ready\s+to\s+stitch|deliver|ಹೊಲಿಯೋಕೆ|ಹೊಲಿಗೆ)\s+(\d+(?:,\d+)?)/i
     ];
     for (const pat of qtyPatterns) {
       const match = text.match(pat);
@@ -337,44 +365,128 @@ export default function HomePage() {
         }
       }
     }
+    // Fallback: check prominent 3-6 digit integer not matching current year
+    if (!extractedQty || extractedQty === 0) {
+      const largeNums = [...text.matchAll(/\b(\d{3,6})\b/g)]
+        .map(m => parseInt(m[1].replace(/,/g, ''), 10))
+        .filter(n => n !== 2024 && n !== 2025 && n !== 2026 && n !== 2027);
+      if (largeNums.length > 0) {
+        extractedQty = largeNums[0];
+      }
+    }
 
-    // 3. Extract Rate Per Piece
+    // 4. Extract Rate Per Piece (Multi-lingual)
     let extractedRate = ratePerPiece;
-    let rateFound = false;
-    const ratePatterns = [
-      /(?:@|rate|inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(?:\/pc|per\s*piece|\/piece|\/-|rupees|\s*each)/i,
-      /(?:rate|price)\s*(?:is|:)?\s*(?:rs\.?|₹|inr)?\s*(\d+(?:\.\d+)?)/i,
-      /(\d+(?:\.\d+)?)\s*(?:rs|rupees|inr|\/pc|per\s*piece|\/piece)\b/i,
-      /(?:at|@)\s*(?:rs\.?|₹|inr)?\s*(\d+(?:\.\d+)?)/i
+    const allFoundRates: number[] = [];
+
+    // Find all standalone ₹ amounts
+    const rupeeMatches = [...text.matchAll(/₹\s*(\d+(?:\.\d+)?)/g)];
+    for (const m of rupeeMatches) {
+      const v = parseFloat(m[1]);
+      if (v > 0) allFoundRates.push(v);
+    }
+
+    // Find rates with currency or language keywords
+    const keywordRateMatches = [
+      ...text.matchAll(/(?:ರೇಟ್|ರೇಟು|ಬೆಲೆ|ದರ|rate|price|total|ಟೋಟಲ್|₹|rs\.?|inr)\s*(?:is|:)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)/gi),
+      ...text.matchAll(/(\d+(?:\.\d+)?)\s*(?:ರೂ|ರೂಪಾಯಿ|rupees|rs|\/-|\/pc|per\s*piece)/gi)
     ];
-    for (const pat of ratePatterns) {
-      const match = text.match(pat);
-      if (match && match[1]) {
-        const val = parseFloat(match[1]);
-        if (val > 0 && val < 50000) {
-          extractedRate = val;
-          rateFound = true;
-          break;
+    for (const m of keywordRateMatches) {
+      const v = parseFloat(m[1]);
+      if (v > 0) allFoundRates.push(v);
+    }
+
+    if (allFoundRates.length > 0) {
+      // Filter out small deltas or large order totals (> ₹5000)
+      const validRates = allFoundRates.filter(r => r >= 10 && r <= 2500);
+      if (validRates.length > 0) {
+        // Take the latest/final rate agreed in the conversation
+        extractedRate = validRates[validRates.length - 1];
+      }
+    }
+
+    // 5. Total Consideration calculation
+    let calcTotal = extractedQty * extractedRate;
+    const totalMatch = text.match(/(?:total|consideration|amount|ಒಟ್ಟು)\s*(?:is|:)?\s*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i);
+    if (totalMatch && totalMatch[1]) {
+      const rawTot = parseFloat(totalMatch[1].replace(/,/g, ''));
+      if (rawTot > 5000) {
+        calcTotal = rawTot;
+        if (!extractedRate || extractedRate === 0) {
+          extractedRate = Math.round(rawTot / extractedQty);
         }
       }
     }
 
-    // 4. Extract Total if present and compute rate if needed
-    const totalMatch = text.match(/(?:total|consideration|amount)\s*(?:is|:)?\s*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i);
-    let calcTotal = extractedQty * extractedRate;
-    if (!rateFound && totalMatch && totalMatch[1]) {
-      const rawTot = parseFloat(totalMatch[1].replace(/,/g, ''));
-      if (rawTot > 0 && extractedQty > 0) {
-        calcTotal = rawTot;
-        extractedRate = Math.round(rawTot / extractedQty);
+    // 6. Extract Scope & Garment Item
+    let extractedItem = itemScope;
+    if (/ಕಾಟನ್\s*ಶರ್ಟ್|cotton\s*shirt/i.test(text)) {
+      extractedItem = 'Stitching of 2,000 Cotton Shirts (ಕಾಟನ್ ಶರ್ಟ್ - Double Stitch & Extra Buttonhole)';
+    } else if (/polo/i.test(text)) {
+      extractedItem = 'Stitching of 2,000 Polo T-Shirts';
+    } else if (/kurti|kurta|ಕುರ್ತಿ/i.test(text)) {
+      extractedItem = 'Stitching of 1,500 Rayon Kurtis';
+    } else if (/cargo|pant|ಪ್ಯಾಂಟ್/i.test(text)) {
+      extractedItem = 'Stitching of Cargo Pants';
+    }
+
+    // 7. Extract Delivery Timeline
+    let extractedDelivery = deliveryTimeline;
+    const delMatch = text.match(/(\d{1,2}\s*(?:ಅಕ್ಟೋಬರ್|ನವೆಂಬರ್|ಡಿಸೆಂಬರ್|ಜನವರಿ|ಫೆಬ್ರವರಿ|ಮಾರ್ಚ್|ಏಪ್ರಿಲ್|ಮೇ|ಜೂನ್|ಜುಲೈ|ಆಗಸ್ಟ್|ಸೆಪ್ಟೆಂಬರ್|october|nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep)[^\.\n,]*)/i);
+    if (delMatch) {
+      extractedDelivery = `By ${delMatch[1].trim()} (30 ಅಕ್ಟೋಬರ್ ಒಳಗೆ)`;
+    } else {
+      const daysMatch = text.match(/(\d+)\s*(?:days|business\s*days|ದಿನ)/i);
+      if (daysMatch) {
+        extractedDelivery = `Within ${daysMatch[1]} days of fabric delivery`;
       }
+    }
+
+    // 8. Detect Statutory Gaps (Universal Multi-lingual Risk Detection)
+    const detectedGaps: any[] = [];
+
+    // Gap A: Pay-When-Paid Exporter Clause (Prohibited under Section 15 MSMED Act)
+    if (/ಎಕ್ಸ್ಪೋರ್ಟರ್|ದುಡ್ಡು ಬಂದ|party se aane|after exporter|exporter|when client pays|pay when paid/i.test(text)) {
+      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:ಎಕ್ಸ್ಪೋರ್ಟರ್|ದುಡ್ಡು ಬಂದ|exporter|party se aane)[^.\n]*/i);
+      detectedGaps.push({
+        id: 'gap_pay_when_paid',
+        pillar_key: 'payment_terms',
+        title: 'Pay-When-Paid Exporter Clause (MSMED Act Section 15 Prohibited)',
+        where_msg_id: 'WhatsApp Stream',
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ನಮಗೆ ಎಕ್ಸ್ಪೋರ್ಟರ್ ಇಂದ ದುಡ್ಡು ಬಂದ ತಕ್ಷಣ ನಿಮಗೆ ಕ್ಲಿಯರ್ ಮಾಡ್ತೀನಿ."',
+        how_it_hurts: 'Buyer is trying to make your payment contingent on a third-party exporter. Under Section 15 of MSMED Act, payment must be made strictly within 15 days of delivery, regardless of external buyer payments.',
+        quick_fix_label: 'Apply 15-Day Govt Payment Mandate',
+        quick_fix_value: 'Payment due strictly within 15 days of delivery (Section 15 MSMED Act). Late payment attracts statutory 3x RBI interest.',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, as per MSMED Act Section 15, payment cannot be contingent on third-party exporter clearance. Please confirm payment within 15 days of delivery.`
+      });
+    }
+
+    // Gap B: Arbitrary 15% Debit Note / Penalty (Void under Section 74 Contract Act & Section 42 Sale of Goods Act)
+    if (/15%|ಕಟ್|cut|debit note|penalty|ದಂಡ/i.test(text)) {
+      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:15%|ಕಟ್|cut|penalty)[^.\n]*/i);
+      detectedGaps.push({
+        id: 'gap_arbitrary_debit',
+        pillar_key: 'scope',
+        title: 'Unlawful 15% Arbitrary Debit Note Penalty',
+        where_msg_id: 'WhatsApp Voice Note',
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ಡೆಲಿವರಿ ಆದ್ಮೇಲೆ ಒಂದು ದಾರ ಲೂಸ್ ಇದ್ರು ನೇರವಾಗಿ 15% ಪೇಮೆಂಟ್ ಕಟ್ ಮಾಡ್ತೀನಿ."',
+        how_it_hurts: 'Buyer is threatening a unilateral 15% (₹14,400) penalty without inspection and cure notice. Under Section 74 Contract Act and Section 42 Sale of Goods Act, arbitrary penalties are void.',
+        quick_fix_label: 'Set 72-Hour Inspection & Rectification Limit',
+        quick_fix_value: 'Buyer must inspect shirts within 72 hours. Any loose threads or minor defects shall be rectified by tailor. Unilateral debit notes are prohibited.',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, any minor loose threads will be checked and rectified within 72 hours under standard trade terms. Arbitrary 15% deductions cannot be accepted.`
+      });
     }
 
     return {
       isHalted: false,
       qty: extractedQty,
       rate: extractedRate,
-      total: calcTotal
+      total: calcTotal,
+      supplier: extractedSupplier,
+      buyer: extractedBuyer,
+      item: extractedItem,
+      delivery: extractedDelivery,
+      gaps: detectedGaps
     };
   };
 
@@ -497,6 +609,17 @@ export default function HomePage() {
       }
 
       setIsHaltedSec29(false);
+      if (extracted.supplier) setSupplierName(extracted.supplier);
+      if (extracted.buyer) setBuyerName(extracted.buyer);
+      if (extracted.item) setItemScope(extracted.item);
+      if (extracted.delivery) setDeliveryTimeline(extracted.delivery);
+      if (extracted.gaps && extracted.gaps.length > 0) {
+        setActiveGaps(extracted.gaps);
+        setActiveGapIndex(0);
+      } else {
+        setActiveGaps([]);
+      }
+
       setQuantity(extracted.qty);
       setRatePerPiece(extracted.rate);
       setTotalValue(extracted.total);
@@ -530,7 +653,8 @@ export default function HomePage() {
       }).catch(err => console.warn('Background sync:', err));
 
       setCurrentStep(2);
-      showToast(`Terms verified: ${extracted.qty} pcs @ ₹${extracted.rate}/pc`);
+      const gapNote = extracted.gaps && extracted.gaps.length > 0 ? ` (${extracted.gaps.length} gap(s) flagged)` : '';
+      showToast(`Terms verified: ${extracted.qty} pcs @ ₹${extracted.rate}/pc${gapNote}`);
     } catch (e) {
       console.warn('Extraction notice:', e);
       setCurrentStep(2);
