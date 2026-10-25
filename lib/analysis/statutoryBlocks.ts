@@ -37,7 +37,7 @@ export function checkStatutoryExclusions(rawText: string, title?: string): Statu
   }
 
   // 2. Power of Attorney - First Schedule, Item 2
-  const poaMatches = combined.match(/\b(power\s*of\s*attorney|general\s*power\s*of\s*attorney|special\s*power\s*of\s*attorney|\bgpa\b|\bspa\b|authorise\s*to\s*sell\s*property|appoint\s*as\s*attorney)\b/i);
+  const poaMatches = combined.match(/\b(power\s*of\s*attorney|general\s*power\s*of\s*attorney|special\s*power\s*of\s*attorney|\bgpa\s*deed\b|\bspa\s*deed\b|authorise\s*to\s*sell\s*property|appoint\s*as\s*attorney)\b/i);
   if (poaMatches) {
     return {
       isBlocked: true,
@@ -63,8 +63,8 @@ export function checkStatutoryExclusions(rawText: string, title?: string): Statu
   }
 
   // 4. Wills & Testamentary Dispositions - First Schedule, Item 4
-  const willMatches = combined.match(/\b(will|testament|codicil|testamentary|bequeath|inheritance\s*deed)\b/i);
-  if (willMatches && !combined.includes('will supply') && !combined.includes('will deliver') && !combined.includes('will pay') && !combined.includes('will do')) {
+  const willMatches = combined.match(/\b(last\s*will(?:\s*and\s*testament)?|living\s*will|make\s*a\s*will|draft\s*a\s*will|my\s*will\b|probate\s*(?:of\s*will)?|testamentary\s*(?:disposition|instrument|deed|trust)|codicil|bequeath|inheritance\s*deed)\b/i);
+  if (willMatches) {
     return {
       isBlocked: true,
       category: 'FIRST_SCHEDULE_WILL',

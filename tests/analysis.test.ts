@@ -3,6 +3,7 @@ import { extractTermsRuleBased } from '../lib/analysis/extractTerms';
 import { generateAgreementDraft } from '../lib/agreement/generateDraft';
 import { computeSha256 } from '../lib/crypto/hash';
 import { exportDraftToPdf } from '../lib/agreement/exportPdf';
+import { checkStatutoryExclusions } from '../lib/analysis/statutoryBlocks';
 
 describe('DealProof AI - Analysis & Extraction Engine', () => {
   const benchmarkChat = 'Hi Ravi, I can supply 100 office chairs for ₹50,000. I can deliver them within 10 days. You can pay after delivery. Please confirm.';
@@ -92,5 +93,17 @@ Please reply 'Confirmed' to lock this version."`;
 
     expect(pdfDoc).toBeDefined();
     expect(pdfDoc.getNumberOfPages()).toBeGreaterThanOrEqual(1);
+  });
+
+  it('correctly allows normal future tense "will" without triggering testamentary will block', () => {
+    const chatWithFutureWill = 'The fabric rolls will be dispatched tomorrow. Stitching rate will be ₹85/pc. Payment will be made in 15 days.';
+    const result = checkStatutoryExclusions(chatWithFutureWill, 'Garment Job Work');
+    expect(result.isBlocked).toBe(false);
+
+    // But actual testamentary will instruments MUST be blocked
+    const actualWill = 'This is my last will and testament. I bequeath all my movable assets to my son.';
+    const willResult = checkStatutoryExclusions(actualWill, 'Last Will');
+    expect(willResult.isBlocked).toBe(true);
+    expect(willResult.category).toBe('FIRST_SCHEDULE_WILL');
   });
 });
