@@ -273,6 +273,25 @@ export default function LegalPaperDocument({
         <span className="text-[10px] text-slate-500 font-mono">Changes if the letter is edited</span>
       </div>
 
+      {/* 3.1 Anti-Fraud Metadata & IP Attribution Lock */}
+      <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="font-bold text-slate-100">Anti-Fraud Metadata &amp; IP Lock</span>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
+              Sec. 11-13 IT Act / Sec. 63 BSA 2023
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-sans">
+            Binds mutual assent to signer Public IP, device User-Agent fingerprint, and timestamp to defeat repudiation fraud (&ldquo;I never agreed / Someone else used my phone&rdquo;).
+          </p>
+        </div>
+        <div className="text-right text-[11px] text-emerald-400 shrink-0 font-semibold font-sans">
+          ✓ SHA-256 Bitstream Sealed
+        </div>
+      </div>
+
       {/* 4. "Ask the other side to confirm" (WhatsApp Speech Bubble) */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
         <div className="flex items-center justify-between">
