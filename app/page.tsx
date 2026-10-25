@@ -1936,10 +1936,11 @@ export default function HomePage() {
                 <div className="text-right">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Valid Sec 10A IT Act</span>
+                    <span>Electronic Assent Recorded (Sec 10A IT Act)</span>
                   </span>
-                  <div className="text-[10px] text-amber-800 font-semibold mt-1">Stamp Duty: Unstamped Electronic Memorandum</div>
-                  <div className="text-[9.5px] text-zinc-500 font-sans">Karnataka Stamp Act Art. 5: ~₹100 Works Contract Duty (Curable under <em>In Re: Interplay, 2023</em>)</div>
+                  <div className="text-[10px] text-amber-800 font-semibold mt-1">Stamp Duty: Unstamped Electronic Memorandum (Duty Unpaid)</div>
+                  <div className="text-[9.5px] text-zinc-500 font-sans">Karnataka Stamp Act Art. 5(i-d): ₹500 Works Contract Duty (Amended Feb 2024; Curable under <em>In Re: Interplay, 2023</em>)</div>
+                  <div className="text-[9px] text-zinc-400 font-sans italic">Enforceability subject to verified consent, authority &amp; compliance with applicable law</div>
                 </div>
               </div>
 
@@ -1953,7 +1954,7 @@ export default function HomePage() {
                     <div className="text-emerald-700 font-medium mt-0.5">✓ Active Udyam Registration — Eligible under <em>Silpi Industries</em> for MSMED Act Provisions</div>
                   ) : (
                     <div className="text-amber-800 font-medium mt-0.5 text-[11px] leading-tight">
-                      ⚠️ Registration Pending: Self-declared micro unit. Under <em>Silpi Industries (2021)</em>, statutory MSMED Act remedies require active registration on date of contract/supply; enforced as contractual covenant under Contract Act.
+                      ⚠️ Registration Pending: Self-declared micro unit. Under <em>Silpi Industries v. KSRTC (2021)</em>, statutory MSMED Act remedies require active Udyam registration on or before the date of entering into the contract / commencement of supplies; pending registration, enforced as binding contractual covenants under Indian Contract Act, 1872.
                     </div>
                   )}
                 </div>
@@ -1979,7 +1980,7 @@ export default function HomePage() {
                     1.2 <strong>Bailment of Fabric (Sec 150–152 Indian Contract Act, 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes a statutory duty of ordinary prudence and safe custody (Section 151 ICA), but is not liable for pre-existing latent fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
                   </p>
                   <p className="text-zinc-700 leading-relaxed">
-                    1.3 <strong>Contractual 72-Hour Inspection &amp; Rework Protocol:</strong> Defining a reasonable examination period under Section 42 of the Sale of Goods Act, 1930, the parties agree to a contractual inspection window of 72 hours from physical delivery for observable stitching defects. The Buyer shall notify the Job-Worker in writing with photo/sample evidence within 72 hours. Upon timely notification, the Job-Worker shall have an exclusive right of 7 business days to cure, rework, or rectify defective units at Job-Worker&apos;s cost. Retention of goods beyond 72 hours without written objection constitutes deemed acceptance of observable workmanship, barring arbitrary unilateral debit notes, without prejudice to statutory remedies for latent fabric defects.
+                    1.3 <strong>Contractual 72-Hour Inspection &amp; Rework Protocol:</strong> Defining a reasonable examination period under Section 42 of the Sale of Goods Act, 1930, the parties agree to a contractual inspection window of 72 hours from physical delivery for observable stitching and finishing defects. The Buyer shall notify the Job-Worker in writing with photo/sample evidence within 72 hours of delivery. Upon timely notification, the Job-Worker shall have an exclusive right of 7 business days to inspect and cure, rework, or rectify defective units at Job-Worker&apos;s cost. Retention of goods beyond 72 hours without written objection constitutes deemed acceptance of observable workmanship, barring arbitrary unilateral debit notes, without waiving or extinguishing Buyer&apos;s statutory remedies for latent stitching defects, gross negligent workmanship, or hidden fabric defects governed by bailment standards under the Indian Contract Act, 1872.
                   </p>
                 </div>
 
@@ -1992,7 +1993,7 @@ export default function HomePage() {
                     The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
                   <p className="mt-1 text-zinc-600 text-xs leading-relaxed">
-                    <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business expense deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds valid micro/small enterprise registration at the date of supply (*Silpi Industries*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
+                    <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business expense deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
                   </p>
                 </div>
 
@@ -2007,7 +2008,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Clause 4: Payment */}
-                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1">
+                <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
                     4. Agreed Payment Terms &amp; MSMED Act Conditional Statutory Notice
                   </div>
@@ -2015,7 +2016,10 @@ export default function HomePage() {
                     4.1 <strong>Contractual Payment Timeline:</strong> Payment is due strictly within <strong>15 days</strong> of delivery, as agreed between the parties (well within the statutory 45-day maximum outer limit permitted under Section 15 of the MSMED Act, 2006).
                   </p>
                   <p className="text-zinc-700 text-xs leading-relaxed">
-                    4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration at the time of supply (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed 15-day timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 of the MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC). Pending verified registration, failure to remit payment within 15 days constitutes a breach of contract entitling the Job-Worker to ordinary contractual interest and damages under Section 73 of the Indian Contract Act, 1872.
+                    4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed 15-day timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 of the MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC).
+                  </p>
+                  <p className="text-zinc-700 text-xs leading-relaxed">
+                    4.3 <strong>Contractual Default Interest (Pending MSME Registration):</strong> In the event statutory MSMED Act remedies are inapplicable due to pending Udyam registration, default beyond the agreed 15-day timeline shall attract an agreed commercial interest rate of <strong>18% per annum</strong> from the due date until full realization, alongside any damages and costs legally recoverable for breach of contract under Section 73 of the Indian Contract Act, 1872.
                   </p>
                 </div>
 
@@ -2306,10 +2310,10 @@ export default function HomePage() {
               {/* Legal Operational & Stamping Notice */}
               <div className="pt-4 border-t border-zinc-200 text-[10px] text-zinc-600 leading-normal space-y-1">
                 <div>
-                  <strong>Legal Operational &amp; Stamping Notice:</strong> This document is an unstamped electronic transaction memorandum executed under Section 10A of the Information Technology Act, 2000. Under Article 5 of the Karnataka Stamp Act, 1957, garment job-work contracts attract an estimated ₹100 nominal stamp duty. Pursuant to the 7-judge Constitution Bench ruling of the Supreme Court in <em>In Re: Interplay (2023)</em>, non-stamping or deficient stamping is a curable procedural defect that does not void the underlying contract; however, this instrument must be impounded and regularized with payment of the requisite duty and penalty before being admitted in evidence in court or arbitration.
+                  <strong>Legal Operational &amp; Stamping Notice:</strong> This document is an unstamped electronic transaction memorandum executed under Section 10A of the Information Technology Act, 2000. Under Article 5(i-d) of the Karnataka Stamp Act, 1957 (as amended in February 2024), works contracts / job-work agreements with consideration up to ₹10 lakh attract ₹500 stamp duty. Pursuant to the 7-judge Constitution Bench ruling of the Supreme Court in <em>In Re: Interplay (2023)</em>, non-stamping or deficient stamping is a curable procedural defect that does not void the underlying contract; however, this instrument must be impounded and regularized with payment of the requisite duty and penalty before being admitted in evidence in court or arbitration.
                 </div>
                 <div>
-                  <strong>MSME Qualification Disclosure (Silpi Industries Precedent):</strong> In accordance with the Supreme Court judgment in <em>Silpi Industries v. Kerala State Road Transport Corporation (2021)</em>, statutory delayed-payment remedies under Sections 15–18 of the MSMED Act, 2006 and the jurisdiction of the Micro and Small Enterprises Facilitation Council (MSEFC) require the supplier to possess an active Udyam registration on or prior to the date of contract / supply. Where registration is pending or unverified, agreed payment terms remain enforceable as binding contractual covenants under the Indian Contract Act, 1872.
+                  <strong>MSME Qualification Disclosure (Silpi Industries Precedent):</strong> In accordance with the Supreme Court judgment in <em>Silpi Industries v. Kerala State Road Transport Corporation (2021)</em>, statutory delayed-payment remedies under Sections 15–18 of the MSMED Act, 2006 and the jurisdiction of the Micro and Small Enterprises Facilitation Council (MSEFC) require the supplier to possess an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies. Where registration is pending or unverified, agreed payment terms remain enforceable as binding contractual covenants under the Indian Contract Act, 1872.
                 </div>
               </div>
 
@@ -2396,6 +2400,16 @@ export default function HomePage() {
                       </div>
                       <div className="text-[10px] text-zinc-500 mt-1 font-sans">
                         Tip for Judges: Paste this string into any SHA-256 calculator (e.g. `echo -n 'payload' | sha256sum`) to verify the digest above.
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-zinc-200">
+                      <div className="font-bold text-zinc-800 mb-1">Prescribed Section 63 BSA, 2023 Evidentiary Certificate Schedule:</div>
+                      <div className="bg-white border border-zinc-200 p-2.5 rounded text-[10px] text-zinc-700 font-sans leading-relaxed space-y-1">
+                        <div className="font-bold text-zinc-900">CERTIFICATE UNDER SECTION 63(4)(c) BHARATIYA SAKSHYA ADHINIYAM, 2023</div>
+                        <div>• <strong>Electronic Record ID:</strong> Deal #{dealId} (Canonical SHA-256: <code className="font-mono bg-zinc-100 px-1">{sha256Digest}</code>)</div>
+                        <div>• <strong>Device &amp; Custody Particulars:</strong> Generated via DealProof Cryptographic Assent Engine. Server/client computing environment operating lawfully and without unauthorized interference.</div>
+                        <div>• <strong>Attribution Trail:</strong> Party A ({supplierName}) In-Unit Terminal Mark at {tailorSignatureRecord?.timestamp_ist || 'Pending'} • Party B ({buyerName}) Direct Assent at {buyerSignatureRecord?.timestamp_ist || 'Pending'}.</div>
+                        <div>• <strong>Integrity Certification:</strong> The canonical structured record reproduced herein has remained tamper-evident from creation to export. Certified by System Administrator under BSA Sec 63.</div>
                       </div>
                     </div>
                   </div>
