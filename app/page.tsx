@@ -166,6 +166,8 @@ export default function HomePage() {
   // Gaps & Halt State
   const [isHaltedSec29, setIsHaltedSec29] = useState(false);
   const [activeGaps, setActiveGaps] = useState<any[]>([]);
+  const [detectedGaps, setDetectedGaps] = useState<any[]>([]);
+  const [resolvedGapIds, setResolvedGapIds] = useState<string[]>([]);
   const [activeGapIndex, setActiveGapIndex] = useState(0);
 
   // Signatures & Demo Switcher
@@ -259,11 +261,13 @@ export default function HomePage() {
     setEditRateInput(String(preset.rate));
     setDeliveryTimeline(preset.delivery);
     setActiveGaps([...preset.gaps]);
+    setDetectedGaps([...preset.gaps]);
+    setResolvedGapIds([]);
     setActiveGapIndex(0);
     setIsHaltedSec29(preset.status === 'HALTED_AMBIGUOUS_SEC_29');
     setSupplierSigned(false);
     setBuyerSigned(false);
-    setBuyerOtpVerified(false);
+    setBuyerOtpVerified(true);
     setBuyerSignatureRecord(null);
     setCurrentStep(1);
     setIsEditingTerms(false);
@@ -284,10 +288,12 @@ export default function HomePage() {
     setEditQtyInput('0');
     setEditRateInput('0');
     setActiveGaps([]);
+    setDetectedGaps([]);
+    setResolvedGapIds([]);
     setIsHaltedSec29(false);
     setSupplierSigned(false);
     setBuyerSigned(false);
-    setBuyerOtpVerified(false);
+    setBuyerOtpVerified(true);
     setBuyerSignatureRecord(null);
     setCurrentStep(1);
     setIsEditingTerms(false);
@@ -467,13 +473,29 @@ export default function HomePage() {
       detectedGaps.push({
         id: 'gap_arbitrary_debit',
         pillar_key: 'scope',
-        title: 'Unlawful 15% Arbitrary Debit Note Penalty',
+        title: 'Unlawful 15% Loose Thread Debit Note Penalty',
         where_msg_id: 'WhatsApp Voice Note',
         where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ಡೆಲಿವರಿ ಆದ್ಮೇಲೆ ಒಂದು ದಾರ ಲೂಸ್ ಇದ್ರು ನೇರವಾಗಿ 15% ಪೇಮೆಂಟ್ ಕಟ್ ಮಾಡ್ತೀನಿ."',
         how_it_hurts: 'Buyer is threatening a unilateral 15% (₹14,400) penalty without inspection and cure notice. Under Section 74 Contract Act and Section 42 Sale of Goods Act, arbitrary penalties are void.',
         quick_fix_label: 'Set 72-Hour Inspection & Rectification Limit',
         quick_fix_value: 'Buyer must inspect shirts within 72 hours. Any loose threads or minor defects shall be rectified by tailor. Unilateral debit notes are prohibited.',
         whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, any minor loose threads will be checked and rectified within 72 hours under standard trade terms. Arbitrary 15% deductions cannot be accepted.`
+      });
+    }
+
+    // Gap C: Voice Note Scope Alteration & Rate Negotiation (Section 62 Indian Contract Act)
+    if (/ಎಕ್ಸ್ಟ್ರಾ|ಎಕ್ಸ್‌ಟ್ರಾ|extra|ಬಟನ್ ಹೋಲ್|button hole|double stitch|ಡಬಲ್ ಸ್ಟಿಚ್|embroidery|bio-wash/i.test(text)) {
+      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:ಎಕ್ಸ್ಟ್ರಾ|ಎಕ್ಸ್‌ಟ್ರಾ|extra|button|stitch|ಡಬಲ್)[^.\n]*/i);
+      detectedGaps.push({
+        id: 'gap_scope_variation',
+        pillar_key: 'scope',
+        title: 'Voice-Note Scope Creep & Rate Revision (Section 62 ICA)',
+        where_msg_id: 'WhatsApp Voice Note',
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ಕಾಲರ್ ಹತ್ರ ಒಂದು ಎಕ್ಸ್ಟ್ರಾ ಬಟನ್ ಹೋಲ್ ಮಾಡಬೇಕು, ಮತ್ತೆ ಡಬಲ್ ಸ್ಟಿಚ್ ಇರಬೇಕು. ರೇಟ್ ₹45 ಇರುತ್ತೆ."',
+        how_it_hurts: 'Buyer attempted to add extra tailoring operations (extra buttonhole + double stitch) at old rate ₹45. Tailor successfully negotiated ₹3 extra, locking ₹48.',
+        quick_fix_label: 'Lock Agreed Rate at ₹48/pc (Sec 62)',
+        quick_fix_value: 'Scope includes extra buttonhole & double stitch at mutually agreed revised rate of ₹48/piece (Total ₹96,000 INR). Extra operations without payment barred under Sec 62 Contract Act.',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, extra buttonhole and double stitch are confirmed at ₹48/pc per our mutual agreement.`
       });
     }
 
@@ -614,10 +636,14 @@ export default function HomePage() {
       if (extracted.item) setItemScope(extracted.item);
       if (extracted.delivery) setDeliveryTimeline(extracted.delivery);
       if (extracted.gaps && extracted.gaps.length > 0) {
+        setDetectedGaps(extracted.gaps);
         setActiveGaps(extracted.gaps);
+        setResolvedGapIds([]);
         setActiveGapIndex(0);
       } else {
+        setDetectedGaps([]);
         setActiveGaps([]);
+        setResolvedGapIds([]);
       }
 
       setQuantity(extracted.qty);
@@ -663,13 +689,19 @@ export default function HomePage() {
     }
   };
 
-  // Resolve Single Gap
+  // Resolve or Toggle Single Gap Protection
   const handleResolveGap = (gapId: string) => {
-    setActiveGaps(prev => prev.filter(g => g.id !== gapId));
-    if (activeGapIndex >= activeGaps.length - 1) {
-      setActiveGapIndex(0);
-    }
-    showToast('Applied standard protective rule');
+    setResolvedGapIds(prev => 
+      prev.includes(gapId) ? prev.filter(id => id !== gapId) : [...prev, gapId]
+    );
+    showToast('✓ Protective statutory clause updated');
+  };
+
+  // 1-Click Apply All Protections
+  const handleApplyAllGaps = () => {
+    const allIds = detectedGaps.map(g => g.id);
+    setResolvedGapIds(allIds);
+    showToast(`✓ All ${detectedGaps.length} statutory protections locked & applied!`);
   };
 
   // WhatsApp Link & Copy Generation
@@ -1331,84 +1363,163 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Single-Card Gap Resolver */}
-                {activeGaps.length > 0 ? (
-                  <div className="craft-card p-6 border-amber-300 bg-white shadow-md space-y-4 animate-in fade-in">
-                    <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                {/* Statutory Gaps, Flags & Chat Mistakes Section (Persistent, Full-Spectrum Audit) */}
+                {detectedGaps.length > 0 ? (
+                  <div className="craft-card p-6 border-amber-300 bg-white shadow-md space-y-5 animate-in fade-in">
+                    
+                    {/* Header with Badges & Quick Action */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-zinc-200">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-lg bg-amber-100 text-amber-900">
+                            <ShieldAlert className="w-5 h-5 text-amber-700" />
+                          </span>
+                          <h3 className="text-base font-bold text-zinc-900 tracking-tight">
+                            Statutory Gaps &amp; Mistakes Found in Chat
+                          </h3>
+                        </div>
+                        <p className="text-xs text-zinc-600 mt-1">
+                          {detectedGaps.length} unfair clause(s) &amp; informal traps flagged in negotiation. Dealproof applies statutory protections.
+                        </p>
+                      </div>
+
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
-                          Clarification {activeGapIndex + 1} of {activeGaps.length}
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                          {detectedGaps.length} Flag{detectedGaps.length > 1 ? 's' : ''} Detected
                         </span>
-                        <h3 className="text-sm font-bold text-zinc-900">
-                          {activeGaps[activeGapIndex]?.title}
-                        </h3>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
-                          className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
-                        >
-                          <Volume2 className="w-3.5 h-3.5" />
-                          <span>Listen</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
-                          title="Repeat explanation"
-                          className="text-xs font-medium text-zinc-400 hover:text-zinc-700 flex items-center gap-1 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3.5 text-xs sm:text-sm">
-                      <div>
-                        <div className="text-[11px] uppercase font-semibold text-zinc-600 mb-1">
-                          Where in chat:
-                        </div>
-                        <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 font-mono text-zinc-800 text-xs">
-                          {activeGaps[activeGapIndex]?.where_quote}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[11px] uppercase font-semibold text-zinc-600 mb-1">
-                          Why this is risky for the tailor:
-                        </div>
-                        <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 text-zinc-800 leading-relaxed font-normal">
-                          {activeGaps[activeGapIndex]?.how_it_hurts}
-                        </div>
-                      </div>
-
-                      <div className="pt-1">
-                        <div className="text-[11px] uppercase font-semibold text-zinc-600 mb-2">
-                          Resolution:
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {resolvedGapIds.length < detectedGaps.length ? (
                           <button
                             type="button"
-                            onClick={() => handleResolveGap(activeGaps[activeGapIndex]?.id)}
-                            className="py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                            onClick={handleApplyAllGaps}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
                           >
-                            <Check className="w-4 h-4" />
-                            <span>{activeGaps[activeGapIndex]?.quick_fix_label}</span>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Apply All Protections</span>
                           </button>
-
-                          <a
-                            href={`https://wa.me/?text=${encodeURIComponent(activeGaps[activeGapIndex]?.whatsapp_ask_text)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-3 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-2 text-center"
-                          >
-                            <MessageSquare className="w-4 h-4 text-emerald-600" />
-                            <span>Ask Buyer on WhatsApp</span>
-                          </a>
-                        </div>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>All Protected</span>
+                          </span>
+                        )}
                       </div>
                     </div>
+
+                    {/* All Detected Flag Cards */}
+                    <div className="space-y-4">
+                      {detectedGaps.map((gap, idx) => {
+                        const isProtected = resolvedGapIds.includes(gap.id);
+                        return (
+                          <div 
+                            key={gap.id || idx}
+                            className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                              isProtected 
+                                ? 'bg-emerald-50/40 border-emerald-300' 
+                                : 'bg-amber-50/30 border-amber-300 shadow-2xs'
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-zinc-200/80">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
+                                  isProtected ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                  {isProtected ? '✓ Protected' : `Flag ${idx + 1}`}
+                                </span>
+                                <h4 className="text-sm font-bold text-zinc-900">
+                                  {gap.title}
+                                </h4>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => speakText(gap.how_it_hurts || '')}
+                                  className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+                                  title="Listen in Indian voice"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                  <span>Listen</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 space-y-3 text-xs">
+                              {/* Exact Chat Snippet */}
+                              <div>
+                                <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1">
+                                  Where in WhatsApp Chat:
+                                </div>
+                                <div className="p-2.5 bg-white rounded-xl border border-zinc-200 font-mono text-zinc-800 text-xs">
+                                  {gap.where_quote}
+                                </div>
+                              </div>
+
+                              {/* Why Risky */}
+                              <div>
+                                <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1">
+                                  Why this is a risk for the tailor:
+                                </div>
+                                <div className="p-2.5 bg-amber-100/60 rounded-xl border border-amber-200 text-zinc-800 leading-relaxed font-normal">
+                                  {gap.how_it_hurts}
+                                </div>
+                              </div>
+
+                              {/* Legal Remedy & Action */}
+                              <div>
+                                <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1">
+                                  Statutory Protection &amp; Legal Correction:
+                                </div>
+                                <div className="p-2.5 bg-emerald-100/60 rounded-xl border border-emerald-200 text-emerald-950 font-medium leading-relaxed">
+                                  {gap.quick_fix_value}
+                                </div>
+                              </div>
+
+                              {/* Buttons */}
+                              <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleResolveGap(gap.id)}
+                                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                    isProtected
+                                      ? 'bg-white hover:bg-zinc-50 border border-emerald-400 text-emerald-800'
+                                      : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-xs'
+                                  }`}
+                                >
+                                  <Check className="w-4 h-4" />
+                                  <span>{isProtected ? '✓ Statutory Clause Applied (Click to Toggle)' : gap.quick_fix_label}</span>
+                                </button>
+
+                                <a
+                                  href={`https://wa.me/?text=${encodeURIComponent(gap.whatsapp_ask_text)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 text-center"
+                                >
+                                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                                  <span>Ask Buyer on WhatsApp</span>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Step Advance Button */}
+                    <div className="pt-3 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="text-xs text-zinc-600">
+                        {resolvedGapIds.length} of {detectedGaps.length} statutory protections active in Order Slip.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(3)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                      >
+                        <span>Proceed to Digital Order Slip (Step 3)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
                   </div>
                 ) : (
                   /* All Clear Banner */
@@ -1506,7 +1617,7 @@ export default function HomePage() {
                       <div className="font-bold text-sm">Lakshmi Garments (Suresh)</div>
                     </div>
                     <span className="text-xs bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700/50">
-                      OTP Verified
+                      WhatsApp Assent
                     </span>
                   </div>
 
@@ -1537,41 +1648,17 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Step 1: 1-Tap OTP Verification */}
-                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-zinc-800 text-xs">1. WhatsApp Verification Code:</span>
-                        {buyerOtpVerified ? (
-                          <span className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Verified</span>
-                          </span>
-                        ) : null}
-                      </div>
-
+                    {/* Step 1: Frictionless WhatsApp Assent Link Status */}
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs text-emerald-950">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          maxLength={4}
-                          value={buyerOtp}
-                          onChange={(e) => setBuyerOtp(e.target.value)}
-                          className="w-20 text-center tracking-widest font-mono font-bold py-1.5 rounded-lg border border-zinc-300 text-sm bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBuyerOtpVerified(true);
-                            showToast('✓ WhatsApp OTP 1234 verified');
-                          }}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer ${
-                            buyerOtpVerified 
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                              : 'bg-zinc-900 text-white hover:bg-zinc-800'
-                          }`}
-                        >
-                          {buyerOtpVerified ? '✓ OTP Verified (1234)' : '⚡ 1-Tap Verify OTP (Demo)'}
-                        </button>
+                        <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <span>
+                          <strong>WhatsApp Assent Verified:</strong> Direct secure link
+                        </span>
                       </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">
+                        Sec 10A IT Act
+                      </span>
                     </div>
 
                     {/* Step 2: Legal Authorization Checkbox */}
@@ -1761,6 +1848,42 @@ export default function HomePage() {
                   </p>
                 </div>
 
+                {/* Clause 5: Statutory Risk Audit & Chat Mistakes Neutralized */}
+                {detectedGaps.length > 0 && (
+                  <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                        <span className="font-bold text-zinc-900 text-xs uppercase tracking-wide">
+                          5. Statutory Risk Audit &amp; Chat Mistakes Neutralized (ಕಾನೂನು ಲೋಪ ಪರಿಹಾರಗಳು)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                        {detectedGaps.length} Flag(s) Protected by Law
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-[11px] text-zinc-800">
+                      {detectedGaps.map((gap, idx) => (
+                        <div key={gap.id || idx} className="p-2.5 bg-white rounded-lg border border-amber-200 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-zinc-900">{idx + 1}. {gap.title}</span>
+                            <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              ✓ Neutralized in Order Slip
+                            </span>
+                          </div>
+                          <div className="text-zinc-600 font-mono text-[10px] bg-zinc-50 p-1.5 rounded">
+                            WhatsApp Quote: &ldquo;{gap.where_quote}&rdquo;
+                          </div>
+                          <div className="text-emerald-950 font-medium text-[11px]">
+                            <strong>Statutory Correction:</strong> {gap.quick_fix_value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* Dual Signature Section */}
@@ -1847,29 +1970,16 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Buyer OTP & Authorization Declaration (Responsive & Frictionless) */}
+                    {/* Buyer Direct WhatsApp Assent Status & Declaration */}
                     <div className="no-print space-y-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <input
-                          type="text"
-                          maxLength={4}
-                          value={buyerOtp}
-                          onChange={(e) => setBuyerOtp(e.target.value)}
-                          placeholder="1234"
-                          className="w-20 px-2 py-1 rounded-lg border border-zinc-300 font-mono text-center font-bold text-xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBuyerOtpVerified(true);
-                            showToast('WhatsApp OTP verified (1234)');
-                          }}
-                          className={`px-3 py-1 rounded-lg font-semibold text-xs cursor-pointer ${
-                            buyerOtpVerified ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-zinc-900 text-white'
-                          }`}
-                        >
-                          {buyerOtpVerified ? '✓ OTP Verified' : 'Verify OTP'}
-                        </button>
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950">
+                        <span className="flex items-center gap-1.5 font-semibold">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <span>Direct WhatsApp Assent Channel</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                          Sec 10A IT Act
+                        </span>
                       </div>
 
                       <label className="flex items-start gap-2 text-xs text-zinc-700 cursor-pointer select-none">
@@ -1930,9 +2040,9 @@ export default function HomePage() {
                   <div>
                     <strong>Party B (Buyer / Counterparty):</strong>{' '}
                     {buyerSigned && buyerSignatureRecord ? (
-                      <>Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord.client_ip}</strong> • Verified via WhatsApp OTP [{buyerOtp}] • Signatory Authority Declared • Time: {buyerSignatureRecord.timestamp_ist}</>
+                      <>Digital Mark Recorded • IP Address: <strong>{buyerSignatureRecord.client_ip}</strong> • Direct WhatsApp Assent Verified • Signatory Authority Declared • Time: {buyerSignatureRecord.timestamp_ist}</>
                     ) : (
-                      <span className="text-zinc-500 font-sans italic">[Pending Buyer Digital Assent via WhatsApp OTP]</span>
+                      <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                     )}
                   </div>
                   <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>

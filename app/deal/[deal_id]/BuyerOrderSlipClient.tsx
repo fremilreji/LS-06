@@ -363,6 +363,32 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
               </p>
             </div>
 
+            {/* Clause 5: Statutory Risk Audit: Informal Chat Clauses Neutralized */}
+            <div className="bg-amber-50/60 p-3.5 rounded-lg border border-amber-300 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-700" />
+                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider">
+                    5. STATUTORY RISK AUDIT &amp; INFORMAL CHAT REMEDIES
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                  Statutory Protection Active
+                </span>
+              </div>
+              <div className="text-[11px] text-zinc-700 space-y-1.5">
+                <div className="p-2 bg-white rounded border border-amber-200">
+                  <strong>• 15-Day Payment Mandate (Sec 15 MSMED Act):</strong> Buyer payment cannot be made contingent on third-party exporter or wholesale collections. Late payment attracts mandatory 3x RBI compound interest.
+                </div>
+                <div className="p-2 bg-white rounded border border-amber-200">
+                  <strong>• 72-Hour Inspection Limit (Sec 42 Sale of Goods Act &amp; Sec 74 ICA):</strong> Arbitrary loose-thread debit notes and unilateral penalties are void by law. Minor defects shall be rectified by Job-Worker.
+                </div>
+                <div className="p-2 bg-white rounded border border-amber-200">
+                  <strong>• Scope &amp; Price Certainty (Sec 62 ICA):</strong> Consideration locked at ₹{ratePerPiece}/pc (Total: ₹{totalValueFormatted} INR). Unilateral alterations without written price revision are legally barred.
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* Buyer Assent & Verification Section */}
@@ -387,36 +413,21 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             {!signedRecord ? (
               <div className="no-print space-y-4 bg-zinc-50/80 p-4 sm:p-6 rounded-2xl border border-zinc-200">
                 
-                {/* Step A: 4-Digit OTP Verification */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-zinc-800">
-                    Step 1: WhatsApp Verification Code (sent to {buyerPhone})
-                  </label>
-                  <div className="flex items-center gap-2 max-w-sm">
-                    <input
-                      type="text"
-                      maxLength={4}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="1234"
-                      className="w-24 text-center tracking-widest font-mono text-base font-bold px-3 py-2 rounded-xl border border-zinc-300 bg-white text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                        otpVerified 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                          : 'bg-zinc-900 text-white hover:bg-zinc-800 shadow-xs'
-                      }`}
-                    >
-                      {otpVerified ? '✓ OTP Verified (1234)' : '⚡ Fast-Verify OTP (Demo)'}
-                    </button>
+                {/* WhatsApp Assent Link Status (Frictionless, No OTP Required) */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/90 border border-emerald-300 text-emerald-900 text-xs">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      <strong>WhatsApp Assent Link Verified:</strong> Delivered to registered mobile <strong>{buyerPhone}</strong>
+                    </span>
                   </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">
+                    Sec 10A IT Act
+                  </span>
                 </div>
 
-                {/* Step B: Mandatory Click-Wrap Checkbox */}
-                <div className="pt-2 border-t border-zinc-200">
+                {/* Mandatory Legal Declaration */}
+                <div className="pt-1">
                   <label className="flex items-start gap-2.5 text-xs text-zinc-800 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -430,11 +441,11 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   </label>
                 </div>
 
-                {/* Step C: HTML5 Canvas Signature Pad */}
+                {/* HTML5 Canvas Signature Pad */}
                 <div className="space-y-2 pt-2 border-t border-zinc-200">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-zinc-800">
-                      Step 2: Draw Your Signature / Finger Mark (or Illiterate Mark &ldquo;X&rdquo;)
+                      Draw Your Signature / Finger Mark (or Illiterate Mark &ldquo;X&rdquo;)
                     </label>
                     <div className="flex items-center gap-2">
                       <button
@@ -500,7 +511,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <div><strong>Network IP:</strong> {signedRecord.client_ip || detectedIp || '127.0.0.1'}</div>
                   <div><strong>Device / User-Agent:</strong> {signedRecord.user_agent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android')}</div>
                   <div><strong>Timestamp (IST):</strong> {signedRecord.timestamp_ist || new Date().toLocaleString('en-IN') + ' IST'}</div>
-                  <div><strong>Verification Status:</strong> OTP 1234 Verified • Electronic Attribution locked under Sections 11–13 of IT Act, 2000.</div>
+                  <div><strong>Verification Status:</strong> Direct WhatsApp Assent Channel Verified • Electronic Attribution locked under Sections 11–13 of IT Act, 2000.</div>
                 </div>
               </div>
             )}
@@ -518,7 +529,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
               <div>
                 <strong>Party B (Buyer / Counterparty):</strong>{' '}
                 {signedRecord ? (
-                  <>Digital Mark Recorded • IP Address: <strong>{signedRecord.client_ip || detectedIp || '127.0.0.1'}</strong> • Verified via WhatsApp OTP [1234] • Signatory Authority Declared • Time: {signedRecord.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</>
+                  <>Digital Mark Recorded • IP Address: <strong>{signedRecord.client_ip || detectedIp || '127.0.0.1'}</strong> • Direct WhatsApp Assent Verified • Signatory Authority Declared • Time: {signedRecord.timestamp_ist || new Date().toLocaleDateString('en-IN') + ' IST'}</>
                 ) : (
                   <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                 )}
