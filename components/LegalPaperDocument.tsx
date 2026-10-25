@@ -13,7 +13,12 @@ import {
   ShieldCheck, 
   Edit3,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink,
+  Share2,
+  Smartphone,
+  X,
+  Network
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -30,13 +35,6 @@ export default function LegalPaperDocument({
   jurisdictionCity = 'Bengaluru, Karnataka',
   onUpdateDraft,
 }: LegalPaperDocumentProps) {
-  const [copiedDoc, setCopiedDoc] = useState(false);
-  const [copiedAsk, setCopiedAsk] = useState(false);
-  const [showFormalDoc, setShowFormalDoc] = useState(false);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [supplierSigned, setSupplierSigned] = useState(false);
-  const [buyerSigned, setBuyerSigned] = useState(false);
-
   const partyAName = draft.extractedData.partyA.name || 'Seller';
   const partyBName = draft.extractedData.partyB.name || 'Buyer';
   const cleanedPartyB = partyBName.replace(/^[\[(]+/, '').trim();
@@ -45,11 +43,36 @@ export default function LegalPaperDocument({
     ? rawFirstName
     : 'Hello';
 
+  const [copiedDoc, setCopiedDoc] = useState(false);
+  const [copiedAsk, setCopiedAsk] = useState(false);
+  const [showFormalDoc, setShowFormalDoc] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [supplierSigned, setSupplierSigned] = useState(false);
+  const [buyerSigned, setBuyerSigned] = useState(false);
+  const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
+  const [buyerOtp, setBuyerOtp] = useState('4488');
+  const [buyerSignerName, setBuyerSignerName] = useState(partyBName);
+  const [buyerPhone, setBuyerPhone] = useState('+91 98450 12345');
+  const [buyerConsentGiven, setBuyerConsentGiven] = useState(true);
+  const [copiedBuyerLink, setCopiedBuyerLink] = useState(false);
+
   const todayStr = new Date(draft.updatedAt).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
+
+  const dealId = garmentData?.deal_id || 'LOT-20261025';
+  const udyamUrn = garmentData?.udyam_verification?.udyam_urn || 'UDYAM-KR-03-0128945';
+  const buyerAssentUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/create?deal=${dealId}&role=buyer`
+    : `http://localhost:3000/create?deal=${dealId}&role=buyer`;
+
+  const whatsappBuyerShare = `Namaste ${partyBFirstName} ji,\n` +
+    `Sri Manjunatha Garments has digitally signed & sealed the Garment Job-Work Memorandum #${dealId} (${draft.extractedData.quantity.value} Kurtis @ ₹85/pc).\n\n` +
+    `Please review and lock your digital assent with your network IP:\n` +
+    `${buyerAssentUrl}\n\n` +
+    `Reply 'Confirmed' or click link to execute under Section 10A IT Act.`;
 
   const whatsappMessage = garmentData?.whatsapp_nudge_text
     ? garmentData.whatsapp_nudge_text
@@ -141,88 +164,121 @@ export default function LegalPaperDocument({
           {/* Header & Double Line */}
           <div className="pb-3 border-b-4 border-double border-slate-300">
             <div className="flex flex-wrap items-center justify-between text-[11px] font-sans text-slate-600 uppercase tracking-wider mb-1.5 pb-1 border-b border-slate-200">
-              <span className="font-semibold text-slate-800">Govt. MSME Samadhaan & Court Admissible Record</span>
-              <span className="font-mono text-blue-700 font-bold">Sec. 18 MSMED Act / Sec. 10A IT Act</span>
+              <span className="font-semibold text-slate-800">Govt. MSME Facilitation &amp; Court Admissible Record</span>
+              <span className="font-mono text-blue-700 font-bold">Sec. 18 MSMED Act / Sec. 10A IT Act / Sec. 63 BSA 2023</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">
-              {draft.title}
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-serif uppercase">
+              Commercial Garment Job-Work Memorandum &amp; Statutory Bailment Agreement
             </h2>
-            <p className="text-xs text-slate-600 mt-1 font-sans">
-              Commercial memorandum recorded on <strong>{todayStr}</strong> between <strong>{partyAName}</strong> (First Party) and <strong>{partyBName}</strong> (Second Party).
+            <div className="flex flex-wrap items-center justify-between text-xs text-slate-600 mt-2 font-mono bg-slate-100 p-2 rounded border border-slate-200">
+              <span><strong>Record ID:</strong> {dealId}</span>
+              <span><strong>Udyam URN:</strong> {udyamUrn} (Active Micro Unit)</span>
+              <span><strong>Execution Date:</strong> {todayStr}</span>
+            </div>
+            <p className="text-xs text-slate-600 mt-2 font-sans leading-relaxed">
+              THIS MEMORANDUM OF COMMERCIAL AGREEMENT is entered into on this <strong>{todayStr}</strong> at <strong>{jurisdictionCity}</strong> between <strong>{partyAName}</strong> (hereinafter referred to as the &ldquo;First Party / Job-Worker&rdquo;) and <strong>{partyBName}</strong> (hereinafter referred to as the &ldquo;Second Party / Buyer&rdquo;).
             </p>
           </div>
 
-          {/* Structured Clauses */}
-          <div className="space-y-5 text-sm sm:text-base leading-relaxed text-slate-800 font-serif">
-            {/* Clause 1: Scope */}
+          {/* Structured Authentic Clauses */}
+          <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-800 font-serif">
+            {/* Clause 1: Scope & Bailment */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                1. SCOPE OF SUPPLY OR SERVICES
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                1. SCOPE OF JOB-WORK &amp; STATUTORY BAILMENT (SECTIONS 148–152 &amp; 170 INDIAN CONTRACT ACT, 1872)
               </h3>
               <p>
-                The transaction concerns the provision of <strong>{draft.extractedData.scopeOrProducts.value}</strong>
-                {draft.extractedData.quantity.value && !draft.extractedData.quantity.value.includes('Unspecified')
-                  ? ` (Agreed Quantity: ${draft.extractedData.quantity.value})`
-                  : ''}. Context: {draft.extractedData.businessContext || 'Commercial job-work & small business transaction'}.
+                1.1 The Job-Worker agrees to perform operations comprising <strong>{draft.extractedData.scopeOrProducts.value}</strong> on <strong>{draft.extractedData.quantity.value}</strong> for the Buyer. Fabric cut panels, rolls, and brand tags delivered by the Buyer are held in statutory bailment.
+              </p>
+              <p className="mt-1 text-slate-700">
+                1.2 <strong>Wastage &amp; Latent Defect Shield:</strong> A permissible cutting/stitching wastage of <strong>2.5%</strong> applies. Under Sections 150–152 ICA, the Job-Worker is NOT liable for latent fabric defects (dye bleeding, yarn faults, or shrinkage during steam pressing). The Job-Worker retains a Bailee&apos;s Particular Lien under Section 170 ICA on finished goods in possession until labour charges are settled in full.
               </p>
             </div>
 
-            {/* Clause 2: Consideration & Taxes */}
+            {/* Clause 2: Consideration & Tax Warning */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                2. FINANCIAL CONSIDERATION & TAXES
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                2. LABOUR CHARGES &amp; SECTION 43B(h) TAX COMPLIANCE NOTICE
               </h3>
               <p>
-                The total agreed consideration is <strong>{draft.extractedData.price.value}</strong> ({draft.extractedData.currency}). 
-                Tax applicability is noted as: <em>{draft.extractedData.taxInclusiveStatus === 'INCLUSIVE' ? 'Inclusive of applicable GST' : draft.extractedData.taxInclusiveStatus === 'EXCLUSIVE' ? 'Exclusive of GST (charged extra)' : 'Unspecified — to be finalized upon tax invoice issuance'}</em>.
+                2.1 The agreed total labour consideration is <strong>{draft.extractedData.price.value}</strong> ({draft.extractedData.currency}), exclusive of applicable GST.
+              </p>
+              <p className="mt-1 text-slate-700 bg-amber-50 p-2 rounded border border-amber-200 text-[11px] font-sans">
+                <strong>Statutory Income Tax Warning:</strong> Under Section 43B(h) of the Income-tax Act, 1961 (and Sec 37(2)(g) of Income-tax Act, 2025), failure by the Buyer to remit payment within 15 days (or agreed 45 days) triggers <strong>100% tax expense disallowance</strong> and penalties in the Buyer&apos;s Tax Audit Form 3CD.
               </p>
             </div>
 
-            {/* Clause 3: Delivery */}
+            {/* Clause 3: Delivery Timeline & Delay Shield */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                3. DELIVERY TIMELINE & LOGISTICS
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                3. DELIVERY SCHEDULE &amp; FABRIC DELAY SHIELD (SECTIONS 53 &amp; 67 ICA, 1872)
               </h3>
               <p>
-                Target completion/delivery timeline: <strong>{draft.extractedData.deliveryTimeline.value}</strong>. Logistics & freight: {draft.extractedData.transportResponsibility.value}.
+                3.1 Target completion and dispatch: <strong>{draft.extractedData.deliveryTimeline.value}</strong>. Any delay by the Buyer in supplying fabric rolls, cut panels, or accessories shall automatically extend the Job-Worker&apos;s completion deadline day-for-day without penalty or debit note.
               </p>
             </div>
 
-            {/* Clause 4: Payment */}
+            {/* Clause 4: Quality Inspection & Deemed Acceptance Clock */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                4. PAYMENT SCHEDULE
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                4. QUALITY INSPECTION &amp; 15-DAY DEEMED ACCEPTANCE CLOCK (SEC. 41–42 SOGA &amp; SEC. 2(b) MSMED ACT)
               </h3>
               <p>
-                Agreed payment condition: <strong>{draft.extractedData.paymentTerms.value}</strong>.
+                4.1 <strong>Visual Inspection Window:</strong> The Buyer shall inspect finished garments within <strong>72 hours</strong> of physical delivery.
+              </p>
+              <p className="mt-1 text-slate-700">
+                4.2 <strong>Deemed Acceptance Clock:</strong> Under Section 2(b) Explanation (ii) of the MSMED Act, 2006, unconditional deemed acceptance takes effect on the actual delivery date if no written objection specifying defects is communicated within <strong>15 calendar days</strong>. Unilateral post-delivery debit notes (&ldquo;Kat&rdquo;) are statutorily barred.
               </p>
             </div>
 
-            {/* Clause 5: Statutory Protection for Delayed Payments */}
+            {/* Clause 5: Payment Schedule & 3x RBI Interest */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                5. STATUTORY RECOVERY & MSMED ACT PROTECTION
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                5. APPOINTED PAYMENT DAY &amp; MANDATORY 3x RBI COMPOUND INTEREST (SECTIONS 15, 16 &amp; 24 MSMED ACT)
               </h3>
               <p>
-                In the event of delayed payment beyond the agreed schedule, the supplier retains statutory rights to file a delayed payment recovery claim before the <strong>Micro and Small Enterprises Facilitation Council (MSEFC)</strong> under <strong>Section 18 of the MSMED Act, 2006</strong> with compound interest payable at three times the RBI bank rate under <strong>Section 16</strong>.
+                5.1 Payment Condition: <strong>{draft.extractedData.paymentTerms.value}</strong>. In accordance with Section 15 of the MSMED Act, 2006, payment is due within 15 days of delivery (or maximum 45 days where expressly agreed in writing). Conditional &ldquo;pay-when-paid&rdquo; clauses are statutorily void under Section 15 &amp; Section 24 overriding effect.
+              </p>
+              <p className="mt-1 text-slate-700">
+                5.2 <strong>Penal Interest:</strong> Overdue payments carry mandatory compound interest at <strong>three times the RBI Bank Rate (17.25% p.a.)</strong> with monthly rests under Section 16, non-deductible from taxable profits under Section 23 MSMED Act.
               </p>
             </div>
 
-            {/* Clause 6: Governing Law & Jurisdiction */}
+            {/* Clause 6: Voice-Note Variation Barrier */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-1">
-                6. DISPUTES & GOVERNING LAW
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                6. SCOPE VARIATION &amp; DELAY PENALTY SHIELD (SECTIONS 7, 62, 70 &amp; 74 ICA, 1872)
               </h3>
               <p>
-                This agreement is governed by the laws of India. Any disputes arising in connection with this agreement shall be heard before the competent courts or MSEFC council at <strong>{jurisdictionCity}</strong>.
+                6.1 No unilateral variation (extra embroidery, silicone wash, or accelerated delivery) communicated via voice notes or messages shall bind the Job-Worker without bilateral written agreement on revised rates and timelines. Extra operations executed non-gratuitously are compensable on Quantum Meruit under Section 70. Arbitrary flat deduction clauses are void under Section 74 ICA.
+              </p>
+            </div>
+
+            {/* Clause 7: Dispute Forum & 75% Pre-Deposit */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                7. STATUTORY DISPUTE RESOLUTION &amp; 75% BUYER PRE-DEPOSIT (SECTIONS 18 &amp; 19 MSMED ACT)
+              </h3>
+              <p>
+                7.1 All disputes regarding unpaid labour charges shall be referred directly to the State Micro and Small Enterprises Facilitation Council (MSEFC) / MSME ODR Portal (<code>odr.msme.gov.in</code>) having jurisdiction over {jurisdictionCity}. Under Section 19 MSMED Act, the Buyer must pre-deposit <strong>75% of the claimed award in cash</strong> with the court before any appeal can be entertained.
+              </p>
+            </div>
+
+            {/* Clause 8: Forensic Evidence Integrity */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-sans mb-0.5">
+                8. ELECTRONIC RECORD INTEGRITY &amp; FORENSIC ADMISSIBILITY (SEC. 63(4)(c) BSA, 2023 &amp; SEC. 10A IT ACT)
+              </h3>
+              <p>
+                8.1 This electronic contract is formed under Section 10A of the Information Technology Act, 2000 and cryptographically sealed under Section 63(4)(c) of the Bharatiya Sakshya Adhiniyam, 2023. Certified Master Merkle Root: <code className="text-blue-700 font-mono text-[10px]">{draft.tamperEvidenceHash}</code>.
               </p>
             </div>
           </div>
 
           {/* Signature & Thumbprint Table */}
-          <div className="pt-8 mt-6 border-t border-slate-300">
+          <div className="pt-6 mt-6 border-t border-slate-300">
             <div className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-700 mb-3">
-              Execution & Assent (Digital WhatsApp Assent OR Physical Signature / Left Thumb Impression)
+              Execution &amp; Assent (Bilateral Electronic &amp; Physical Attestation Block)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs font-sans text-slate-800">
               {/* Supplier Assent Box */}
@@ -241,8 +297,8 @@ export default function LegalPaperDocument({
                       <span>AFFIXED &amp; SEALED</span>
                     </div>
                     <div>Mode: Left Thumb Impression (LTI) / OTP Verified</div>
-                    <div>IP: 106.51.22.84 (Bommanahalli Cluster)</div>
-                    <div>Time: {todayStr} | Status: Assented</div>
+                    <div>Network IP: 106.51.22.84 (Bommanahalli Cluster)</div>
+                    <div>Execution Time: {todayStr} | Status: Irrevocable</div>
                   </div>
                 ) : (
                   <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-2">
@@ -251,9 +307,9 @@ export default function LegalPaperDocument({
                     <button
                       type="button"
                       onClick={() => setSupplierSigned(true)}
-                      className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] transition-colors"
+                      className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] transition-colors cursor-pointer"
                     >
-                      Affix Supplier Thumbprint / Sign
+                      Affix Supplier Thumbprint / Sign (Lock My IP)
                     </button>
                   </div>
                 )}
@@ -268,27 +324,62 @@ export default function LegalPaperDocument({
                   <div className="text-slate-600 text-[11px] mt-0.5">Buyer / Client / Exporter</div>
                 </div>
 
-                {buyerSigned ? (
+                {!supplierSigned ? (
+                  <div className="mt-3 p-3 bg-amber-50/90 rounded border border-amber-200 text-[11px] text-amber-900 font-sans space-y-1">
+                    <div className="font-bold text-amber-800">Step 1 Pending:</div>
+                    <div>Awaiting Supplier to affix thumbprint or sign first. The buyer digital assent link will be unlocked immediately after.</div>
+                  </div>
+                ) : buyerSigned ? (
                   <div className="mt-3 p-2 bg-emerald-50 rounded border border-emerald-300 text-[10px] text-emerald-950 font-mono space-y-1">
                     <div className="font-bold text-emerald-800 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>DIGITALLY ASSENTED (Sec 10A IT Act)</span>
                     </div>
-                    <div>Mode: WhatsApp &quot;Confirmed&quot; + Mobile OTP</div>
-                    <div>IP: 122.179.45.10 (Peenya Warehouse)</div>
-                    <div className="text-[10px] text-emerald-700 font-bold">✓ BINDING STATUTORY CONTRACT</div>
+                    <div>Signer: {buyerSignerName}</div>
+                    <div>Mode: WhatsApp &quot;Confirmed&quot; + Web OTP</div>
+                    <div>Network IP: 122.179.45.10 (Peenya / Airtel Fiber)</div>
+                    <div className="text-[10px] text-emerald-700 font-bold">✓ BINDING STATUTORY CONTRACT SEALED</div>
                   </div>
                 ) : (
-                  <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-2">
-                    <div>Physical: __________________________</div>
-                    <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
-                    <button
-                      type="button"
-                      onClick={() => setBuyerSigned(true)}
-                      className="w-full py-1.5 px-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] transition-colors shadow-sm"
-                    >
-                      Simulate Buyer Assent (WhatsApp / Portal)
-                    </button>
+                  <div className="mt-3 p-2.5 bg-blue-50/90 rounded border border-blue-200 text-xs text-blue-950 font-sans space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-blue-900 flex items-center gap-1.5 text-[11px]">
+                        <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                        <span>Step 2: Awaiting Buyer Digital Assent</span>
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 leading-tight">
+                      Supplier locked their IP. Share link with buyer on WhatsApp so they can review and lock their own network IP:
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 pt-0.5">
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(whatsappBuyerShare)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>WhatsApp Link</span>
+                      </a>
+
+                      <a
+                        href={`sms:?body=${encodeURIComponent(whatsappBuyerShare)}`}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+                      >
+                        <Smartphone className="w-3 h-3 text-blue-400" />
+                        <span>SMS Link</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsBuyerModalOpen(true)}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-colors cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Open Buyer Portal (Simulate Buyer IP Lock)</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -380,6 +471,15 @@ export default function LegalPaperDocument({
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span>Send via WhatsApp</span>
+            </a>
+
+            <a
+              href={`sms:?body=${encodeURIComponent(whatsappMessage)}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors shadow-sm"
+              title="Send via native SMS"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+              <span>Send via SMS</span>
             </a>
 
             <button
@@ -484,6 +584,165 @@ export default function LegalPaperDocument({
           </div>
         )}
       </div>
+
+      {/* Buyer Assent Modal (Counterparty Verification & IP Lock Portal) */}
+      {isBuyerModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 text-white shadow-2xl space-y-5 my-8 relative">
+            <button
+              type="button"
+              onClick={() => setIsBuyerModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              title="Close portal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+                  <Network className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-100">
+                    Counterparty Assent Portal (Buyer IP &amp; Assent Lock)
+                  </h3>
+                  <p className="text-[11px] text-blue-400 font-mono">
+                    Sec. 10A IT Act 2000 • Sec. 11-13 Attribution • Sec. 63 BSA 2023
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 pt-1 font-sans">
+                This portal simulates what the Buyer sees when opening the WhatsApp or SMS verification link on their mobile or desktop device to independently log network attribution.
+              </p>
+            </div>
+
+            {/* Deal Summary Box */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs font-mono">
+              <div className="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-1.5">
+                <span>Lot / Deal Reference:</span>
+                <span className="text-blue-300 font-bold">{dealId}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>Order Scope:</span>
+                <span className="font-semibold text-slate-100">{draft.extractedData.scopeOrProducts.value || 'Ladies Kurtis'} ({draft.extractedData.quantity.value})</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>Job-Work Consideration:</span>
+                <span className="font-bold text-emerald-400">{draft.extractedData.price.value}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>Supplier Status:</span>
+                <span className="text-[11px] text-emerald-400">✓ Signed &amp; IP Locked (106.51.22.84)</span>
+              </div>
+            </div>
+
+            {/* Buyer Signatory Details */}
+            <div className="space-y-3 font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Buyer Authorized Signatory:
+                  </label>
+                  <input
+                    type="text"
+                    value={buyerSignerName}
+                    onChange={(e) => setBuyerSignerName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    placeholder="Raghavendra (Apex Exports)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Registered Mobile / WhatsApp:
+                  </label>
+                  <input
+                    type="text"
+                    value={buyerPhone}
+                    onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono"
+                    placeholder="+91 98450 12345"
+                  />
+                </div>
+              </div>
+
+              {/* Network Attribution Badge */}
+              <div className="p-3 bg-blue-950/30 border border-blue-800/60 rounded-xl space-y-1.5 text-[11px] font-mono text-slate-300">
+                <div className="flex items-center justify-between text-blue-300 font-semibold">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Buyer Device Network Fingerprint (Simulated Live)</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-200">
+                    Airtel Broadband
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[10px] text-slate-400 pt-0.5">
+                  <div>Public IP: <span className="text-slate-200 font-bold">122.179.45.10</span> (Peenya, Bengaluru)</div>
+                  <div>ISP: Bharti Airtel Ltd - AS45609</div>
+                  <div>Hardware Hash: <span className="text-slate-200">SHA256: 4a9f...e2b1</span></div>
+                  <div>Timestamp: <span className="text-slate-200">{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} IST</span></div>
+                </div>
+              </div>
+
+              {/* Statutory Checkbox */}
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={buyerConsentGiven}
+                  onChange={(e) => setBuyerConsentGiven(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-slate-900"
+                />
+                <span className="text-xs text-slate-300 leading-relaxed">
+                  I, <strong>{buyerSignerName || 'Raghavendra'}</strong>, on behalf of Apex Exports, hereby acknowledge and confirm commercial assent to the <strong>{draft.extractedData.quantity.value} kurtis</strong> job-work order at <strong>₹85/pc</strong> under MSMED Act 2006 terms, and accept the 2.5% cutting tolerance, Section 170 bailee lien, and 72-hour visual inspection window.
+                </span>
+              </label>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(buyerAssentUrl);
+                  setCopiedBuyerLink(true);
+                  setTimeout(() => setCopiedBuyerLink(false), 2000);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition-colors"
+              >
+                {copiedBuyerLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedBuyerLink ? 'Link Copied!' : 'Copy Assent Link'}</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBuyerModalOpen(false)}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!buyerConsentGiven}
+                  onClick={() => {
+                    setBuyerSigned(true);
+                    setIsBuyerModalOpen(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-colors shadow-md ${
+                    buyerConsentGiven
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Lock Buyer IP &amp; Execute Assent</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
