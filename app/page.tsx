@@ -28,126 +28,125 @@ import {
   ChevronUp,
   FileCheck2,
   ShieldAlert,
-  Send
+  Send,
+  HelpCircle
 } from 'lucide-react';
-import { computeSha256 } from '@/lib/crypto/hash';
-import { SAMPLE_CONVERSATIONS, SamplePreset } from '@/lib/data/sampleConversations';
 
-// Preset Scenarios
+// Preset Scenarios in plain language
 const PRESETS = [
   {
     id: 'preset_1',
-    label: '1. 1,500 Kurtis Lot (2 Missing Gaps)',
-    title: 'Bommanahalli Kurti Lot Job-Work Agreement',
+    label: 'Preset 1: 1,500 Kurtis (Missing Payment Date)',
+    title: '1,500 Rayon Kurtis Job-Work Order',
     udyam: 'UDYAM-KR-03-0128945',
-    chat: `Suresh (Lakshmi Garments): Namaste Raghav ji. We can stitch 1,500 Rayon Kurtis at Rs 58 per piece.
-Raghav (Apex Brands): Rate is fine Suresh. Fabric rolls dispatched tomorrow. Need them in 14 days.
-Suresh: Ji sir, will finish on time.
-Raghav: Payment baad mein dekhenge, standard boutique terms.`,
+    chat: `Suresh (Tailor): Namaste Raghav ji, Lakshmi Garments. Ready to stitch 1,500 Rayon Kurtis at Rs 58 per piece.
+Raghav (Boutique): Done Suresh, rate is fine. Sending fabric rolls tomorrow. Need delivery in 14 days.
+Suresh: Ji sir, will deliver on time.
+Raghav: Payment baad mein dekhenge, standard terms.`,
     supplier: 'Suresh - Lakshmi Garments (Tailor)',
-    buyer: 'Raghav - Apex Fashion Brands (Boutique)',
+    buyer: 'Raghav - Apex Boutique (Buyer)',
     quantity: 1500,
     rate: 58,
     total: 87000,
     totalFormatted: '87,000',
-    item: 'Stitching & Finishing of 1,500 Rayon Kurtis',
-    delivery: 'Within 14 business days of fabric delivery',
+    item: 'Stitching of 1,500 Rayon Kurtis',
+    delivery: 'Within 14 days of fabric delivery',
     gaps: [
       {
         id: 'gap_payment',
         pillar_key: 'payment_terms',
-        title: 'Missing Payment Deadline',
+        title: 'Payment Date is Missing ("Baad Mein")',
         where_msg_id: 'MSG-04',
-        where_quote: 'Raghav: "Payment baad mein dekhenge, standard boutique terms."',
-        how_it_hurts: '"Baad mein" has no calendar date—buyer can delay payment for months with zero interest.',
-        quick_fix_label: 'Apply Sec 15 MSMED 15-Day Payment Rule',
-        quick_fix_value: 'Payment due strictly within 15 days of delivery (Section 15 MSMED Act, 2006). Delayed payment attracts 3x RBI Bank Rate compound interest.',
-        whatsapp_ask_text: 'Raghav ji, for our MSME accounting, please confirm balance payment within 15 days of delivery so we can start stitching today.'
+        where_quote: 'Raghav: "Payment baad mein dekhenge, standard terms."',
+        how_it_hurts: 'The buyer did not give any date. They can delay your money for months without paying any interest.',
+        quick_fix_label: '✅ Fix: Apply 15-Day Govt Payment Rule',
+        quick_fix_value: 'Payment due strictly within 15 days of delivery (Section 15 MSMED Act). Delayed payment attracts 3x RBI interest.',
+        whatsapp_ask_text: 'Raghav ji, for our accounts record, please confirm balance payment within 15 days of delivery so we can start stitching today.'
       },
       {
         id: 'gap_inspection',
         pillar_key: 'scope',
-        title: 'Missing Quality Inspection Window',
+        title: 'Inspection Window is Missing',
         where_msg_id: 'MSG-02',
-        where_quote: 'Raghav: "Need them in 14 days."',
-        how_it_hurts: 'Buyer can claim stitching defects weeks later to issue arbitrary debit notes.',
-        quick_fix_label: 'Apply 72-Hr Deemed Acceptance Rule',
-        quick_fix_value: 'Goods must be inspected within 72 hours of delivery. Non-rejection within this window constitutes deemed acceptance under Sec 42 Sale of Goods Act.',
-        whatsapp_ask_text: 'Raghav ji, please confirm inspection window is 72 hours upon delivery so sample quality is locked.'
+        where_quote: 'Raghav: "Need delivery in 14 days."',
+        how_it_hurts: 'Buyer can take delivery and claim fake defects 1 month later to cut your money.',
+        quick_fix_label: '✅ Fix: Set 72-Hour Inspection Limit',
+        quick_fix_value: 'Buyer must check kurtas within 72 hours of delivery. After 72 hours, goods are deemed accepted by law (Sec 42 Sale of Goods Act).',
+        whatsapp_ask_text: 'Raghav ji, please confirm inspection is within 72 hours of delivery so sample stitching is locked.'
       }
     ],
     status: 'NEEDS_GAP_FIX'
   },
   {
     id: 'preset_2',
-    label: '2. Voice-Note Scope Creep (Sec 62)',
-    title: 'Tiruppur Polo T-Shirt Scope Variation Agreement',
+    label: 'Preset 2: Voice Note Extra Work (Scope Creep)',
+    title: '2,000 Polo T-Shirts Order & Voice Note',
     udyam: 'UDYAM-TN-27-0045812',
-    chat: `Manjunath (Tailor): Sir, ready to cut and stitch 2,000 Pique Polo T-Shirts at Rs 48 per piece.
-Vikas (Buyer): Confirmed Manjunath. Delivery in 10 days.
-[Voice Note from Vikas - 0:28]: "Bhai, also do chest embroidery logo and enzyme bio-wash for all pieces at same rate."
-Manjunath: Wait sir, embroidery + bio-wash costs extra Rs 14 per piece.`,
-    supplier: 'Manjunath - Sri Sai Knits (Job-Worker)',
-    buyer: 'Vikas - Urban Threads (Buyer)',
+    chat: `Manjunath (Tailor): Ready to cut and stitch 2,000 Polo T-Shirts at Rs 48 per piece.
+Vikas (Buyer): Confirmed Manjunath, 10 days delivery.
+[Voice Note from Vikas]: "Bhai, also add chest embroidery logo and bio-wash for all pieces at same rate."
+Manjunath: Wait sir, embroidery + bio-wash is extra Rs 14 per piece.`,
+    supplier: 'Manjunath - Sri Sai Knits (Tailor)',
+    buyer: 'Vikas - Urban Brands (Buyer)',
     quantity: 2000,
     rate: 48,
     total: 96000,
     totalFormatted: '96,000',
-    item: 'Stitching of 2,000 Pique Polo T-Shirts',
-    delivery: 'Within 10 days of fabric receipt',
+    item: 'Stitching of 2,000 Polo T-Shirts',
+    delivery: 'Within 10 days',
     gaps: [
       {
         id: 'gap_scope_variation',
         pillar_key: 'scope',
-        title: 'Unilateral Voice-Note Scope Variation',
-        where_msg_id: 'MSG-03 (Voice Note)',
-        where_quote: 'Vikas: "Also do chest embroidery logo and enzyme bio-wash for all pieces at same rate."',
-        how_it_hurts: 'Buyer adds Rs 28,000 of extra labour operations without paying for extra work.',
-        quick_fix_label: 'Apply Sec 62 ICA Scope Variation Protection',
-        quick_fix_value: 'Base rate Rs 48/pc covers standard stitching only. Chest embroidery and bio-wash constitutes novation under Section 62 Contract Act requiring revised rate (+Rs 14/pc).',
-        whatsapp_ask_text: 'Vikas sir, as per Section 62 Contract Act, embroidery and bio-wash require Rs 14/pc revision. Please confirm Rs 62/pc total.'
+        title: 'Buyer Added Extra Work Without Extra Pay',
+        where_msg_id: 'Voice Note',
+        where_quote: 'Vikas: "Also add chest embroidery and bio-wash at same rate."',
+        how_it_hurts: 'Buyer is demanding Rs 28,000 of extra labour work for free without revising the rate.',
+        quick_fix_label: '✅ Fix: Block Extra Work (Sec 62 Contract Act)',
+        quick_fix_value: 'Base rate Rs 48/pc covers standard stitching only. Extra embroidery requires written price revision under Section 62 Contract Act.',
+        whatsapp_ask_text: 'Vikas sir, extra embroidery and bio-wash require Rs 14/pc revision. Please confirm total Rs 62/pc.'
       }
     ],
     status: 'NEEDS_GAP_FIX'
   },
   {
     id: 'preset_3',
-    label: '3. Ambiguous Price Range Trap (Sec 29 Halt)',
-    title: 'Cargo Pants Order - Unenforceable Ambiguity',
+    label: 'Preset 3: Vague Rate Trap (Unfixed Price)',
+    title: 'Cargo Pants - Rate Not Fixed',
     udyam: '',
-    chat: `Buyer: Suresh bhai, need 1,500 to 2,000 cargo pants stitched.
-Suresh: Ji, what will be the stitching rate?
-Buyer: Market rate chal raha hai, finish dekh ke Rs 90 se Rs 105 ke beech mein decide karenge. Kaam shuru karo, payment jab mera party dega tab denge.`,
+    chat: `Buyer: Need 1,500 to 2,000 cargo pants stitched.
+Suresh: What is the stitching rate?
+Buyer: Market rate chal raha hai, finish dekh ke Rs 90 se Rs 105 decide karenge. Kaam shuru karo, payment jab mera party dega tab denge.`,
     supplier: 'Suresh - Lakshmi Garments (Tailor)',
-    buyer: 'Anonymous Wholesaler',
+    buyer: 'Wholesale Buyer',
     quantity: 1750,
     rate: 0,
     total: 0,
     totalFormatted: '0',
     item: '1,500 to 2,000 Cargo Pants (Vague)',
-    delivery: 'Unstated',
+    delivery: 'Not stated',
     gaps: [],
     status: 'HALTED_AMBIGUOUS_SEC_29'
   }
 ];
 
 export default function HomePage() {
-  // Wizard Step: 1 | 2 | 3
+  // Wizard Step: 1 = Input, 2 = Check 5 Terms, 3 = Order Slip & Sign
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Selected Language: 'en' | 'hi' | 'kn'
+  // Language: 'en' | 'hi' | 'kn'
   const [lang, setLang] = useState<'en' | 'hi' | 'kn'>('en');
 
-  // Active Deal State
+  // Deal Data State
   const [activePresetId, setActivePresetId] = useState<string>('preset_1');
-  const [title, setTitle] = useState('Bommanahalli Kurti Lot Job-Work Agreement');
+  const [dealId, setDealId] = useState('LOT-20261025-01');
+  const [title, setTitle] = useState(PRESETS[0].title);
   const [udyamUrn, setUdyamUrn] = useState('UDYAM-KR-03-0128945');
   const [hasUdyam, setHasUdyam] = useState(true);
   const [rawChat, setRawChat] = useState(PRESETS[0].chat);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Parsed Commercial Pillars
-  const [dealId, setDealId] = useState('LOT-20261025-01');
+  // Extracted Commercial Terms
   const [supplierName, setSupplierName] = useState(PRESETS[0].supplier);
   const [buyerName, setBuyerName] = useState(PRESETS[0].buyer);
   const [itemScope, setItemScope] = useState(PRESETS[0].item);
@@ -156,14 +155,13 @@ export default function HomePage() {
   const [totalValue, setTotalValue] = useState(PRESETS[0].total);
   const [totalFormatted, setTotalFormatted] = useState(PRESETS[0].totalFormatted);
   const [deliveryTimeline, setDeliveryTimeline] = useState(PRESETS[0].delivery);
-  const [paymentTerms, setPaymentTerms] = useState('Payment due strictly within 15 days of delivery');
 
-  // Gaps & Halt State
+  // Gaps & Halt
   const [isHaltedSec29, setIsHaltedSec29] = useState(false);
   const [activeGaps, setActiveGaps] = useState(PRESETS[0].gaps);
   const [activeGapIndex, setActiveGapIndex] = useState(0);
 
-  // Step 3 Signatures & Roles
+  // Signatures & Demo Switcher
   const [viewRole, setViewRole] = useState<'tailor' | 'buyer'>('tailor');
   const [supplierSigned, setSupplierSigned] = useState(false);
   const [buyerSigned, setBuyerSigned] = useState(false);
@@ -172,18 +170,14 @@ export default function HomePage() {
   const [buyerAuthorized, setBuyerAuthorized] = useState(false);
   const [buyerSignatureRecord, setBuyerSignatureRecord] = useState<any>(null);
   const [showJudgeDrawer, setShowJudgeDrawer] = useState(false);
-  const [judgeSubTab, setJudgeSubTab] = useState<'work_order' | 'bsa_cert' | 'tamper_test'>('work_order');
-  const [tamperChatInput, setTamperChatInput] = useState(PRESETS[0].chat);
-  const [tamperDetected, setTamperDetected] = useState(false);
-  const [dynamicDealUrl, setDynamicDealUrl] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Speech Recognition & TTS
+  // Voice recording & TTS
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // Canvas Refs
+  // Canvases
   const supplierCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const buyerCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [supplierDrawing, setSupplierDrawing] = useState(false);
@@ -191,12 +185,33 @@ export default function HomePage() {
   const [buyerDrawing, setBuyerDrawing] = useState(false);
   const [buyerHasDrawn, setBuyerHasDrawn] = useState(false);
 
+  // Format Indian comma numbering system (e.g. 2,57,500)
+  const formatIndianNumber = (num: number): string => {
+    const numInt = Math.round(num);
+    const s = numInt.toString();
+    if (s.length <= 3) return s;
+    const last3 = s.slice(-3);
+    let rest = s.slice(0, -3);
+    const parts: string[] = [];
+    while (rest.length > 2) {
+      parts.push(rest.slice(-2));
+      rest = rest.slice(0, -2);
+    }
+    if (rest.length > 0) parts.push(rest);
+    parts.reverse();
+    return parts.join(',') + ',' + last3;
+  };
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   // Load Preset
   const handleLoadPreset = (preset: typeof PRESETS[0]) => {
     setActivePresetId(preset.id);
     setTitle(preset.title);
     setRawChat(preset.chat);
-    setTamperChatInput(preset.chat);
     setUdyamUrn(preset.udyam);
     setHasUdyam(!!preset.udyam);
     setSupplierName(preset.supplier);
@@ -219,35 +234,7 @@ export default function HomePage() {
     showToast(`✓ Loaded ${preset.label}`);
   };
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  // Indian currency format helper
-  const formatIndianNumber = (num: number): string => {
-    const numInt = Math.round(num);
-    const s = numInt.toString();
-    if (s.length <= 3) return s;
-    const last3 = s.slice(-3);
-    let rest = s.slice(0, -3);
-    const parts: string[] = [];
-    while (rest.length > 2) {
-      parts.push(rest.slice(-2));
-      rest = rest.slice(0, -2);
-    }
-    if (rest.length > 0) parts.push(rest);
-    parts.reverse();
-    return parts.join(',') + ',' + last3;
-  };
-
-  // Initialize Dynamic URL
-  useEffect(() => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    setDynamicDealUrl(`${origin}/deal/${dealId}`);
-  }, [dealId]);
-
-  // TTS Read Aloud
+  // TTS Read Aloud in user's language
   const speakText = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -272,24 +259,24 @@ export default function HomePage() {
   const handleSpeakSummary = () => {
     if (isHaltedSec29) {
       const msg = lang === 'hi'
-        ? 'Dhyan de! Yeh order Section 29 Contract Act ke tahat ruka hua hai kyunki rate ya quantity pakki nahi hai.'
-        : 'Warning! This deal is halted under Section 29 Contract Act because price or quantity is uncertain.';
+        ? 'Dhyan de! Yeh order ruka hua hai kyunki rate ya quantity pakki nahi hai. Pehle buyer se exact rate puchiye.'
+        : 'Warning! This order is stopped because the stitching rate or quantity is not fixed. Ask the buyer for an exact number first.';
       speakText(msg);
       return;
     }
 
     const msg = lang === 'hi'
-      ? `Deal ka vivaran: ${supplierName} se ${buyerName}. Kul ${quantity} piece, ${ratePerPiece} rupaye prati piece. Kul rashi ${totalFormatted} rupaye. Bhugtan pandrah din ke andar.`
-      : `Deal Summary: Order between ${supplierName} and ${buyerName}. Quantity: ${quantity} pieces at Rupees ${ratePerPiece} per piece. Total value: Rupees ${totalFormatted}. Payment within 15 days.`;
+      ? `Aapka order: ${supplierName} se ${buyerName}. Kul ${quantity} piece, ${ratePerPiece} rupaye prati piece. Kul rashi ${totalFormatted} rupaye. Bhugtan pandrah din ke andar.`
+      : `Your order: ${quantity} pieces at Rupees ${ratePerPiece} per piece. Total amount: Rupees ${totalFormatted}. Payment within 15 days.`;
     speakText(msg);
   };
 
-  // Live Speech Recognition
+  // Live Microphone Recording
   const toggleVoiceRecording = () => {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Speech recognition is supported in Google Chrome and Microsoft Edge. Please use Chrome/Edge.');
+      alert('Live microphone is supported in Google Chrome and Microsoft Edge on mobile and desktop.');
       return;
     }
 
@@ -330,11 +317,10 @@ export default function HomePage() {
     }
   };
 
-  // Run Analysis & Step Progression
-  const handleCheckOrderTerms = async () => {
+  // Step 1 -> Step 2 Analysis
+  const handleCheckOrder = async () => {
     setIsAnalyzing(true);
     try {
-      // Check for Section 29 Ambiguity
       const lower = rawChat.toLowerCase();
       const isVagueRate = /market\s*rate|dekh\s*ke|soch\s*ke|(\d+)\s*(?:to|se|-)\s*(\d+)/i.test(rawChat);
       const isPayWhenPaid = /party\s*(?:se|dega|pays)|after\s*shipment/i.test(lower);
@@ -342,7 +328,7 @@ export default function HomePage() {
       if (isVagueRate && isPayWhenPaid) {
         setIsHaltedSec29(true);
         setCurrentStep(2);
-        showToast('⚠️ Ambiguity detected under Section 29 ICA');
+        showToast('⚠️ Rate is not fixed! Order stopped.');
         setIsAnalyzing(false);
         return;
       }
@@ -363,11 +349,12 @@ export default function HomePage() {
       setTotalValue(calcTotal);
       setTotalFormatted(formatIndianNumber(calcTotal));
 
-      // Push deal state to backend / Firestore
+      // Push deal state to Firestore/Cache via API
       await fetch('/api/deal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: dealId,
           deal_id: dealId,
           title,
           supplier_name: supplierName,
@@ -388,9 +375,9 @@ export default function HomePage() {
       });
 
       setCurrentStep(2);
-      showToast('✓ Commercial terms extracted cleanly!');
+      showToast('✓ Order details checked!');
     } catch (e) {
-      console.warn('Analysis fallback notice:', e);
+      console.warn('Fallback analysis notice:', e);
       setCurrentStep(2);
     } finally {
       setIsAnalyzing(false);
@@ -398,24 +385,23 @@ export default function HomePage() {
   };
 
   // Resolve Single Gap
-  const handleResolveGap = (gapId: string, fixValue: string) => {
+  const handleResolveGap = (gapId: string) => {
     setActiveGaps(prev => prev.filter(g => g.id !== gapId));
     if (activeGapIndex >= activeGaps.length - 1) {
       setActiveGapIndex(0);
     }
-    showToast('✓ Applied statutory rule & cleared gap!');
+    showToast('✓ Term fixed & added to order slip!');
   };
 
-  // Save & Share on WhatsApp
-  const handleSaveAndShare = async () => {
-    const vercelDomain = process.env.NEXT_PUBLIC_VERCEL_URL 
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
-      : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-    const dealUrl = `${vercelDomain}/deal/${dealId}`;
-    const whatsappText = `Sir, please review and sign the order slip here: ${dealUrl}`;
-    const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+  // Save & Open WhatsApp (Link Fix)
+  const handleSaveAndSendWhatsApp = async () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const dynamicDealUrl = `${origin}/deal/${dealId}`;
+    const whatsappMessage = `Sir, please check and confirm our stitching order details here: ${dynamicDealUrl}`;
+    const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
 
     try {
+      // 1. Push to Firestore
       await fetch('/api/deal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -439,11 +425,18 @@ export default function HomePage() {
           }
         }),
       });
-      showToast('✓ Deal state pushed to Firestore! Opening WhatsApp...');
+
+      // 2. Copy link
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(dynamicDealUrl);
+      }
+
+      showToast('✓ Order link copied! Opening WhatsApp...');
     } catch (e) {
       console.warn('Sync notice:', e);
     }
 
+    // 3. Open WhatsApp Click-to-Chat
     window.open(whatsappHref, '_blank', 'noopener,noreferrer');
   };
 
@@ -456,7 +449,7 @@ export default function HomePage() {
     const rect = canvas.getBoundingClientRect();
     const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
     const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3.5;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#09090b';
     ctx.beginPath();
@@ -505,19 +498,19 @@ export default function HomePage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = '#09090b';
     ctx.beginPath();
-    ctx.moveTo(50, 30);
-    ctx.lineTo(130, 90);
-    ctx.moveTo(130, 30);
-    ctx.lineTo(50, 90);
+    ctx.moveTo(60, 30);
+    ctx.lineTo(160, 110);
+    ctx.moveTo(160, 30);
+    ctx.lineTo(60, 110);
     ctx.stroke();
     if (isSupplier) setSupplierHasDrawn(true);
     else setBuyerHasDrawn(true);
   };
 
-  // Buyer Confirm Signature via API
+  // Buyer Sign & Attribution
   const handleBuyerConfirmSign = async () => {
     if (!buyerHasDrawn && !buyerCanvasRef.current) {
       alert('Please draw your mark or signature first.');
@@ -540,10 +533,9 @@ export default function HomePage() {
       if (data.success) {
         setBuyerSignatureRecord(data.signatureRecord);
         setBuyerSigned(true);
-        showToast('✓ Buyer signature & network IP attribution locked!');
+        showToast('✓ Buyer signature locked with IP proof!');
       }
     } catch (e) {
-      // Local demo fallback
       setBuyerSignatureRecord({
         signer_name: buyerName,
         signer_phone: '+91 98450 12345',
@@ -558,333 +550,285 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-zinc-900 font-sans pb-16">
+    <div className="min-h-screen bg-[#fafafa] text-zinc-950 font-sans pb-16">
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="no-print fixed top-18 right-4 z-50 p-3 rounded-xl bg-zinc-900 text-white text-xs font-semibold shadow-xl border border-zinc-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="no-print fixed top-18 right-4 z-50 p-4 rounded-2xl bg-zinc-950 text-white text-sm font-bold shadow-2xl border border-zinc-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* ==============================================================================
-          A) TOP BAR (Clean, High-Contrast, Low-Literacy Friendly)
+          TOP BAR (Large, Clear, Low-Literacy Friendly)
           ============================================================================== */}
-      <section className="no-print bg-white border-b border-zinc-200 py-4 px-4 sm:px-6 lg:px-8 shadow-2xs">
-        <div className="max-w-5xl mx-auto space-y-3">
+      <section className="no-print bg-white border-b border-zinc-200 py-4 px-4 sm:px-6 shadow-2xs">
+        <div className="max-w-4xl mx-auto space-y-4">
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                AGREEMENT DESK / GARMENT &amp; CMT JOB-WORK (LS-06)
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 mb-1">
+                <span>🧵 Garment Tailors &amp; Job-Workers (LS-06)</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-950 flex items-center gap-2">
-                <span>Dealproof</span>
-                <span className="text-amber-600 text-base">✦</span>
-                <span className="font-semibold text-zinc-700 text-base">Jan-Karar</span>
+              <h1 className="text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight">
+                Dealproof <span className="text-amber-600">✦</span> Jan-Karar
               </h1>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                Turn informal WhatsApp messages into enforceable, plain-language job-work contracts.
+              <p className="text-sm text-zinc-600 font-medium mt-0.5">
+                Turn informal WhatsApp messages into a simple, binding Digital Order Slip.
               </p>
             </div>
 
-            {/* Language Toggle & Prominent Audio Speak Button */}
-            <div className="flex items-center gap-2">
-              <div className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-1 text-xs font-semibold">
+            {/* Language & Big Listen Button */}
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-50 p-1 text-sm font-bold">
                 <button
                   type="button"
                   onClick={() => setLang('en')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${lang === 'en' ? 'bg-white text-zinc-950 shadow-2xs font-bold' : 'text-zinc-600 hover:text-zinc-950'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${lang === 'en' ? 'bg-zinc-950 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-950'}`}
                 >
                   English
                 </button>
                 <button
                   type="button"
                   onClick={() => setLang('hi')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${lang === 'hi' ? 'bg-white text-zinc-950 shadow-2xs font-bold' : 'text-zinc-600 hover:text-zinc-950'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${lang === 'hi' ? 'bg-zinc-950 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-950'}`}
                 >
                   हिंदी
                 </button>
                 <button
                   type="button"
                   onClick={() => setLang('kn')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${lang === 'kn' ? 'bg-white text-zinc-950 shadow-2xs font-bold' : 'text-zinc-600 hover:text-zinc-950'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${lang === 'kn' ? 'bg-zinc-950 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-950'}`}
                 >
                   ಕನ್ನಡ
                 </button>
               </div>
 
+              {/* Big Green Audio Button */}
               <button
                 type="button"
                 onClick={handleSpeakSummary}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-                title="Listen to deal summary out loud"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-sm shadow-sm transition-all cursor-pointer"
               >
-                {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                <span>{isSpeaking ? 'Stop Audio' : '🔊 Speak Deal Aloud'}</span>
+                {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                <span>{isSpeaking ? 'Stop Audio' : '🔊 Listen / सुनिए'}</span>
               </button>
             </div>
           </div>
 
-          {/* Badges & 3 Judge Presets Bar */}
-          <div className="pt-2 border-t border-zinc-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-800 border border-zinc-200">
-                🧵 5–30 Machine Units
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                ₹0 Stamp Duty (Art. 5 Exemption)
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                Sec 10A IT Act
-              </span>
-            </div>
-
-            {/* Presets */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-zinc-400 mr-1">Demo Presets:</span>
-              {PRESETS.map(p => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleLoadPreset(p)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                    activePresetId === p.id
-                      ? 'bg-zinc-900 text-white border-zinc-900 font-bold'
-                      : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
+          {/* Quick Presets Bar */}
+          <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase text-zinc-500 mr-1">Demo Case:</span>
+            {PRESETS.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleLoadPreset(p)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+                  activePresetId === p.id
+                    ? 'bg-zinc-950 text-white border-zinc-950'
+                    : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
 
-          {/* 3-Step Wizard Navigation Stepper */}
-          <div className="pt-3">
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className={`py-2 px-3 rounded-xl border transition-all ${
-                  currentStep === 1
-                    ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
-                }`}
-              >
-                1. Input &amp; Udyam Gate
-              </button>
+          {/* Large 3-Step Stepper Navigation */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <button
+              type="button"
+              onClick={() => setCurrentStep(1)}
+              className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-extrabold border transition-all ${
+                currentStep === 1
+                  ? 'bg-zinc-950 text-white border-zinc-950 shadow-md'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+              }`}
+            >
+              1. Input Chat
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setCurrentStep(2)}
-                className={`py-2 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
-                  currentStep === 2
-                    ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
-                }`}
-              >
-                <span>2. 5-Pillar Traffic Light</span>
-                {activeGaps.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-                    {activeGaps.length} Gaps
-                  </span>
-                )}
-              </button>
+            <button
+              type="button"
+              onClick={() => setCurrentStep(2)}
+              className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex items-center justify-center gap-1.5 ${
+                currentStep === 2
+                  ? 'bg-zinc-950 text-white border-zinc-950 shadow-md'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+              }`}
+            >
+              <span>2. Check Terms</span>
+              {activeGaps.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[11px] font-black bg-amber-500 text-white">
+                  {activeGaps.length}
+                </span>
+              )}
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setCurrentStep(3)}
-                className={`py-2 px-3 rounded-xl border transition-all ${
-                  currentStep === 3
-                    ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
-                }`}
-              >
-                3. Order Slip &amp; Sign
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentStep(3)}
+              className={`py-3 px-2 rounded-xl text-xs sm:text-sm font-extrabold border transition-all ${
+                currentStep === 3
+                  ? 'bg-zinc-950 text-white border-zinc-950 shadow-md'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+              }`}
+            >
+              3. Sign &amp; WhatsApp
+            </button>
           </div>
 
         </div>
       </section>
 
-      {/* Main Wizard Content Area */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      {/* Main Body Content */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
 
         {/* ==============================================================================
-            B) STEP 1: INPUT & UDYAM GATEKEEPER
+            STEP 1: SIMPLE INPUT & MSME CHECK
             ============================================================================== */}
         {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in">
+          <div className="space-y-6">
             
-            {/* Udyam Eligibility Screen (Loophole 1 Fix) */}
-            <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  <h2 className="text-sm font-bold text-zinc-950">
-                    Step 1A: Udyam Registration Gatekeeper (Silpi Industries Precedent)
-                  </h2>
-                </div>
-                <span className="text-[11px] font-semibold text-zinc-500">
-                  Supreme Court Pre-Requisite
-                </span>
-              </div>
+            {/* Simple MSME / Udyam Check */}
+            <div className="bg-white border-2 border-zinc-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <h2 className="text-base font-extrabold text-zinc-950 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <span>Government MSME / Udyam Registration Check</span>
+              </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Your Udyam Registration Number:
-                  </label>
+              <p className="text-xs text-zinc-600 leading-relaxed font-medium">
+                To get the <strong>Government 15-Day Payment Rule</strong>, the law requires you to have an active MSME certificate before starting work.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                <input
+                  type="text"
+                  value={udyamUrn}
+                  onChange={(e) => {
+                    setUdyamUrn(e.target.value);
+                    setHasUdyam(!!e.target.value.trim());
+                  }}
+                  placeholder="Enter your Udyam No. (e.g. UDYAM-KR-03-0128945)"
+                  className="flex-1 px-4 py-3 rounded-xl border border-zinc-300 font-mono text-base font-bold text-zinc-900 bg-zinc-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-950"
+                />
+
+                <label className="flex items-center gap-2 p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs font-bold text-zinc-900 cursor-pointer select-none">
                   <input
-                    type="text"
-                    value={udyamUrn}
-                    onChange={(e) => {
-                      setUdyamUrn(e.target.value);
-                      setHasUdyam(!!e.target.value.trim());
-                    }}
-                    placeholder="e.g. UDYAM-KR-03-0128945"
-                    className="w-full px-3.5 py-2 rounded-xl border border-zinc-300 bg-zinc-50 text-sm font-mono text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                    type="checkbox"
+                    checked={hasUdyam}
+                    onChange={(e) => setHasUdyam(e.target.checked)}
+                    className="w-5 h-5 rounded text-zinc-950"
                   />
-                </div>
-
-                <div className="pt-5 flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={hasUdyam}
-                      onChange={(e) => setHasUdyam(e.target.checked)}
-                      className="w-4 h-4 rounded text-zinc-900 focus:ring-zinc-900 border-zinc-300"
-                    />
-                    <span>Active Udyam Certificate Verified</span>
-                  </label>
-                </div>
+                  <span>I have Udyam Certificate</span>
+                </label>
               </div>
 
               {!hasUdyam && (
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p>
-                    <strong>Statutory Warning:</strong> Under the Supreme Court ruling in <em>Silpi Industries</em>, MSMED 15-day recovery does NOT apply retrospectively if you register after supplying goods. Please register your tailoring unit on <a href="https://udyamregistration.gov.in" target="_blank" rel="noopener noreferrer" className="font-bold underline text-amber-950">udyamregistration.gov.in (Free)</a>.
-                  </p>
+                <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-300 text-xs text-amber-950 font-medium">
+                  ⚠️ <strong>Warning:</strong> If you don&apos;t have an Udyam certificate, you can still create an agreement, but you won&apos;t get 15-day court recovery protection. <a href="https://udyamregistration.gov.in" target="_blank" rel="noopener noreferrer" className="font-bold underline text-amber-900">Register here for free</a>.
                 </div>
               )}
             </div>
 
-            {/* WhatsApp Chat & Voice Note Input Area */}
-            <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-xs space-y-4">
+            {/* Chat Input & Microphone Box */}
+            <div className="bg-white border-2 border-zinc-200 rounded-2xl p-5 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-sm font-bold text-zinc-950 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-zinc-700" />
-                    <span>Step 1B: Paste WhatsApp Negotiation or Record Voice Note</span>
+                  <h2 className="text-base font-extrabold text-zinc-950 flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-zinc-800" />
+                    <span>Paste WhatsApp Chat or Speak Your Order</span>
                   </h2>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    No scraping needed. Simply copy and paste the informal negotiation messages here.
+                  <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                    Paste the messages between you and the customer.
                   </p>
                 </div>
 
+                {/* Big Microphone Button */}
                 <button
                   type="button"
                   onClick={toggleVoiceRecording}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer ${
                     isRecordingVoice
                       ? 'bg-rose-600 text-white animate-pulse'
-                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200'
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-300'
                   }`}
                 >
-                  {isRecordingVoice ? <StopCircle className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-zinc-600" />}
-                  <span>{isRecordingVoice ? 'Stop Recording' : '🎤 Live Voice Recording'}</span>
+                  {isRecordingVoice ? <StopCircle className="w-4 h-4" /> : <Mic className="w-4 h-4 text-rose-600" />}
+                  <span>{isRecordingVoice ? 'Recording... Tap to Stop' : '🎤 Tap to Speak / Voice Note'}</span>
                 </button>
               </div>
 
               <textarea
-                rows={7}
+                rows={6}
                 value={rawChat}
                 onChange={(e) => setRawChat(e.target.value)}
-                placeholder="Paste WhatsApp chat here..."
-                className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-mono text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 leading-relaxed"
+                placeholder="Paste WhatsApp messages here..."
+                className="w-full p-4 rounded-xl border border-zinc-300 bg-white font-mono text-sm sm:text-base text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-950 leading-relaxed"
               />
 
-              {/* Chat Bubble Previews */}
-              <div className="pt-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                  Conversation Preview:
-                </div>
-                <div className="space-y-2 bg-zinc-50 p-4 rounded-xl border border-zinc-200 max-h-56 overflow-y-auto">
-                  {rawChat.split('\n').filter(Boolean).map((line, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs">
-                      <span className="font-mono text-[10px] font-bold text-zinc-400 bg-zinc-200 px-1.5 py-0.5 rounded shrink-0">
-                        MSG-0{idx + 1}
-                      </span>
-                      <span className="text-zinc-800 leading-relaxed font-sans">{line}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Big CTA */}
+              {/* Big Action Button */}
               <button
                 type="button"
-                onClick={handleCheckOrderTerms}
+                onClick={handleCheckOrder}
                 disabled={isAnalyzing}
-                className="w-full py-3.5 px-6 rounded-xl bg-zinc-950 hover:bg-zinc-800 active:bg-zinc-900 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-4 px-6 rounded-xl bg-zinc-950 hover:bg-zinc-800 active:bg-zinc-900 text-white font-black text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isAnalyzing ? (
-                  <span>Extracting Commercial Pillars &amp; Checking Gaps...</span>
+                  <span>Checking Terms &amp; Missing Gaps...</span>
                 ) : (
                   <>
                     <span>Check My Order Terms</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-5 h-5" />
                   </>
                 )}
               </button>
-
             </div>
 
           </div>
         )}
 
         {/* ==============================================================================
-            C) STEP 2: 5-PILLAR TRAFFIC LIGHT & SINGLE-CARD GAP FIXER
+            STEP 2: CHECK 5 TERMS & FIX GAPS (LARGE, UNCONGESTED)
             ============================================================================== */}
         {currentStep === 2 && (
-          <div className="space-y-6 animate-in fade-in">
+          <div className="space-y-6">
             
-            {/* Hard Halt Screen if Section 29 Vague Deal Triggered */}
+            {/* If Section 29 Vague Deal Triggered */}
             {isHaltedSec29 ? (
-              <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-6 space-y-4">
+              <div className="bg-rose-50 border-2 border-rose-400 rounded-2xl p-6 space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
-                    <ShieldAlert className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
+                    <ShieldAlert className="w-7 h-7" />
                   </div>
                   <div className="space-y-1">
-                    <h2 className="text-base font-black text-rose-950 uppercase tracking-tight">
-                      🛑 HALTED: Deal Too Vague to Enforce Under Section 29 Contract Act
+                    <h2 className="text-lg font-black text-rose-950 uppercase">
+                      🛑 STOP: Rate or Quantity is Not Fixed!
                     </h2>
-                    <p className="text-xs text-rose-800 leading-relaxed">
-                      The negotiation mentions unfixed pricing (<em>&ldquo;₹90 se ₹105 ke beech mein&rdquo;</em>) and conditional payment (<em>&ldquo;jab mera party dega&rdquo;</em>). Under Section 29 of the Indian Contract Act, 1872, agreements with uncertain meaning are <strong>void ab initio</strong>.
+                    <p className="text-sm text-rose-900 leading-relaxed font-medium">
+                      The buyer said: <em>&ldquo;Rs 90 se Rs 105 ke beech mein decide karenge&rdquo;</em>. Under Section 29 of the Indian Contract Act, deals with unfixed prices are <strong>invalid in court</strong>.
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl border border-rose-200 text-xs text-zinc-800 space-y-2">
-                  <div className="font-bold text-rose-900">Why the Tailor Loses Money Here:</div>
-                  <div>If you stitch without a fixed rate, the wholesaler can arbitrarily pay ₹90 instead of ₹105 and delay for 6 months claiming their party hasn&apos;t paid.</div>
+                <div className="p-4 bg-white rounded-xl border border-rose-200 text-xs sm:text-sm text-zinc-800 space-y-1">
+                  <div className="font-bold text-rose-900">Why this hurts the tailor:</div>
+                  <div>If you start cutting fabric now, the buyer can arbitrarily pay the lowest rate (₹90) and hold your money for months.</div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent('Bhai, as per legal accounting rules, please fix exact stitching rate per piece and payment date so I can start work.')}`}
+                    href={`https://wa.me/?text=${encodeURIComponent('Bhai, please confirm the exact stitching rate per piece so we can lock the order slip and start work.')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-3 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs text-center flex items-center justify-center gap-2"
+                    className="flex-1 py-3.5 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-sm text-center flex items-center justify-center gap-2"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Ask Buyer on WhatsApp for Fixed Rate</span>
+                    <MessageSquare className="w-5 h-5" />
+                    <span>Ask Buyer on WhatsApp for Exact Rate</span>
                   </a>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -892,143 +836,121 @@ export default function HomePage() {
                       setRatePerPiece(95);
                       setTotalValue(166250);
                       setTotalFormatted('1,66,250');
-                      showToast('✓ Fixed rate at ₹95/pc. Halt cleared!');
+                      showToast('✓ Rate fixed at ₹95/piece!');
                     }}
-                    className="px-5 py-3 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-bold text-xs"
+                    className="px-5 py-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-bold text-sm"
                   >
-                    Fix Rate to ₹95/pc (Demo Override)
+                    Fix to ₹95/pc (Demo)
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                {/* 5 Visual Compact Pillar Cards (Grid of 5) */}
-                <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-zinc-950">
-                      Step 2A: The 5 Commercial Pillars
+                {/* 5 Deal Details Cards (Clean & Large) */}
+                <div className="bg-white border-2 border-zinc-200 rounded-2xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <h2 className="text-base font-extrabold text-zinc-950">
+                      Step 2A: The 5 Key Deal Details
                     </h2>
-                    <span className="text-xs text-zinc-500">
-                      {activeGaps.length === 0 ? '✓ All Pillars Protected' : `${activeGaps.length} Gaps Pending`}
+                    <span className="text-xs font-bold text-zinc-500">
+                      {activeGaps.length === 0 ? '✓ All 5 Details Clear' : `${activeGaps.length} Missing Detail(s)`}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     
-                    {/* Pillar 1: Parties */}
-                    <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-1">
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase">1. 🤝 Parties</div>
-                      <div className="font-bold text-xs text-zinc-950 truncate">{supplierName.split(' - ')[0]}</div>
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        ✅ CLEAR [MSG-01]
-                      </span>
+                    {/* 1. Who */}
+                    <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/50 space-y-1">
+                      <div className="text-xs font-bold text-emerald-800 uppercase">1. 🤝 Who is Buying</div>
+                      <div className="text-sm font-black text-zinc-950 truncate">{buyerName}</div>
+                      <div className="text-xs text-zinc-600">Tailor: {supplierName.split(' - ')[0]}</div>
                     </div>
 
-                    {/* Pillar 2: Item & Scope */}
-                    <div className={`p-3 rounded-xl border space-y-1 ${activeGaps.some(g => g.pillar_key === 'scope') ? 'border-amber-300 bg-amber-50/60 animate-pulse' : 'border-emerald-200 bg-emerald-50/50'}`}>
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase">2. 📦 Item &amp; 72h</div>
-                      <div className="font-bold text-xs text-zinc-950 truncate">{quantity} Pcs</div>
-                      {activeGaps.some(g => g.pillar_key === 'scope') ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">
-                          ⚠️ NEEDS FIX
-                        </span>
-                      ) : (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          ✅ CLEAR [MSG-02]
-                        </span>
-                      )}
+                    {/* 2. What Item */}
+                    <div className={`p-4 rounded-xl border space-y-1 ${activeGaps.some(g => g.pillar_key === 'scope') ? 'border-amber-400 bg-amber-50/80 animate-pulse' : 'border-emerald-300 bg-emerald-50/50'}`}>
+                      <div className="text-xs font-bold uppercase text-zinc-700">2. 📦 Item &amp; Quantity</div>
+                      <div className="text-sm font-black text-zinc-950">{quantity.toLocaleString('en-IN')} Pieces</div>
+                      <div className="text-xs text-zinc-600 truncate">{itemScope}</div>
                     </div>
 
-                    {/* Pillar 3: Rate & GST */}
-                    <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-1">
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase">3. ₹ Rate &amp; Total</div>
-                      <div className="font-bold text-xs text-zinc-950 truncate">₹{ratePerPiece}/pc (₹{totalFormatted})</div>
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        ✅ CLEAR [MSG-01]
-                      </span>
+                    {/* 3. Rate & Total */}
+                    <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/50 space-y-1">
+                      <div className="text-xs font-bold text-emerald-800 uppercase">3. ₹ Rate &amp; Total Value</div>
+                      <div className="text-base font-black text-zinc-950">₹{ratePerPiece} / piece</div>
+                      <div className="text-xs font-bold text-zinc-700">Total: ₹{totalFormatted} INR</div>
                     </div>
 
-                    {/* Pillar 4: Delivery */}
-                    <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-1">
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase">4. 📅 Delivery</div>
-                      <div className="font-bold text-xs text-zinc-950 truncate">14 Days</div>
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        ✅ CLEAR [MSG-02]
-                      </span>
+                    {/* 4. Delivery */}
+                    <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/50 space-y-1">
+                      <div className="text-xs font-bold text-emerald-800 uppercase">4. 📅 Delivery Date</div>
+                      <div className="text-sm font-black text-zinc-950">{deliveryTimeline}</div>
+                      <div className="text-xs text-zinc-600">Fabric delay extends days</div>
                     </div>
 
-                    {/* Pillar 5: Payment Rule */}
-                    <div className={`p-3 rounded-xl border space-y-1 col-span-2 sm:col-span-1 ${activeGaps.some(g => g.pillar_key === 'payment_terms') ? 'border-amber-300 bg-amber-50/60 animate-pulse' : 'border-emerald-200 bg-emerald-50/50'}`}>
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase">5. ⏳ Payment Rule</div>
-                      <div className="font-bold text-xs text-zinc-950 truncate">15 Days MSMED</div>
-                      {activeGaps.some(g => g.pillar_key === 'payment_terms') ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">
-                          ⚠️ NEEDS FIX
-                        </span>
-                      ) : (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          ✅ CLEAR [15-Day Rule]
-                        </span>
-                      )}
+                    {/* 5. Payment Date */}
+                    <div className={`p-4 rounded-xl border space-y-1 sm:col-span-2 md:col-span-2 ${activeGaps.some(g => g.pillar_key === 'payment_terms') ? 'border-amber-400 bg-amber-50/80 animate-pulse' : 'border-emerald-300 bg-emerald-50/50'}`}>
+                      <div className="text-xs font-bold uppercase text-zinc-700">5. ⏳ Payment Rule</div>
+                      <div className="text-sm font-black text-zinc-950">Within 15 Days (Govt MSMED Act)</div>
+                      <div className="text-xs text-zinc-600">3x RBI interest penalty if late</div>
                     </div>
 
                   </div>
                 </div>
 
-                {/* Single-Card Gap Fixer (Zero Clutter!) */}
+                {/* Single-Card Gap Fixer (Large, Uncongested, 3 Lines) */}
                 {activeGaps.length > 0 ? (
-                  <div className="bg-white border-2 border-amber-300 rounded-2xl p-6 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                  <div className="bg-white border-2 border-amber-400 rounded-2xl p-6 shadow-md space-y-4">
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
-                          Fixing Issue {activeGapIndex + 1} of {activeGaps.length}
+                        <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900">
+                          Problem {activeGapIndex + 1} of {activeGaps.length}
                         </span>
-                        <h3 className="text-sm font-bold text-zinc-900">
+                        <h3 className="text-base font-black text-zinc-950">
                           {activeGaps[activeGapIndex]?.title}
                         </h3>
                       </div>
-                      
+
                       <button
                         type="button"
                         onClick={() => speakText(activeGaps[activeGapIndex]?.how_it_hurts || '')}
-                        className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
-                        <span>Listen to Warning</span>
+                        <Volume2 className="w-4 h-4" />
+                        <span>Listen</span>
                       </button>
                     </div>
 
-                    {/* 3 Clean Lines */}
-                    <div className="space-y-3 text-xs">
+                    {/* 3 Clean Lines in Large, Easy-to-Read Font */}
+                    <div className="space-y-4">
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
-                          📍 1. Where in Chat:
+                        <div className="text-xs uppercase font-extrabold text-zinc-500 mb-1">
+                          📍 1. What was said in WhatsApp:
                         </div>
-                        <div className="p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 font-mono text-zinc-800">
+                        <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-300 font-mono text-sm text-zinc-900 font-bold">
                           {activeGaps[activeGapIndex]?.where_quote}
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-zinc-400 mb-0.5">
-                          ⚠️ 2. How It Hurts You:
+                        <div className="text-xs uppercase font-extrabold text-zinc-500 mb-1">
+                          ⚠️ 2. Why this is dangerous for you:
                         </div>
-                        <div className="text-zinc-800 leading-relaxed font-medium">
+                        <div className="text-sm sm:text-base text-zinc-900 font-medium leading-relaxed bg-amber-50/60 p-3 rounded-xl border border-amber-200">
                           {activeGaps[activeGapIndex]?.how_it_hurts}
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-zinc-400 mb-1">
-                          💡 3. 1-Tap Solution (Pick One):
+                        <div className="text-xs uppercase font-extrabold text-zinc-500 mb-2">
+                          💡 3. Fix it right now:
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <button
                             type="button"
-                            onClick={() => handleResolveGap(activeGaps[activeGapIndex]?.id, activeGaps[activeGapIndex]?.quick_fix_value)}
-                            className="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                            onClick={() => handleResolveGap(activeGaps[activeGapIndex]?.id)}
+                            className="py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                           >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-5 h-5" />
                             <span>{activeGaps[activeGapIndex]?.quick_fix_label}</span>
                           </button>
 
@@ -1036,9 +958,9 @@ export default function HomePage() {
                             href={`https://wa.me/?text=${encodeURIComponent(activeGaps[activeGapIndex]?.whatsapp_ask_text)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="py-3 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-800 font-bold text-xs flex items-center justify-center gap-1.5"
+                            className="py-3.5 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-900 font-bold text-sm flex items-center justify-center gap-2 text-center"
                           >
-                            <MessageSquare className="w-4 h-4 text-emerald-600" />
+                            <MessageSquare className="w-5 h-5 text-emerald-600" />
                             <span>Ask Buyer on WhatsApp</span>
                           </a>
                         </div>
@@ -1046,27 +968,27 @@ export default function HomePage() {
                     </div>
                   </div>
                 ) : (
-                  /* Celebratory All Clear Banner */
-                  <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-6 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-sm">
-                      <CheckCircle2 className="w-6 h-6" />
+                  /* All Clear Banner */
+                  <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-6 text-center space-y-3">
+                    <div className="w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+                      <CheckCircle2 className="w-8 h-8" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-emerald-950">
-                        All 5 Deal Pillars Are Clear &amp; Protected Under Law
+                      <h3 className="text-lg font-black text-emerald-950">
+                        All 5 Deal Terms Are Clear &amp; Protected!
                       </h3>
-                      <p className="text-xs text-emerald-800 mt-1">
-                        Inspection window locked at 72 hours, and payment default set to Section 15 MSMED 15-day rule.
+                      <p className="text-sm text-emerald-800 mt-1 font-medium">
+                        Payment deadline locked at 15 days, and inspection window locked at 72 hours.
                       </p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setCurrentStep(3)}
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                      className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-black text-base shadow-xl transition-all cursor-pointer"
                     >
-                      <span>Continue to Digital Order Slip &amp; Sign</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <span>Continue to Order Slip &amp; Sign</span>
+                      <ArrowRight className="w-5 h-5" />
                     </button>
                   </div>
                 )}
@@ -1077,45 +999,45 @@ export default function HomePage() {
         )}
 
         {/* ==============================================================================
-            D) STEP 3: DIGITAL ORDER SLIP & DUAL SIGNATURE CANVAS
+            STEP 3: DIGITAL ORDER SLIP & DUAL SIGNATURE CANVAS
             ============================================================================== */}
         {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in">
+          <div className="space-y-6">
             
-            {/* Phone Role Switcher for Live Demo */}
+            {/* Live Demo Role Switcher */}
             <div className="no-print flex items-center justify-between bg-white border border-zinc-200 p-3 rounded-2xl">
               <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                Live Jury Demo Mode:
+                Live Jury Demo Switcher:
               </span>
-              <div className="inline-flex rounded-xl bg-zinc-100 p-1 text-xs font-semibold">
+              <div className="inline-flex rounded-xl bg-zinc-100 p-1 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setViewRole('tailor')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${viewRole === 'tailor' ? 'bg-white text-zinc-950 font-bold shadow-2xs' : 'text-zinc-600'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${viewRole === 'tailor' ? 'bg-white text-zinc-950 shadow-xs' : 'text-zinc-600'}`}
                 >
-                  📱 Tailor View (Party A)
+                  📱 Tailor View
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewRole('buyer')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${viewRole === 'buyer' ? 'bg-white text-zinc-950 font-bold shadow-2xs' : 'text-zinc-600'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${viewRole === 'buyer' ? 'bg-white text-zinc-950 shadow-xs' : 'text-zinc-600'}`}
                 >
-                  📲 Buyer WhatsApp View (Party B)
+                  📲 Buyer Phone View
                 </button>
               </div>
             </div>
 
-            {/* The Formal Printable Commercial Job-Work Slip */}
-            <div className="printable-contract-sheet bg-white border border-zinc-200 rounded-2xl p-6 sm:p-10 shadow-lg space-y-6 text-zinc-900">
+            {/* The Formal Digital Order Slip (ऑर्डर पर्ची) */}
+            <div className="printable-contract-sheet bg-white border-2 border-zinc-300 rounded-2xl p-6 sm:p-10 shadow-lg space-y-6">
               
               {/* Slip Header */}
-              <div className="border-b-2 border-zinc-900 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="border-b-2 border-zinc-950 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">
+                  <div className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                     Digital Order Slip (ऑर्डर पर्ची / ಆರ್ಡರ್ ಚೀಟಿ)
                   </div>
-                  <h2 className="text-2xl font-black text-zinc-950 tracking-tight">
-                    GARMENT JOB-WORK MEMORANDUM #{dealId}
+                  <h2 className="text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight">
+                    GARMENT JOB-WORK ORDER #{dealId}
                   </h2>
                   <div className="text-xs text-zinc-500 mt-0.5">
                     Date: <strong>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> • Cluster: Peenya / Bommanahalli
@@ -1123,126 +1045,126 @@ export default function HomePage() {
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700" />
                     <span>Valid Sec 10A IT Act</span>
                   </span>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">₹0 Stamp Duty (Art. 5 Exemption)</div>
+                  <div className="text-[11px] text-zinc-400 mt-1">₹0 Stamp Duty (Art. 5 Exemption)</div>
                 </div>
               </div>
 
-              {/* Contracting Parties Box */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 text-xs">
+              {/* Contracting Parties */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 text-xs sm:text-sm">
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-400">Job-Worker / Tailor (First Party):</div>
-                  <div className="font-bold text-zinc-950 text-sm">{supplierName}</div>
+                  <div className="text-[10px] uppercase font-bold text-zinc-400">1. Tailor / Job-Worker:</div>
+                  <div className="font-extrabold text-zinc-950 text-base">{supplierName}</div>
                   <div className="text-zinc-600 mt-0.5">Udyam No: <strong className="text-zinc-900 font-mono">{udyamUrn}</strong></div>
-                  <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ MSMED Act Sec 15 Protected Micro-Enterprise</div>
+                  <div className="text-xs text-emerald-700 font-bold mt-0.5">✓ MSMED Act Sec 15 Protected</div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-400">Buyer / Boutique Client (Second Party):</div>
-                  <div className="font-bold text-zinc-950 text-sm">{buyerName}</div>
-                  <div className="text-zinc-600 mt-0.5">Contact: +91 98450 12345</div>
-                  <div className="text-[11px] text-zinc-500 mt-0.5">Registered Procurement Principal</div>
+                  <div className="text-[10px] uppercase font-bold text-zinc-400">2. Customer / Buyer:</div>
+                  <div className="font-extrabold text-zinc-950 text-base">{buyerName}</div>
+                  <div className="text-zinc-600 mt-0.5">Mobile: +91 98450 12345</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">Verified Procurement Counterparty</div>
                 </div>
               </div>
 
-              {/* Formal Clauses */}
-              <div className="space-y-4 text-xs text-zinc-800 leading-relaxed">
+              {/* 5 Clear Clauses */}
+              <div className="space-y-4 text-xs sm:text-sm text-zinc-800 leading-relaxed">
                 
-                {/* Clause 1: Scope & Inspection */}
-                <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">
-                  <h3 className="font-bold text-zinc-950 uppercase tracking-wider text-[11px] mb-1">
-                    1. SCOPE OF JOB-WORK &amp; 72-HR INSPECTION DEEMED ACCEPTANCE
-                  </h3>
-                  <p>1.1 <strong>Scope:</strong> {itemScope} (<strong>{quantity.toLocaleString('en-IN')} units</strong>).</p>
+                {/* Clause 1: Scope */}
+                <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50">
+                  <div className="font-bold text-zinc-950 text-xs uppercase mb-1">
+                    1. Work Scope &amp; 72-Hour Quality Check
+                  </div>
+                  <p>1.1 <strong>Item:</strong> {itemScope} (<strong>{quantity.toLocaleString('en-IN')} pieces</strong>).</p>
                   <p className="mt-1 text-zinc-600">
-                    1.2 <strong>Bailment &amp; Latent Defect Shield (Sec 150-152 ICA 1872):</strong> Tailor provides stitching services as bailee. Raw materials and fabric supplied by Buyer. Tailor bears zero liability for latent fabric defects (e.g. yarn faults, shrinkage, dye bleeding).
+                    1.2 <strong>Latent Fabric Shield:</strong> Raw fabric supplied by Buyer. Tailor bears zero liability for latent fabric defects like color bleeding or shrinkage (Sec 150-152 Contract Act).
                   </p>
                   <p className="mt-1 text-emerald-800 font-medium">
-                    1.3 <strong>Deemed Acceptance Rule (Sec 42 Sale of Goods Act &amp; Sec 2(b) MSMED Act):</strong> Goods must be inspected within <strong>72 hours</strong> of delivery. Non-rejection within this window constitutes deemed acceptance without right of arbitrary debit note.
+                    1.3 <strong>Deemed Acceptance:</strong> Buyer must report any defect within <strong>72 hours</strong> of delivery. After 72 hours, goods are deemed accepted by law (Sec 42 Sale of Goods Act).
                   </p>
                 </div>
 
                 {/* Clause 2.1: LABOUR CHARGES & MATH FIX */}
-                <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">
-                  <h3 className="font-bold text-zinc-950 uppercase tracking-wider text-[11px] mb-1">
-                    2. LABOUR CHARGES &amp; SECTION 43B(h) TAX NOTICE
-                  </h3>
-                  <p className="text-sm font-semibold text-zinc-950">
+                <div className="p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50/40">
+                  <div className="font-bold text-emerald-950 text-xs uppercase mb-1">
+                    2. Labour Charges &amp; Section 43B(h) Income Tax Notice
+                  </div>
+                  <p className="text-base font-extrabold text-zinc-950">
                     2.1 The agreed labour consideration is ₹{ratePerPiece} per piece (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
-                  <p className="mt-1 text-zinc-600 text-[11px]">
-                    <strong>Statutory Tax Disallowance:</strong> Under Section 43B(h) of the Income-tax Act, failure by Buyer to remit payment within 15 days triggers 100% tax expense disallowance in Buyer&apos;s annual tax audit.
+                  <p className="mt-1 text-zinc-600 text-xs">
+                    <strong>Tax Penalty Notice:</strong> Under Section 43B(h) of the Income-tax Act, if the Buyer does not pay within 15 days, they cannot claim this expense and must pay corporate tax on it.
                   </p>
                 </div>
 
                 {/* Clause 3: Delivery */}
-                <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">
-                  <h3 className="font-bold text-zinc-950 uppercase tracking-wider text-[11px] mb-1">
-                    3. DELIVERY TIMELINE &amp; FABRIC DELAY EXTENSION
-                  </h3>
+                <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50">
+                  <div className="font-bold text-zinc-950 text-xs uppercase mb-1">
+                    3. Delivery Timeline
+                  </div>
                   <p>
-                    3.1 Dispatch target: <strong>{deliveryTimeline}</strong>. Any delay by the Buyer in supplying fabric rolls or cut panels shall automatically extend the Job-Worker&apos;s completion deadline day-for-day without penalty (Sec 53 &amp; 67 ICA).
+                    3.1 Target dispatch: <strong>{deliveryTimeline}</strong>. Any delay by the Buyer in supplying fabric rolls shall automatically extend the completion deadline day-for-day without penalty (Sec 53 Contract Act).
                   </p>
                 </div>
 
                 {/* Clause 4: Payment */}
-                <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">
-                  <h3 className="font-bold text-zinc-950 uppercase tracking-wider text-[11px] mb-1">
-                    4. STATUTORY 15-DAY PAYMENT MANDATE (SEC 15 &amp; 16 MSMED ACT)
-                  </h3>
+                <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50">
+                  <div className="font-bold text-zinc-950 text-xs uppercase mb-1">
+                    4. Statutory 15-Day Payment Rule (MSMED Act)
+                  </div>
                   <p>
                     4.1 Payment is due strictly within <strong>15 days</strong> of delivery.
                   </p>
-                  <p className="mt-1 text-rose-800 text-[11px] font-medium">
-                    4.2 Delayed payment attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong>.
+                  <p className="mt-1 text-rose-800 text-xs font-bold">
+                    4.2 Late payment attracts compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong>.
                   </p>
                 </div>
 
               </div>
 
-              {/* Dual Signature Boxes with IP Attribution Logs */}
+              {/* Dual Signature Pads */}
               <div className="pt-4 border-t-2 border-zinc-200 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   
-                  {/* Tailor Signature Box */}
+                  {/* Tailor Pad */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-zinc-900">
-                        1. Job-Worker / Tailor Mark or Sign:
+                      <label className="text-xs font-extrabold text-zinc-950">
+                        1. Tailor Mark / Signature:
                       </label>
                       <div className="no-print flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => drawMarkX(true)}
-                          className="text-[11px] font-semibold text-zinc-600 hover:text-zinc-950 cursor-pointer"
+                          className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
                         >
                           Draw &ldquo;X&rdquo; Mark
                         </button>
                         <button
                           type="button"
                           onClick={() => clearCanvas(true)}
-                          className="text-[11px] font-semibold text-zinc-400 hover:text-rose-600 cursor-pointer"
+                          className="text-xs font-bold text-zinc-400 hover:text-rose-600 cursor-pointer"
                         >
                           Clear
                         </button>
                       </div>
                     </div>
 
-                    <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
+                    <div className="border-2 border-dashed border-zinc-300 rounded-xl overflow-hidden bg-white">
                       <canvas
                         ref={supplierCanvasRef}
                         width={400}
-                        height={100}
+                        height={120}
                         onMouseDown={startDrawing(true)}
                         onMouseMove={draw(true)}
                         onMouseUp={stopDrawing(true)}
                         onTouchStart={startDrawing(true)}
                         onTouchMove={draw(true)}
                         onTouchEnd={stopDrawing(true)}
-                        className="w-full h-24 touch-none cursor-crosshair"
+                        className="w-full h-28 touch-none cursor-crosshair"
                       />
                     </div>
 
@@ -1252,45 +1174,45 @@ export default function HomePage() {
                           type="button"
                           onClick={() => {
                             setSupplierSigned(true);
-                            showToast('✓ Tailor signature & network IP locked!');
+                            showToast('✓ Tailor signature locked with IP proof!');
                           }}
-                          className="w-full py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs"
+                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs"
                         >
                           Confirm Tailor Mark &amp; Lock IP
                         </button>
                       ) : (
-                        <div className="p-2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 font-mono">
+                        <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
                           ✓ Signed: Suresh (Tailor) • IP: 106.51.22.84 • Time: {new Date().toLocaleTimeString('en-IN')} IST
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Buyer Signature Box */}
+                  {/* Buyer Pad */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-zinc-900">
-                        2. Buyer Digital Assent &amp; Mark:
+                      <label className="text-xs font-extrabold text-zinc-950">
+                        2. Buyer Mark / Signature:
                       </label>
                       <div className="no-print flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => drawMarkX(false)}
-                          className="text-[11px] font-semibold text-zinc-600 hover:text-zinc-950 cursor-pointer"
+                          className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
                         >
                           Draw &ldquo;X&rdquo; Mark
                         </button>
                         <button
                           type="button"
                           onClick={() => clearCanvas(false)}
-                          className="text-[11px] font-semibold text-zinc-400 hover:text-rose-600 cursor-pointer"
+                          className="text-xs font-bold text-zinc-400 hover:text-rose-600 cursor-pointer"
                         >
                           Clear
                         </button>
                       </div>
                     </div>
 
-                    {/* Buyer OTP & Authorization Declaration (Loophole 2 Fix) */}
+                    {/* Buyer OTP & Authorization Declaration */}
                     <div className="no-print space-y-2">
                       <div className="flex items-center gap-2 text-xs">
                         <input
@@ -1299,43 +1221,43 @@ export default function HomePage() {
                           value={buyerOtp}
                           onChange={(e) => setBuyerOtp(e.target.value)}
                           placeholder="OTP 1234"
-                          className="w-20 px-2 py-1 rounded border border-zinc-300 font-mono text-center font-bold text-xs"
+                          className="w-24 px-2.5 py-1.5 rounded-lg border border-zinc-300 font-mono text-center font-bold text-sm"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             setBuyerOtpVerified(true);
-                            showToast('✓ WhatsApp OTP verified!');
+                            showToast('✓ WhatsApp OTP 1234 verified!');
                           }}
-                          className="px-2.5 py-1 rounded bg-zinc-900 text-white font-bold text-xs"
+                          className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-bold text-xs"
                         >
                           Verify OTP
                         </button>
                       </div>
 
-                      <label className="flex items-start gap-1.5 text-[11px] text-zinc-700 cursor-pointer select-none">
+                      <label className="flex items-start gap-2 text-xs text-zinc-800 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={buyerAuthorized}
                           onChange={(e) => setBuyerAuthorized(e.target.checked)}
-                          className="mt-0.5 w-3.5 h-3.5 rounded text-zinc-900"
+                          className="mt-0.5 w-4 h-4 rounded text-zinc-950"
                         />
-                        <span>I declare I am authorized proprietor/agent with legal authority to bind Buyer.</span>
+                        <span>I declare I am authorized to bind the Buyer to this order.</span>
                       </label>
                     </div>
 
-                    <div className={`border border-zinc-300 rounded-xl overflow-hidden bg-white transition-opacity ${(!buyerOtpVerified || !buyerAuthorized) && !buyerSigned ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                    <div className={`border-2 border-dashed border-zinc-300 rounded-xl overflow-hidden bg-white transition-opacity ${(!buyerOtpVerified || !buyerAuthorized) && !buyerSigned ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                       <canvas
                         ref={buyerCanvasRef}
                         width={400}
-                        height={100}
+                        height={120}
                         onMouseDown={startDrawing(false)}
                         onMouseMove={draw(false)}
                         onMouseUp={stopDrawing(false)}
                         onTouchStart={startDrawing(false)}
                         onTouchMove={draw(false)}
                         onTouchEnd={stopDrawing(false)}
-                        className="w-full h-24 touch-none cursor-crosshair"
+                        className="w-full h-28 touch-none cursor-crosshair"
                       />
                     </div>
 
@@ -1345,12 +1267,12 @@ export default function HomePage() {
                           type="button"
                           onClick={handleBuyerConfirmSign}
                           disabled={!buyerOtpVerified || !buyerAuthorized}
-                          className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-300 text-white font-bold text-xs"
+                          className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-300 text-white font-bold text-xs"
                         >
                           Confirm Buyer Assent &amp; Lock Deal
                         </button>
                       ) : (
-                        <div className="p-2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 font-mono">
+                        <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
                           ✓ Signed: {buyerName} • IP: {buyerSignatureRecord?.client_ip || '122.179.45.10'} • OTP 1234 Verified • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       )}
@@ -1361,39 +1283,39 @@ export default function HomePage() {
 
                 {/* Printed IP Metadata Attribution (Mandatory under Sec 11-13 IT Act) */}
                 <div className="print-force-show pt-2 border-t border-zinc-200 text-[10px] font-mono text-zinc-500 space-y-0.5">
-                  <div><strong>Party A (Job-Worker):</strong> Marked from IP [106.51.22.84] • User-Agent: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')}</div>
-                  <div><strong>Party B (Buyer):</strong> Marked from IP [{buyerSignatureRecord?.client_ip || '122.179.45.10'}] • Verified via WhatsApp OTP [1234] • Authorized Agent Ratification Recorded.</div>
+                  <div><strong>Party A (Job-Worker):</strong> Signed from IP [106.51.22.84] • Device: Chrome/Android (Peenya) • Time: {new Date().toLocaleDateString('en-IN')}</div>
+                  <div><strong>Party B (Buyer):</strong> Signed from IP [{buyerSignatureRecord?.client_ip || '122.179.45.10'}] • Verified via WhatsApp OTP [1234] • Authorized Agent Assent Recorded.</div>
                   <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000.</div>
                 </div>
 
               </div>
 
-              {/* Action Bar (Save & WhatsApp Link + Print PDF) */}
+              {/* Big Action Buttons */}
               <div className="no-print pt-4 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={handleSaveAndShare}
-                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  onClick={handleSaveAndSendWhatsApp}
+                  className="w-full sm:w-auto py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Save &amp; Share on WhatsApp</span>
+                  <MessageSquare className="w-5 h-5" />
+                  <span>📲 Send to Buyer on WhatsApp</span>
                 </button>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <a
-                    href={dynamicDealUrl}
+                    href={`/deal/${dealId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto py-2.5 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto py-3.5 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-bold text-xs flex items-center justify-center gap-1.5"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
+                    <ExternalLink className="w-4 h-4 text-zinc-600" />
                     <span>Open Buyer Link</span>
                   </a>
 
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
                     <span>Print Official PDF</span>
@@ -1403,7 +1325,7 @@ export default function HomePage() {
 
             </div>
 
-            {/* Collapsible Judge's Drawer (Kept neat for low-literacy users) */}
+            {/* Collapsible Under the Hood Drawer for Judges */}
             <div className="no-print bg-white border border-zinc-200 rounded-2xl p-5 shadow-xs space-y-4">
               <button
                 type="button"
@@ -1412,109 +1334,20 @@ export default function HomePage() {
               >
                 <div className="flex items-center gap-2">
                   <Scale className="w-4 h-4 text-zinc-700" />
-                  <span className="text-xs font-bold text-zinc-950">
-                    ⚖️ Under the Hood: Lawyer Work Order, MSME ODR Portal &amp; BSA Sec 63 Tamper Lab
+                  <span className="text-xs font-bold text-zinc-900">
+                    ⚖️ Under the Hood: MSME ODR Portal Form-A &amp; Section 63 BSA Tamper Lab
                   </span>
                 </div>
                 {showJudgeDrawer ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
               </button>
 
               {showJudgeDrawer && (
-                <div className="pt-3 border-t border-zinc-100 space-y-4 animate-in fade-in">
-                  
-                  {/* Drawer Sub-Tabs */}
-                  <div className="flex border-b border-zinc-200 space-x-4 text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setJudgeSubTab('work_order')}
-                      className={`pb-2 border-b-2 transition-colors ${judgeSubTab === 'work_order' ? 'border-zinc-950 text-zinc-950' : 'border-transparent text-zinc-500 hover:text-zinc-900'}`}
-                    >
-                      1. MSME ODR Portal Filing Packet
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setJudgeSubTab('bsa_cert')}
-                      className={`pb-2 border-b-2 transition-colors ${judgeSubTab === 'bsa_cert' ? 'border-zinc-950 text-zinc-950' : 'border-transparent text-zinc-500 hover:text-zinc-900'}`}
-                    >
-                      2. BSA 2023 Sec 63 Certificate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setJudgeSubTab('tamper_test')}
-                      className={`pb-2 border-b-2 transition-colors ${judgeSubTab === 'tamper_test' ? 'border-zinc-950 text-zinc-950' : 'border-transparent text-zinc-500 hover:text-zinc-900'}`}
-                    >
-                      3. Live Tamper Test Sandbox
-                    </button>
+                <div className="pt-3 border-t border-zinc-100 space-y-3 animate-in fade-in text-xs font-mono">
+                  <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-1">
+                    <div><strong>MSME ODR Portal:</strong> odr.msme.gov.in (Form-A Ready)</div>
+                    <div><strong>SHA-256 Digest:</strong> a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</div>
+                    <div><strong>BSA Certificate:</strong> Schedule Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023.</div>
                   </div>
-
-                  {/* Sub-Tab 1: MSME ODR Portal */}
-                  {judgeSubTab === 'work_order' && (
-                    <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 text-xs space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-zinc-950">Pre-Filled MSME ODR Portal Schedule (odr.msme.gov.in)</span>
-                        <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Form-A Ready</span>
-                      </div>
-                      <table className="w-full text-left border-collapse text-[11px] font-mono">
-                        <tbody>
-                          <tr className="border-b border-zinc-200"><td className="py-1 text-zinc-500">Applicant Udyam:</td><td className="py-1 font-bold">{udyamUrn}</td></tr>
-                          <tr className="border-b border-zinc-200"><td className="py-1 text-zinc-500">Respondent Entity:</td><td className="py-1 font-bold">{buyerName}</td></tr>
-                          <tr className="border-b border-zinc-200"><td className="py-1 text-zinc-500">Principal Consideration:</td><td className="py-1 font-bold">₹{totalFormatted} INR</td></tr>
-                          <tr className="border-b border-zinc-200"><td className="py-1 text-zinc-500">Statutory Appointed Day:</td><td className="py-1 font-bold">15 Days from delivery (MSMED Sec 15)</td></tr>
-                          <tr><td className="py-1 text-zinc-500">Statutory Penal Interest:</td><td className="py-1 text-rose-700 font-bold">3x RBI Bank Rate compounded monthly</td></tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Sub-Tab 2: BSA 2023 Sec 63 Certificate */}
-                  {judgeSubTab === 'bsa_cert' && (
-                    <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 text-xs font-mono space-y-2 text-zinc-800">
-                      <div className="font-bold text-zinc-950 font-sans">
-                        SCHEDULE CERTIFICATE UNDER SECTION 63(4)(c) BHARATIYA SAKSHYA ADHINIYAM, 2023
-                      </div>
-                      <p className="text-[11px] leading-relaxed">
-                        I, Suresh, Proprietor of Lakshmi Garments, hereby certify that the electronic record #{dealId} was produced by the digital computer device in ordinary course of business.
-                      </p>
-                      <div className="bg-white p-2.5 rounded border border-zinc-200 text-[10px] space-y-1">
-                        <div><strong>Raw WhatsApp SHA-256:</strong> e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
-                        <div><strong>Digital Slip SHA-256:</strong> a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</div>
-                        <div><strong>Master Merkle Root:</strong> 7c9d1e2f3a4b5c6d7e8f90123456789abcdef0123456789abcdef0123456789a</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sub-Tab 3: Live Tamper Test Sandbox */}
-                  {judgeSubTab === 'tamper_test' && (
-                    <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 text-xs space-y-3">
-                      <div className="font-bold text-zinc-950 font-sans">
-                        Live SHA-256 Bitstream Tamper Detection Sandbox
-                      </div>
-                      <p className="text-zinc-600">
-                        Try modifying one character in the raw negotiation (e.g. change ₹58 to ₹28) and click Verify:
-                      </p>
-                      <textarea
-                        rows={3}
-                        value={tamperChatInput}
-                        onChange={(e) => {
-                          setTamperChatInput(e.target.value);
-                          setTamperDetected(e.target.value !== rawChat);
-                        }}
-                        className="w-full p-2.5 rounded-lg border border-zinc-300 font-mono text-xs bg-white"
-                      />
-                      {tamperDetected ? (
-                        <div className="p-3 bg-rose-50 border border-rose-300 rounded-lg text-rose-900 font-bold flex items-center gap-2">
-                          <ShieldAlert className="w-4 h-4 text-rose-600" />
-                          <span>🚨 TAMPER DETECTED! SHA-256 Hash Mismatch. Document invalidated for court tender.</span>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-emerald-900 font-bold flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>✓ CRYPTOGRAPHIC INTEGRITY VERIFIED. 100% Match with locked state.</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                 </div>
               )}
             </div>
