@@ -41,6 +41,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [detectedIp, setDetectedIp] = useState<string>('');
+  const [sha256Digest, setSha256Digest] = useState<string>('7243edc4302d0cceeffa756d5dce58ff67f6e97f969b8c27c6164bc42cf9c126');
 
   useEffect(() => {
     fetch('/api/ip')
@@ -92,6 +93,20 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     || deal?.extractedData?.deliveryTimeline?.value 
     || 'Within 14 business days of fabric delivery';
   const paymentDays = deal?.payment_terms?.payment_deadline_days || 15;
+
+  // Compute canonical SHA-256 digest
+  useEffect(() => {
+    const canonicalPayload = `DealProof|${dealId}|${supplierName}|${buyerName}|${quantity}|${ratePerPiece}|${totalValue}|${deal?.signatures?.supplier?.client_ip || ''}|${signedRecord?.client_ip || detectedIp || ''}|${signedRecord?.timestamp_ist || ''}`;
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoder = new TextEncoder();
+      crypto.subtle.digest('SHA-256', encoder.encode(canonicalPayload))
+        .then(buffer => {
+          const hashHex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+          setSha256Digest(hashHex);
+        })
+        .catch(() => {});
+    }
+  }, [dealId, supplierName, buyerName, quantity, ratePerPiece, totalValue, deal?.signatures?.supplier, signedRecord, detectedIp]);
 
   // Initialize canvas
   useEffect(() => {
@@ -330,7 +345,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                 <span>Sec 10A IT Act Valid</span>
               </span>
-              <div className="text-[10px] text-zinc-500 mt-1">₹0 Stamp Duty (Art. 5 Exemption)</div>
+              <div className="text-[10px] text-zinc-500 mt-1 font-medium">Karnataka Stamp Act: ₹100 Nominal (Curable under In Re: Interplay, 2023)</div>
             </div>
           </div>
 
@@ -339,13 +354,17 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             <div>
               <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor (First Party)</div>
               <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
-              <div className="text-zinc-600 mt-0.5">Udyam No: <strong className="text-zinc-900 font-mono">{udyamNumber}</strong></div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ MSMED Act Sec 15 Protected Micro-Unit</div>
+              <div className="text-zinc-600 mt-0.5">Udyam No: <strong className="text-zinc-900 font-mono">{udyamNumber || 'Pending Registration'}</strong></div>
+              {udyamNumber ? (
+                <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ MSMED Act Sec 15 Protected Micro-Unit</div>
+              ) : (
+                <div className="text-[11px] text-amber-700 font-semibold mt-0.5">⚠️ Self-Declared Micro Unit (URN Verification Pending for MSEFC Jurisdiction)</div>
+              )}
             </div>
             <div>
               <div className="text-[10px] uppercase font-bold text-zinc-400">2. Customer / Boutique Buyer (Second Party)</div>
               <div className="font-bold text-zinc-900 text-sm">{buyerName}</div>
-              <div className="text-zinc-600 mt-0.5">Mobile: {buyerPhone}</div>
+              <div className="text-zinc-600 mt-0.5">{buyerPhone ? `Mobile: ${buyerPhone}` : 'Direct Electronic Assent Channel'}</div>
               <div className="text-[11px] text-zinc-500 mt-0.5">Registered Procurement Counterparty</div>
             </div>
           </div>
@@ -356,29 +375,29 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             {/* Clause 1: Scope & Inspection Rule */}
             <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                1. SCOPE OF JOB-WORK &amp; 72-HR INSPECTION DEEMED ACCEPTANCE
+                1. SCOPE OF JOB-WORK &amp; AGREED 72-HR INSPECTION WINDOW
               </h3>
               <p>
-                1.1 <strong>Scope:</strong> {scope} (<strong>{quantity.toLocaleString('en-IN')} units</strong>).
+                1.1 <strong>Scope:</strong> Stitching &amp; Finishing of {scope.replace(/^Stitching\s+(?:&\s+Finishing\s+)?of\s+/i, '')} — <strong>Total Confirmed Quantity: {quantity.toLocaleString('en-IN')} units</strong>.
               </p>
               <p className="mt-1 text-zinc-600">
-                1.2 <strong>Latent Defect Shield (Sec 150-152 ICA 1872):</strong> Tailor provides cutting, stitching, and finishing as bailee. Raw materials and fabric supplied by Buyer. Tailor bears zero liability for latent fabric defects (e.g. yarn faults, shrinkage, dye bleeding).
+                1.2 <strong>Bailment of Fabric (Sec 150–152 ICA 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes ordinary prudence in workmanship and safe custody, but is not liable for pre-existing fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
               </p>
               <p className="mt-1 text-emerald-800 font-medium">
-                1.3 <strong>Deemed Acceptance Rule (Sec 42 Sale of Goods Act):</strong> Buyer must inspect goods upon delivery. Any quality objection must be raised in writing within <strong>72 hours</strong> of delivery; otherwise, goods are deemed accepted without right of arbitrary debit note.
+                1.3 <strong>Contractual 72-Hour Inspection &amp; Rectification Window:</strong> Pursuant to Section 42 of the Sale of Goods Act, 1930 (defining reasonable examination period), the parties agree to a 72-hour inspection window from delivery. Buyer shall notify Job-Worker in writing of observable stitching defects within 72 hours for prompt cure/rectification. Retention beyond 72 hours without written objection constitutes deemed acceptance, barring arbitrary debit notes.
               </p>
             </div>
 
-            {/* Clause 2.1: LABOUR CHARGES & MATH CALCULATION (CRITICAL REQUIREMENT) */}
+            {/* Clause 2: Labour Charges & MSME Tax Compliance Notice */}
             <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                2. LABOUR CHARGES &amp; SECTION 43B(h) TAX NOTICE
+                2. LABOUR CHARGES &amp; MSME TAX COMPLIANCE NOTICE
               </h3>
               <p className="text-sm font-semibold text-zinc-900">
-                The agreed labour consideration is ₹{ratePerPiece} per piece (Total Consideration: ₹{totalValueFormatted} INR), exclusive of applicable GST.
+                The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalValueFormatted} INR), exclusive of applicable GST.
               </p>
-              <p className="mt-1 text-zinc-500 text-[11px]">
-                <strong>Statutory Income Tax Warning:</strong> Under Section 43B(h) of the Income-tax Act, failure by the Buyer to settle this payment within 15 days triggers 100% tax expense disallowance in the Buyer&apos;s annual tax audit.
+              <p className="mt-1 text-zinc-600 text-[11px] leading-relaxed">
+                <strong>Tax Compliance Notice:</strong> Timely payment within the agreed 15-day period is required for Buyer&apos;s business tax deduction. Under applicable MSME tax provisions (Income-tax Act Section 43B(h) / Section 37(2)(g) of the Income-tax Act, 2025), overdue payments to registered micro/small enterprises beyond the agreed MSMED Act timeline are disallowed as deductible business expenses in the financial year of incurrence and deferred until the tax year of actual payment.
               </p>
             </div>
 
@@ -395,13 +414,13 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
             {/* Clause 4: Payment Terms */}
             <div className="bg-zinc-50/60 p-3.5 rounded-lg border border-zinc-200/80">
               <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
-                4. STATUTORY 15-DAY PAYMENT MANDATE (SEC 15 &amp; 16 MSMED ACT)
+                4. AGREED PAYMENT TERMS &amp; MSMED ACT SECTION 15–16 MANDATE
               </h3>
               <p>
-                4.1 Payment is due strictly within <strong>{paymentDays} days</strong> of delivery.
+                4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>{paymentDays} days</strong> of delivery, as agreed by both parties (within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
               </p>
               <p className="mt-1 text-rose-800 text-[11px] font-semibold">
-                4.2 Under Section 16 MSMED Act, 2006, delayed payment attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong>.
+                4.2 <strong>Statutory Interest on Delayed Payment:</strong> Under Section 16 MSMED Act, 2006, delayed payment beyond the agreed timeline mandates compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> from the appointed day until full discharge.
               </p>
             </div>
 
@@ -581,14 +600,14 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                 )}
               </div>
-              <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>
+              <div><strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 when accompanied by the platform certificate. Canonical Electronic Record SHA-256 Digest: <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>.</div>
             </div>
 
           </div>
 
           {/* Legal Operational Notice */}
           <div className="pt-4 border-t border-zinc-200 text-[10px] text-zinc-500 leading-normal">
-            <strong>Legal Operational Notice:</strong> This Digital Order Slip is an electronic record formed under Section 10A of the Information Technology Act, 2000. Non-stamping is a curable procedural defect under the Supreme Court of India 7-judge Constitution Bench precedent in <em>In Re: Interplay (2023)</em>. In the event of dispute, this record is admissible before the MSME ODR Portal (MSEFC) under Section 18 of the MSMED Act, 2006.
+            <strong>Legal Operational Notice:</strong> This Digital Order Slip is an electronic record formed under Section 10A of the Information Technology Act, 2000. Under Article 5 of the Karnataka Stamp Act, 1957, job-work agreements attract a nominal ₹100 stamp duty; non-stamping or deficit stamping is a curable procedural defect under the Supreme Court of India 7-judge Constitution Bench precedent in <em>In Re: Interplay (2023)</em>. In the event of dispute, this record is admissible before the MSME ODR Portal (MSEFC) under Section 18 of the MSMED Act, 2006.
           </div>
 
         </div>

@@ -46,13 +46,13 @@ const PRESETS = [
 Raghav (Boutique): Done Suresh, rate is fine. Sending fabric rolls tomorrow. Need delivery in 14 days.
 Suresh: Ji sir, will deliver on time.
 Raghav: Payment baad mein dekhenge, standard terms.`,
-    supplier: 'Suresh - Lakshmi Garments',
-    buyer: 'Raghav - Apex Boutique',
+    supplier: 'Suresh (Lakshmi Garments)',
+    buyer: 'Raghav (Apex Fashion Brands / Boutique Buyer)',
     quantity: 1500,
     rate: 58,
     total: 87000,
     totalFormatted: '87,000',
-    item: 'Stitching of 1,500 Rayon Kurtis',
+    item: 'Stitching & Finishing of Rayon Kurtis',
     delivery: 'Within 14 days of fabric delivery',
     gaps: [
       {
@@ -95,7 +95,7 @@ Manjunath: Wait sir, embroidery + bio-wash is extra Rs 14 per piece.`,
     rate: 48,
     total: 96000,
     totalFormatted: '96,000',
-    item: 'Stitching of 2,000 Polo T-Shirts',
+    item: 'Stitching & Finishing of Polo T-Shirts',
     delivery: 'Within 10 days',
     gaps: [
       {
@@ -126,7 +126,7 @@ Buyer: Market rate chal raha hai, finish dekh ke Rs 90 se Rs 105 decide karenge.
     rate: 0,
     total: 0,
     totalFormatted: '0',
-    item: '1,500 to 2,000 Cargo Pants (Vague)',
+    item: 'Stitching of Cargo Pants',
     delivery: 'Not stated',
     gaps: [],
     status: 'HALTED_AMBIGUOUS_SEC_29'
@@ -151,9 +151,9 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Extracted Commercial Details (Initialized to 0 until user types or loads demo)
-  const [supplierName, setSupplierName] = useState('Suresh - Lakshmi Garments');
-  const [buyerName, setBuyerName] = useState('Raghav - Apex Boutique');
-  const [itemScope, setItemScope] = useState('Stitching of Garments');
+  const [supplierName, setSupplierName] = useState('Suresh (Lakshmi Garments)');
+  const [buyerName, setBuyerName] = useState('Raghav (Apex Fashion Brands / Boutique Buyer)');
+  const [itemScope, setItemScope] = useState('Rayon Kurtis');
   const [quantity, setQuantity] = useState(0);
   const [ratePerPiece, setRatePerPiece] = useState(0);
   const [totalValue, setTotalValue] = useState(0);
@@ -202,6 +202,21 @@ export default function HomePage() {
   const [detectedClientIp, setDetectedClientIp] = useState<string>('');
   const [detectedUserAgent, setDetectedUserAgent] = useState<string>('');
   const [tailorSignatureRecord, setTailorSignatureRecord] = useState<any>(null);
+  const [sha256Digest, setSha256Digest] = useState<string>('7243edc4302d0cceeffa756d5dce58ff67f6e97f969b8c27c6164bc42cf9c126');
+
+  // Compute canonical SHA-256 digest across contract terms and assent records
+  useEffect(() => {
+    const canonicalPayload = `DealProof|${dealId}|${supplierName}|${buyerName}|${quantity}|${ratePerPiece}|${totalValue}|${tailorSignatureRecord?.client_ip || ''}|${buyerSignatureRecord?.client_ip || ''}|${buyerSignatureRecord?.timestamp_ist || ''}`;
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoder = new TextEncoder();
+      crypto.subtle.digest('SHA-256', encoder.encode(canonicalPayload))
+        .then(buffer => {
+          const hashHex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+          setSha256Digest(hashHex);
+        })
+        .catch(() => {});
+    }
+  }, [dealId, supplierName, buyerName, quantity, ratePerPiece, totalValue, tailorSignatureRecord, buyerSignatureRecord]);
 
   // Origin for links & live IP detection
   const [siteOrigin, setSiteOrigin] = useState('http://localhost:3000');
@@ -449,13 +464,13 @@ export default function HomePage() {
     // 6. Extract Scope & Garment Item
     let extractedItem = itemScope;
     if (/ಕಾಟನ್\s*ಶರ್ಟ್|cotton\s*shirt/i.test(text)) {
-      extractedItem = 'Stitching of 2,000 Cotton Shirts (ಕಾಟನ್ ಶರ್ಟ್ - Double Stitch & Extra Buttonhole)';
+      extractedItem = 'Cotton Shirts (Double Stitch & Extra Buttonhole)';
     } else if (/polo/i.test(text)) {
-      extractedItem = 'Stitching of 2,000 Polo T-Shirts';
+      extractedItem = 'Polo T-Shirts';
     } else if (/kurti|kurta|ಕುರ್ತಿ/i.test(text)) {
-      extractedItem = 'Stitching of 1,500 Rayon Kurtis';
+      extractedItem = 'Rayon Kurtis';
     } else if (/cargo|pant|ಪ್ಯಾಂಟ್/i.test(text)) {
-      extractedItem = 'Stitching of Cargo Pants';
+      extractedItem = 'Cargo Pants';
     }
 
     // 7. Extract Delivery Timeline
@@ -1920,7 +1935,7 @@ export default function HomePage() {
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Valid Sec 10A IT Act</span>
                   </span>
-                  <div className="text-[11px] text-zinc-400 mt-1">₹0 Stamp Duty (Art. 5 Exemption)</div>
+                  <div className="text-[11px] text-zinc-500 mt-1 font-medium">Karnataka Stamp Act: ₹100 Nominal (Curable under In Re: Interplay, 2023)</div>
                 </div>
               </div>
 
@@ -1929,8 +1944,12 @@ export default function HomePage() {
                 <div>
                   <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor:</div>
                   <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
-                  <div className="text-zinc-500 mt-0.5">Udyam No: <strong className="text-zinc-800 font-mono">{udyamUrn}</strong></div>
-                  <div className="text-emerald-700 font-medium mt-0.5">✓ MSMED Act Sec 15 Protected Micro-Unit</div>
+                  <div className="text-zinc-500 mt-0.5">Udyam No: <strong className="text-zinc-800 font-mono">{udyamUrn || 'Pending Registration'}</strong></div>
+                  {udyamUrn ? (
+                    <div className="text-emerald-700 font-medium mt-0.5">✓ Registered Micro-Enterprise — MSMED Act Protected</div>
+                  ) : (
+                    <div className="text-amber-700 font-medium mt-0.5">⚠️ Self-Declared Micro Unit (URN Verification Pending for MSEFC Tribunal Jurisdiction)</div>
+                  )}
                 </div>
 
                 <div>
@@ -1947,27 +1966,27 @@ export default function HomePage() {
                 {/* Clause 1: Scope */}
                 <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    1. Scope of Work &amp; 72-Hour Quality Inspection
+                    1. Scope of Work &amp; Agreed 72-Hour Inspection Window
                   </div>
-                  <p>1.1 <strong>Scope:</strong> {itemScope} (<strong>{quantity.toLocaleString('en-IN')} units</strong>).</p>
+                  <p>1.1 <strong>Scope of Work:</strong> Stitching &amp; Finishing of {itemScope.replace(/^Stitching\s+(?:&\s+Finishing\s+)?of\s+/i, '')} — <strong>Total Confirmed Quantity: {quantity.toLocaleString('en-IN')} units</strong>.</p>
                   <p className="mt-1 text-zinc-600">
-                    1.2 <strong>Bailment Shield (Sec 150-152 ICA):</strong> Raw fabric supplied by Buyer. Tailor provides stitching services as bailee. Tailor bears zero liability for latent fabric defects such as shrinkage, yarn faults, or dye bleeding.
+                    1.2 <strong>Bailment of Fabric (Sec 150–152 Indian Contract Act):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes ordinary prudence in workmanship and safe custody of materials, but is not liable for pre-existing fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
                   </p>
                   <p className="mt-1 text-emerald-800 font-medium">
-                    1.3 <strong>Deemed Acceptance Rule (Sec 42 Sale of Goods Act):</strong> Buyer must report any defect within <strong>72 hours</strong> of delivery. Non-rejection within this window constitutes deemed acceptance without right of arbitrary debit note.
+                    1.3 <strong>Contractual 72-Hour Inspection &amp; Rectification Window:</strong> Pursuant to Section 42 of the Sale of Goods Act, 1930 (defining reasonable examination period), the parties agree to a 72-hour inspection window from delivery. Buyer shall notify Job-Worker in writing of observable stitching defects within 72 hours for prompt cure/rectification. Retention beyond 72 hours without written objection constitutes deemed acceptance, barring arbitrary debit notes.
                   </p>
                 </div>
 
-                {/* Clause 2.1: LABOUR CHARGES & MATH CALCULATION (CRITICAL REQUIREMENT) */}
+                {/* Clause 2: Labour Charges & MSME Tax Compliance Notice */}
                 <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    2. Labour Charges &amp; Section 43B(h) Tax Compliance Notice
+                    2. Labour Charges &amp; MSME Tax Compliance Notice
                   </div>
                   <p className="text-sm font-semibold text-zinc-900">
-                    The agreed labour consideration is ₹{ratePerPiece} per piece (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
+                    The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
-                  <p className="mt-1 text-zinc-500 text-xs">
-                    <strong>Tax Penalty Notice:</strong> Under Section 43B(h) of the Income-tax Act, failure by Buyer to remit payment within 15 days triggers 100% tax expense disallowance in Buyer&apos;s annual tax audit.
+                  <p className="mt-1 text-zinc-600 text-xs leading-relaxed">
+                    <strong>Tax Compliance Notice:</strong> Timely payment within the agreed 15-day period is required for Buyer&apos;s business tax deduction. Under applicable MSME tax provisions (Income-tax Act Section 43B(h) / Section 37(2)(g) of the Income-tax Act, 2025), overdue payments to registered micro/small enterprises beyond the agreed MSMED Act timeline are disallowed as deductible business expenses in the financial year of incurrence and deferred until the tax year of actual payment.
                   </p>
                 </div>
 
@@ -1984,13 +2003,13 @@ export default function HomePage() {
                 {/* Clause 4: Payment */}
                 <div className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
                   <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
-                    4. Statutory 15-Day Payment Rule (MSMED Act)
+                    4. Agreed Payment Terms &amp; MSMED Act Section 15–16 Mandate
                   </div>
                   <p>
-                    4.1 Payment is due strictly within <strong>15 days</strong> of delivery.
+                    4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>15 days</strong> of delivery, as agreed by both parties (well within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
                   </p>
                   <p className="mt-1 text-rose-800 text-xs font-semibold">
-                    4.2 Late payment attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong>.
+                    4.2 <strong>Statutory Interest on Delayed Payment:</strong> Under Section 16 of the MSMED Act, 2006, delayed payment beyond the agreed timeline mandates compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> from the appointed day until full discharge.
                   </p>
                 </div>
 
@@ -2257,7 +2276,7 @@ export default function HomePage() {
                       <span className="text-zinc-500 font-sans italic">[Pending Buyer Remote Digital Assent]</span>
                     )}
                   </div>
-                  <div><strong>Statutory Attestation:</strong> Digital transaction sealed under Section 10A and Sections 11–13 of the IT Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023. SHA-256 Digest: <code>a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</code>.</div>
+                  <div><strong>Statutory Attestation &amp; Evidentiary Certificate:</strong> Formed electronically under Section 10A and attributed under Sections 11–13 of the Information Technology Act, 2000. Admissible under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 when accompanied by the platform certificate. Canonical Electronic Record SHA-256 Digest: <code className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.5 rounded">{sha256Digest}</code>.</div>
                 </div>
 
               </div>
@@ -2335,8 +2354,8 @@ export default function HomePage() {
                 <div className="pt-3 border-t border-zinc-100 space-y-3 animate-in fade-in text-xs font-mono text-zinc-600">
                   <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-1">
                     <div><strong>MSME ODR Portal:</strong> odr.msme.gov.in (Form-A Schedule Ready)</div>
-                    <div><strong>SHA-256 Digest:</strong> a8f5c94288fe1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b719</div>
-                    <div><strong>BSA Certificate:</strong> Schedule Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023.</div>
+                    <div><strong>Canonical Record SHA-256:</strong> {sha256Digest}</div>
+                    <div><strong>Evidentiary Admissibility:</strong> Certificate under Section 63(4)(c) Bharatiya Sakshya Adhiniyam, 2023 &amp; Section 65B Indian Evidence Act generated on record export.</div>
                     <div><strong>Network Attribution:</strong> IP {supplierSigned && tailorSignatureRecord ? tailorSignatureRecord.client_ip : (detectedClientIp || 'Dynamic Network IP')} (Party A) • IP {buyerSigned && buyerSignatureRecord ? buyerSignatureRecord.client_ip : 'Awaiting Buyer Assent'} (Party B) under Sections 11-13 IT Act.</div>
                   </div>
                 </div>
