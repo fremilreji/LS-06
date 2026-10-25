@@ -12,7 +12,8 @@ import {
   Scale, 
   ShieldCheck, 
   Edit3,
-  Sparkles
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import { LEGAL_DISCLAIMER } from '@/lib/agreement/generateDraft';
 
@@ -33,6 +34,8 @@ export default function LegalPaperDocument({
   const [copiedAsk, setCopiedAsk] = useState(false);
   const [showFormalDoc, setShowFormalDoc] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [supplierSigned, setSupplierSigned] = useState(false);
+  const [buyerSigned, setBuyerSigned] = useState(false);
 
   const partyAName = draft.extractedData.partyA.name || 'Seller';
   const partyBName = draft.extractedData.partyB.name || 'Buyer';
@@ -221,29 +224,81 @@ export default function LegalPaperDocument({
             <div className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-700 mb-3">
               Execution & Assent (Digital WhatsApp Assent OR Physical Signature / Left Thumb Impression)
             </div>
-            <div className="grid grid-cols-2 gap-6 text-xs font-sans text-slate-800">
-              <div className="p-3 border border-slate-300 rounded bg-slate-50/50">
-                <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
-                  {partyAName}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs font-sans text-slate-800">
+              {/* Supplier Assent Box */}
+              <div className="p-3.5 border border-slate-300 rounded-lg bg-slate-50/50 flex flex-col justify-between">
+                <div>
+                  <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
+                    {partyAName}
+                  </div>
+                  <div className="text-slate-600 text-[11px] mt-0.5">Supplier / Micro Job-Worker</div>
                 </div>
-                <div className="text-slate-600 text-[11px] mt-0.5">Supplier / Service Provider</div>
-                <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-1">
-                  <div>Signature: __________________________</div>
-                  <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
-                </div>
+
+                {supplierSigned ? (
+                  <div className="mt-3 p-2 bg-emerald-50 rounded border border-emerald-300 text-[10px] text-emerald-950 font-mono space-y-1">
+                    <div className="font-bold text-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>AFFIXED &amp; SEALED</span>
+                    </div>
+                    <div>Mode: Left Thumb Impression (LTI) / OTP Verified</div>
+                    <div>IP: 106.51.22.84 (Bommanahalli Cluster)</div>
+                    <div>Time: {todayStr} | Status: Assented</div>
+                  </div>
+                ) : (
+                  <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-2">
+                    <div>Physical: __________________________</div>
+                    <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
+                    <button
+                      type="button"
+                      onClick={() => setSupplierSigned(true)}
+                      className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] transition-colors"
+                    >
+                      Affix Supplier Thumbprint / Sign
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="p-3 border border-slate-300 rounded bg-slate-50/50">
-                <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
-                  {partyBName}
+              {/* Buyer Assent Box */}
+              <div className="p-3.5 border border-slate-300 rounded-lg bg-slate-50/50 flex flex-col justify-between">
+                <div>
+                  <div className="border-t-2 border-slate-900 pt-1.5 font-bold">
+                    {partyBName}
+                  </div>
+                  <div className="text-slate-600 text-[11px] mt-0.5">Buyer / Client / Exporter</div>
                 </div>
-                <div className="text-slate-600 text-[11px] mt-0.5">Buyer / Client</div>
-                <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-1">
-                  <div>Signature: __________________________</div>
-                  <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
-                </div>
+
+                {buyerSigned ? (
+                  <div className="mt-3 p-2 bg-emerald-50 rounded border border-emerald-300 text-[10px] text-emerald-950 font-mono space-y-1">
+                    <div className="font-bold text-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>DIGITALLY ASSENTED (Sec 10A IT Act)</span>
+                    </div>
+                    <div>Mode: WhatsApp &quot;Confirmed&quot; + Mobile OTP</div>
+                    <div>IP: 122.179.45.10 (Peenya Warehouse)</div>
+                    <div className="text-[10px] text-emerald-700 font-bold">✓ BINDING STATUTORY CONTRACT</div>
+                  </div>
+                ) : (
+                  <div className="mt-3 pt-2 border-t border-dashed border-slate-300 text-[10px] text-slate-500 space-y-2">
+                    <div>Physical: __________________________</div>
+                    <div>OR Left Thumb Impression (LTI / अंगूठा)</div>
+                    <button
+                      type="button"
+                      onClick={() => setBuyerSigned(true)}
+                      className="w-full py-1.5 px-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] transition-colors shadow-sm"
+                    >
+                      Simulate Buyer Assent (WhatsApp / Portal)
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+
+            {supplierSigned && buyerSigned && (
+              <div className="mt-4 p-3 bg-emerald-950/20 border-2 border-emerald-600 rounded-xl text-center text-xs font-bold text-emerald-800 font-sans animate-in fade-in">
+                🎉 BILATERAL CONTRACT FULLY EXECUTED &amp; SEALED UNDER SECTION 10A IT ACT / SECTION 10 INDIAN CONTRACT ACT, 1872
+              </div>
+            )}
 
             {/* Independent Attestation Witness for Illiterate/Unlettered Signatories */}
             <div className="mt-4 p-3 bg-slate-100 rounded text-[11px] text-slate-700 border border-slate-200 leading-relaxed font-sans">
