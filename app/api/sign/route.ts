@@ -79,5 +79,14 @@ export async function GET(req: NextRequest) {
   }
 
   const deal = await getDealFromFirestore(dealId);
-  return NextResponse.json({ success: true, deal });
+  return NextResponse.json(
+    { success: true, deal },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    }
+  );
 }

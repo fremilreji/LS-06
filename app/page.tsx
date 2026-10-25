@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, 
   CheckCircle2, 
@@ -31,7 +31,8 @@ import {
   HelpCircle,
   Clock,
   Layers,
-  Edit3
+  Edit3,
+  RefreshCw
 } from 'lucide-react';
 
 // Preset Scenarios
@@ -751,7 +752,7 @@ export default function HomePage() {
     }
   };
 
-  // Canvas Handlers
+  // Canvas Handlers (Optimized for Mobile Touch & High-DPI Screens)
   const startDrawing = (isSupplier: boolean) => (e: any) => {
     const canvas = isSupplier 
       ? supplierCanvasRef.current 
@@ -759,9 +760,19 @@ export default function HomePage() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const clientX = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#18181b';
@@ -786,9 +797,19 @@ export default function HomePage() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const clientX = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
     ctx.lineTo(x, y);
     ctx.stroke();
   };
@@ -834,8 +855,8 @@ export default function HomePage() {
     }
   };
 
-  // Tailor Sign & Dynamic IP Locking
-  const handleTailorConfirmSign = () => {
+  // Tailor Sign & Dynamic IP Locking (Persisted to Cloud/Disk Cache)
+  const handleTailorConfirmSign = async () => {
     const nowIst = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       day: '2-digit',
@@ -847,15 +868,102 @@ export default function HomePage() {
       hour12: true,
     }) + ' IST';
     const clientIp = detectedClientIp || '127.0.0.1';
-    setTailorSignatureRecord({
+    const record = {
       signer_name: supplierName,
       client_ip: clientIp,
       user_agent: detectedUserAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android'),
       timestamp_ist: nowIst,
-    });
+    };
+    setTailorSignatureRecord(record);
     setSupplierSigned(true);
     showToast(`✓ Tailor signature locked with IP: ${clientIp}`);
+
+    try {
+      const activeCanvas = supplierCanvasRef.current;
+      const signatureData = activeCanvas ? activeCanvas.toDataURL() : 'digital-mark-tailor';
+      await fetch('/api/sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deal_id: dealId,
+          signature_data: signatureData,
+          role: 'supplier',
+          signer_name: supplierName,
+        }),
+      });
+    } catch (e) {
+      console.warn('Tailor sign API sync notice:', e);
+    }
   };
+
+  // Auto-persist deal whenever Step 3 is reached so remote mobile buyer accesses full terms
+  useEffect(() => {
+    if (currentStep === 3 && dealId) {
+      fetch('/api/deal/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: dealId,
+          deal_id: dealId,
+          title,
+          supplier_name: supplierName,
+          buyer_name: buyerName,
+          udyam_number: udyamUrn,
+          payment_terms: {
+            quantity_pcs: quantity,
+            rate_per_piece: ratePerPiece,
+            total_value: totalValue,
+            total_value_formatted: totalFormatted,
+            payment_deadline_days: 15,
+          },
+          clauses: {
+            scope: { value: itemScope },
+            delivery_timeline: { value: deliveryTimeline },
+          }
+        }),
+      }).catch((err) => console.warn('Auto-save notice:', err));
+    }
+  }, [currentStep, dealId, title, supplierName, buyerName, udyamUrn, quantity, ratePerPiece, totalValue, totalFormatted, itemScope, deliveryTimeline]);
+
+  // State & function for syncing remote Party B assent across devices
+  const [isSyncingBuyer, setIsSyncingBuyer] = useState(false);
+
+  const syncBuyerStatus = useCallback(async (showManualToast = false) => {
+    if (!dealId) return;
+    try {
+      setIsSyncingBuyer(true);
+      const res = await fetch(`/api/deal/save?deal_id=${encodeURIComponent(dealId)}&_t=${Date.now()}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.deal?.signatures?.buyer) {
+        const remoteBuyer = data.deal.signatures.buyer;
+        setBuyerSignatureRecord((prev: any) => {
+          if (!prev || prev.client_ip !== remoteBuyer.client_ip) {
+            showToast(`🎉 Remote Buyer Assent Received! Signed by ${remoteBuyer.signer_name} (IP: ${remoteBuyer.client_ip})`);
+          } else if (showManualToast) {
+            showToast(`✓ Buyer signature verified: IP ${remoteBuyer.client_ip}`);
+          }
+          return remoteBuyer;
+        });
+        setBuyerSigned(true);
+      } else if (showManualToast) {
+        showToast('ℹ Awaiting remote Buyer signature on WhatsApp link...');
+      }
+    } catch (e) {
+      if (showManualToast) showToast('Sync failed, please retry.');
+    } finally {
+      setIsSyncingBuyer(false);
+    }
+  }, [dealId]);
+
+  // Auto-poll every 2.5 seconds when on Step 3 until buyer signs
+  useEffect(() => {
+    if (currentStep !== 3 || !dealId) return;
+    const interval = setInterval(() => {
+      syncBuyerStatus(false);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [currentStep, dealId, syncBuyerStatus]);
 
   // Buyer Sign & Attribution
   const handleBuyerConfirmSign = async () => {
@@ -1708,6 +1816,7 @@ export default function HomePage() {
                           onTouchMove={draw(false)}
                           onTouchEnd={stopDrawing(false)}
                           className="w-full h-24 touch-none cursor-crosshair"
+                          style={{ touchAction: 'none' }}
                         />
                       </div>
                     </div>
@@ -1926,6 +2035,7 @@ export default function HomePage() {
                         onTouchMove={draw(true)}
                         onTouchEnd={stopDrawing(true)}
                         className="w-full h-24 touch-none cursor-crosshair"
+                        style={{ touchAction: 'none' }}
                       />
                     </div>
 
@@ -1952,21 +2062,35 @@ export default function HomePage() {
                       <label className="text-xs font-bold text-zinc-900">
                         2. Buyer Mark / Signature:
                       </label>
-                      <div className="no-print flex items-center gap-2">
+                      <div className="no-print flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => drawMarkX(false)}
-                          className="text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                          onClick={() => syncBuyerStatus(true)}
+                          disabled={isSyncingBuyer}
+                          className="px-2 py-0.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Check live status from Buyer's phone"
                         >
-                          Draw &ldquo;X&rdquo; Mark
+                          <RefreshCw className={`w-2.5 h-2.5 ${isSyncingBuyer ? 'animate-spin' : ''}`} />
+                          <span>{isSyncingBuyer ? 'Syncing...' : 'Sync Buyer'}</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => clearCanvas(false)}
-                          className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer"
-                        >
-                          Clear
-                        </button>
+                        {!buyerSigned && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => drawMarkX(false)}
+                              className="text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                            >
+                              Draw &ldquo;X&rdquo; Mark
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => clearCanvas(false)}
+                              className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -1977,52 +2101,79 @@ export default function HomePage() {
                           <ShieldCheck className="w-4 h-4 text-emerald-600" />
                           <span>Direct WhatsApp Assent Channel</span>
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
-                          Sec 10A IT Act
-                        </span>
+                        {buyerSigned ? (
+                          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">
+                            ✓ Assent Confirmed
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 flex items-center gap-1 animate-pulse">
+                            <span>⏳ Awaiting Phone Sign</span>
+                          </span>
+                        )}
                       </div>
 
-                      <label className="flex items-start gap-2 text-xs text-zinc-700 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={buyerAuthorized}
-                          onChange={(e) => setBuyerAuthorized(e.target.checked)}
-                          className="mt-0.5 w-3.5 h-3.5 rounded text-zinc-900"
-                        />
-                        <span>I declare I am authorized to bind the Buyer entity.</span>
-                      </label>
-                    </div>
-
-                    <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
-                      <canvas
-                        ref={buyerCanvasRef}
-                        width={400}
-                        height={110}
-                        onMouseDown={startDrawing(false)}
-                        onMouseMove={draw(false)}
-                        onMouseUp={stopDrawing(false)}
-                        onTouchStart={startDrawing(false)}
-                        onTouchMove={draw(false)}
-                        onTouchEnd={stopDrawing(false)}
-                        className="w-full h-24 touch-none cursor-crosshair"
-                      />
-                    </div>
-
-                    <div className="no-print">
-                      {!buyerSigned ? (
-                        <button
-                          type="button"
-                          onClick={handleBuyerConfirmSign}
-                          className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer"
-                        >
-                          Confirm Buyer Assent &amp; Lock Deal
-                        </button>
-                      ) : (
-                        <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
-                          ✓ Signed: {buyerName} • IP: {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'} • OTP {buyerOtp} Verified • Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
-                        </div>
+                      {!buyerSigned && (
+                        <label className="flex items-start gap-2 text-xs text-zinc-700 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={buyerAuthorized}
+                            onChange={(e) => setBuyerAuthorized(e.target.checked)}
+                            className="mt-0.5 w-3.5 h-3.5 rounded text-zinc-900"
+                          />
+                          <span>I declare I am authorized to bind the Buyer entity.</span>
+                        </label>
                       )}
                     </div>
+
+                    {!buyerSigned ? (
+                      <>
+                        <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
+                          <canvas
+                            ref={buyerCanvasRef}
+                            width={400}
+                            height={110}
+                            onMouseDown={startDrawing(false)}
+                            onMouseMove={draw(false)}
+                            onMouseUp={stopDrawing(false)}
+                            onTouchStart={startDrawing(false)}
+                            onTouchMove={draw(false)}
+                            onTouchEnd={stopDrawing(false)}
+                            className="w-full h-24 touch-none cursor-crosshair"
+                            style={{ touchAction: 'none' }}
+                          />
+                        </div>
+
+                        <div className="no-print space-y-1.5">
+                          <button
+                            type="button"
+                            onClick={handleBuyerConfirmSign}
+                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Simulate Local Buyer Sign</span>
+                          </button>
+                          <div className="text-[10px] text-center text-zinc-400">
+                            Auto-syncing every 2.5s when Buyer signs via WhatsApp link
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 font-mono space-y-1">
+                        <div className="font-bold flex items-center gap-1.5 text-emerald-800 font-sans">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Buyer Digital Assent Recorded (Sec 10A IT Act)</span>
+                        </div>
+                        <div className="text-[11px] text-zinc-700">
+                          <strong>Signer:</strong> {buyerSignatureRecord?.signer_name || buyerName}
+                        </div>
+                        <div className="text-[11px] text-zinc-700">
+                          <strong>Remote IP:</strong> {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'}
+                        </div>
+                        <div className="text-[11px] text-zinc-700">
+                          <strong>Timestamp:</strong> {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                 </div>

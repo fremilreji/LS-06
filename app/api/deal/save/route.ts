@@ -42,5 +42,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Deal not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true, deal });
+  return NextResponse.json(
+    { success: true, deal },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    }
+  );
 }

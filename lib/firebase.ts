@@ -42,6 +42,42 @@ try {
   console.warn('Firebase initialization notice:', error);
 }
 
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
+function getCachePath(): string {
+  try {
+    return path.join(process.cwd(), '.deals_cache.json');
+  } catch {
+    return path.join(os.tmpdir(), 'dealproof_deals_cache.json');
+  }
+}
+
+function readLocalCache(): Record<string, any> {
+  try {
+    const file = getCachePath();
+    if (fs.existsSync(file)) {
+      const content = fs.readFileSync(file, 'utf8');
+      return JSON.parse(content);
+    }
+  } catch {
+    // fallback
+  }
+  return {};
+}
+
+function writeLocalCache(dealId: string, deal: any): void {
+  try {
+    const file = getCachePath();
+    const all = readLocalCache();
+    all[dealId] = deal;
+    fs.writeFileSync(file, JSON.stringify(all, null, 2), 'utf8');
+  } catch {
+    // fallback
+  }
+}
+
 export { app, auth, db };
 
 // Global fallback in-memory store for local testing and offline execution
@@ -70,8 +106,9 @@ export async function saveDealToFirestore(dealData: any): Promise<string> {
     createdAt: dealData.createdAt || nowIso,
   };
 
-  // Always cache locally
+  // Always cache locally in memory and on disk
   localDealStore.set(dealId, formattedDeal);
+  writeLocalCache(dealId, formattedDeal);
 
   // If Firebase is configured, persist to Cloud Firestore
   if (db && isFirebaseConfigured()) {
@@ -103,6 +140,7 @@ export async function getDealFromFirestore(dealId: string): Promise<any | null> 
       if (snap.exists()) {
         const data = snap.data();
         localDealStore.set(dealId, data);
+        writeLocalCache(dealId, data);
         return data;
       }
     } catch (err) {
@@ -110,7 +148,19 @@ export async function getDealFromFirestore(dealId: string): Promise<any | null> 
     }
   }
 
-  // 2. Check local memory cache
+  // 2. Check disk cache first for multi-process / multi-device live sync
+  const fileDeals = readLocalCache();
+  if (fileDeals[dealId]) {
+    const diskDeal = fileDeals[dealId];
+    const memDeal = localDealStore.get(dealId);
+    // Prefer disk copy if it has signatures or is newer
+    if (!memDeal || diskDeal.signatures?.buyer || diskDeal.signatures?.supplier || (diskDeal.updatedAt && (!memDeal.updatedAt || diskDeal.updatedAt >= memDeal.updatedAt))) {
+      localDealStore.set(dealId, diskDeal);
+      return diskDeal;
+    }
+  }
+
+  // 2b. Check local memory cache
   if (localDealStore.has(dealId)) {
     return localDealStore.get(dealId);
   }
@@ -182,6 +232,7 @@ export async function updateDealSignatureInFirestore(
   };
 
   localDealStore.set(dealId, updatedDeal);
+  writeLocalCache(dealId, updatedDeal);
 
   if (db && isFirebaseConfigured()) {
     try {

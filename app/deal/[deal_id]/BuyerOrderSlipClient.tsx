@@ -100,6 +100,26 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     ctx.strokeStyle = '#18181b';
   }, []);
 
+  // Sync with backend if Tailor updates or signs in real-time
+  useEffect(() => {
+    if (!dealId) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/deal/save?deal_id=${encodeURIComponent(dealId)}&_t=${Date.now()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.deal) {
+          setDeal(data.deal);
+          if (data.deal.signatures?.buyer && !signedRecord) {
+            setSignedRecord(data.deal.signatures.buyer);
+          }
+        }
+      } catch {}
+    };
+    const t = setInterval(poll, 3000);
+    return () => clearInterval(t);
+  }, [dealId, signedRecord]);
+
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (signedRecord) return;
     const canvas = canvasRef.current;
@@ -107,10 +127,19 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
+
     setIsDrawing(true);
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const clientX = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
     ctx.beginPath();
     ctx.moveTo(x, y);
     if (!otpVerified) setOtpVerified(true);
@@ -123,9 +152,18 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    const clientX = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e && e.touches.length > 0 ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasDrawn(true);
@@ -478,6 +516,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                       onTouchMove={draw}
                       onTouchEnd={stopDrawing}
                       className="w-full h-28 touch-none cursor-crosshair"
+                      style={{ touchAction: 'none' }}
                     />
                   </div>
 
