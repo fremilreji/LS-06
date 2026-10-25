@@ -25,7 +25,11 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
   const [deal, setDeal] = useState(initialDeal);
   const [otp, setOtp] = useState('1234');
   const [otpVerified, setOtpVerified] = useState(false);
-  const [buyerPhone, setBuyerPhone] = useState('+91 98450 12345');
+  const [buyerPhone, setBuyerPhone] = useState(
+    initialDeal?.buyer_phone || 
+    initialDeal?.payment_terms?.buyer_phone || 
+    ''
+  );
   const [signerName, setSignerName] = useState(initialDeal?.buyer_name || 'Authorized Buyer Representative');
   const [isAuthorizedAgent, setIsAuthorizedAgent] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -456,7 +460,11 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>
-                      <strong>WhatsApp Assent Link Verified:</strong> Delivered to registered mobile <strong>{buyerPhone}</strong>
+                      {buyerPhone && !buyerPhone.includes('98450') ? (
+                        <><strong>WhatsApp Assent Link Verified:</strong> Delivered to registered mobile <strong>{buyerPhone}</strong></>
+                      ) : (
+                        <><strong>WhatsApp Assent Channel Verified:</strong> Direct counterparty electronic assent channel</>
+                      )}
                     </span>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">
@@ -546,7 +554,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <span>Buyer Digital Assent Recorded &amp; Attributed</span>
                 </div>
                 <div className="text-[11px] text-zinc-700 font-mono space-y-1 bg-white p-3 rounded-lg border border-emerald-100">
-                  <div><strong>Signatory:</strong> {signedRecord.signer_name} ({signedRecord.signer_phone})</div>
+                  <div><strong>Signatory:</strong> {signedRecord.signer_name} {signedRecord.signer_phone && !signedRecord.signer_phone.includes('98450') ? `(${signedRecord.signer_phone})` : ''}</div>
                   <div><strong>Network IP:</strong> {signedRecord.client_ip || detectedIp || '127.0.0.1'}</div>
                   <div><strong>Device / User-Agent:</strong> {signedRecord.user_agent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Chrome/Android')}</div>
                   <div><strong>Timestamp (IST):</strong> {signedRecord.timestamp_ist || new Date().toLocaleString('en-IN') + ' IST'}</div>

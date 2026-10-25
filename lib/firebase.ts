@@ -166,7 +166,7 @@ export async function getDealFromFirestore(dealId: string): Promise<any | null> 
   }
 
   // 3. Fallback for common preset IDs for demonstration
-  if (dealId.includes('1') || dealId.toLowerCase().includes('kurti')) {
+  if (dealId === 'preset_1' || dealId === 'demo_1' || dealId.toLowerCase().includes('kurti-demo')) {
     return {
       id: dealId,
       deal_id: dealId,

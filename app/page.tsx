@@ -143,6 +143,7 @@ export default function HomePage() {
   // Active Deal Data (Clean blank state by default on launch)
   const [activePresetId, setActivePresetId] = useState<string>('');
   const [dealId, setDealId] = useState('LOT-20261025-01');
+  const [buyerPhone, setBuyerPhone] = useState('');
   const [title, setTitle] = useState('Garment Job-Work Order Memorandum');
   const [udyamUrn, setUdyamUrn] = useState('');
   const [hasUdyam, setHasUdyam] = useState(false);
@@ -207,6 +208,11 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSiteOrigin(window.location.origin);
+      // Generate unique deal ID for this user session so contracts never collide across users
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      setDealId(`LOT-${dateStr}-${rand}`);
+
       // Dynamically detect the user's actual network IP
       fetch('/api/ip')
         .then(res => res.json())
@@ -247,6 +253,10 @@ export default function HomePage() {
   // Load Preset
   const handleLoadPreset = (preset: typeof PRESETS[0]) => {
     setActivePresetId(preset.id);
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    setDealId(`LOT-${dateStr}-${preset.id.replace('preset_', 'P')}-${rand}`);
+    setBuyerPhone('');
     setTitle(preset.title);
     setRawChat(preset.chat);
     setUdyamUrn(preset.udyam);
@@ -278,6 +288,10 @@ export default function HomePage() {
   // Reset to Clean Blank Text Box
   const handleResetToBlank = () => {
     setActivePresetId('');
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    setDealId(`LOT-${dateStr}-${rand}`);
+    setBuyerPhone('');
     setTitle('Garment Job-Work Order Memorandum');
     setRawChat('');
     setUdyamUrn('');
@@ -337,8 +351,8 @@ export default function HomePage() {
 
     const uniqueParties = [...new Set(headerMatches)];
     if (uniqueParties.length >= 2) {
-      const tailorKeywords = /garment|manjunath|tailor|knits|stitching|tex|textile|works|fab|apparel|fashions|suresh|shivanna/i;
-      const buyerKeywords = /boutique|metro|brand|retail|export|wholesale|apex|urban|buyer|store|raghav|vikas|ramesh/i;
+      const tailorKeywords = /garment|manjunath|tailor|ಟೈಲರ್|ದರ್ಜಿ|दर्जी|सिलाइ|ಗಾರ್ರ್ಮೆಂಟ್|knits|stitching|tex|textile|works|fab|apparel|fashions|suresh|ಸುರೇಶ್|shivanna|ಶಿವಣ್ಣ/i;
+      const buyerKeywords = /boutique|ಬೊಟಿಕ್|ಬೊಟೀಕ್|ಖರೀದಿ|ಖರೀದಿದಾರ|ग्राहक|metro|brand|retail|export|wholesale|apex|urban|buyer|store|raghav|ರಾಘವ್|vikas|ವಿಕಾಸ್|ramesh|ರಮೇಶ್/i;
 
       for (const p of uniqueParties) {
         if (tailorKeywords.test(p)) {
@@ -348,9 +362,16 @@ export default function HomePage() {
         }
       }
       if (extractedSupplier === supplierName && extractedBuyer === buyerName) {
-        extractedBuyer = uniqueParties[0];
-        extractedSupplier = uniqueParties[1];
+        extractedSupplier = uniqueParties[0];
+        extractedBuyer = uniqueParties[1];
       }
+    }
+
+    // Extract any phone number in chat
+    let extractedPhone = '';
+    const phoneMatch = text.match(/(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}/);
+    if (phoneMatch) {
+      extractedPhone = phoneMatch[0].trim();
     }
 
     // 3. Extract Quantity
@@ -507,6 +528,7 @@ export default function HomePage() {
       total: calcTotal,
       supplier: extractedSupplier,
       buyer: extractedBuyer,
+      buyerPhone: extractedPhone,
       item: extractedItem,
       delivery: extractedDelivery,
       gaps: detectedGaps
@@ -619,6 +641,10 @@ export default function HomePage() {
       showToast('Please paste chat messages or select a Demo Case above.');
       return;
     }
+    // Generate fresh unique lot ID for each newly analyzed order to prevent multi-user link conflicts
+    const freshLotId = `LOT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    setDealId(freshLotId);
+
     setIsAnalyzing(true);
     try {
       const extracted = extractDealTermsFromText(rawChat);
@@ -632,8 +658,15 @@ export default function HomePage() {
       }
 
       setIsHaltedSec29(false);
+      const finalSupplier = extracted.supplier || supplierName;
+      const finalBuyer = extracted.buyer || buyerName;
+      const finalPhone = extracted.buyerPhone || buyerPhone || '';
+      const finalItem = extracted.item || itemScope;
+      const finalDelivery = extracted.delivery || deliveryTimeline;
+
       if (extracted.supplier) setSupplierName(extracted.supplier);
       if (extracted.buyer) setBuyerName(extracted.buyer);
+      if (extracted.buyerPhone) setBuyerPhone(extracted.buyerPhone);
       if (extracted.item) setItemScope(extracted.item);
       if (extracted.delivery) setDeliveryTimeline(extracted.delivery);
       if (extracted.gaps && extracted.gaps.length > 0) {
@@ -654,16 +687,17 @@ export default function HomePage() {
       setEditQtyInput(String(extracted.qty));
       setEditRateInput(String(extracted.rate));
 
-      // Asynchronously persist to backend / Firebase
+      // Asynchronously persist to backend / Firebase with unique Lot ID
       fetch('/api/deal/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: dealId,
-          deal_id: dealId,
+          id: freshLotId,
+          deal_id: freshLotId,
           title,
-          supplier_name: supplierName,
-          buyer_name: buyerName,
+          supplier_name: finalSupplier,
+          buyer_name: finalBuyer,
+          buyer_phone: finalPhone,
           udyam_number: udyamUrn,
           payment_terms: {
             quantity_pcs: extracted.qty,
@@ -671,10 +705,11 @@ export default function HomePage() {
             total_value: extracted.total,
             total_value_formatted: formatIndianNumber(extracted.total),
             payment_deadline_days: 15,
+            buyer_phone: finalPhone,
           },
           clauses: {
-            scope: { value: itemScope },
-            delivery_timeline: { value: deliveryTimeline },
+            scope: { value: finalItem },
+            delivery_timeline: { value: finalDelivery },
           }
         }),
       }).catch(err => console.warn('Background sync:', err));
@@ -732,6 +767,7 @@ export default function HomePage() {
           title,
           supplier_name: supplierName,
           buyer_name: buyerName,
+          buyer_phone: buyerPhone,
           udyam_number: udyamUrn,
           payment_terms: {
             quantity_pcs: quantity,
@@ -739,6 +775,7 @@ export default function HomePage() {
             total_value: totalValue,
             total_value_formatted: totalFormatted,
             payment_deadline_days: 15,
+            buyer_phone: buyerPhone,
           },
           clauses: {
             scope: { value: itemScope },
@@ -908,6 +945,7 @@ export default function HomePage() {
           title,
           supplier_name: supplierName,
           buyer_name: buyerName,
+          buyer_phone: buyerPhone,
           udyam_number: udyamUrn,
           payment_terms: {
             quantity_pcs: quantity,
@@ -915,6 +953,7 @@ export default function HomePage() {
             total_value: totalValue,
             total_value_formatted: totalFormatted,
             payment_deadline_days: 15,
+            buyer_phone: buyerPhone,
           },
           clauses: {
             scope: { value: itemScope },
@@ -1899,7 +1938,7 @@ export default function HomePage() {
                 <div>
                   <div className="text-[10px] uppercase font-bold text-zinc-400">2. Customer / Boutique:</div>
                   <div className="font-bold text-zinc-900 text-sm">{buyerName}</div>
-                  <div className="text-zinc-500 mt-0.5">Contact: +91 98450 12345</div>
+                  <div className="text-zinc-500 mt-0.5">{buyerPhone ? `Contact: ${buyerPhone}` : 'Direct WhatsApp Assent Channel'}</div>
                   <div className="text-zinc-500 mt-0.5">Registered Procurement Principal</div>
                 </div>
               </div>
