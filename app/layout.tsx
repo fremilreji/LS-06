@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'DealProof AI — From Handshake to Contract | Srujana Tech Fest 2026',
+  title: 'Dealproof ✦ Jan-Karar — From Handshake to Contract (LS-06)',
   description:
     'Turn informal business conversations into clear agreement drafts. Legal tech analysis for Indian MSMEs (Problem LS-06). Built with Next.js, Firebase & Vercel.',
 };
@@ -29,13 +29,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-blue-600 selection:text-white">
+      <body className="min-h-full flex flex-col bg-[#fafafa] text-zinc-900 selection:bg-zinc-900 selection:text-white">
         <AuthProvider>
-          <Suspense fallback={<div className="h-16 bg-slate-950 border-b border-slate-800" />}>
-            <Navbar />
-          </Suspense>
+          <div className="no-print">
+            <Suspense fallback={<div className="h-14 bg-white border-b border-zinc-200" />}>
+              <Navbar />
+            </Suspense>
+          </div>
           <main className="flex-1">{children}</main>
-          <Footer />
+          <div className="no-print">
+            <Footer />
+          </div>
         </AuthProvider>
       </body>
     </html>
