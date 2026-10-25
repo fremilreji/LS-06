@@ -491,51 +491,65 @@ export default function HomePage() {
     // 8. Detect Statutory Gaps (Universal Multi-lingual Risk Detection)
     const detectedGaps: any[] = [];
 
-    // Gap A: Pay-When-Paid Exporter Clause (Prohibited under Section 15 MSMED Act)
-    if (/ಎಕ್ಸ್ಪೋರ್ಟರ್|ದುಡ್ಡು ಬಂದ|party se aane|after exporter|exporter|when client pays|pay when paid/i.test(text)) {
-      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:ಎಕ್ಸ್ಪೋರ್ಟರ್|ದುಡ್ಡು ಬಂದ|exporter|party se aane)[^.\n]*/i);
+    // Gap 1: Payment Terms Risk (MSMED Act Section 15 - Vague, Delayed, or Exceeding 45 Days)
+    if (/(?:60|90|120|45|30)\s*days|credit|baad mein|baad me|standard terms|payment later|party se aane|after exporter|exporter|when client pays|pay when paid|ಆಮೇಲೆ ನೋಡೋಣ|ದುಡ್ಡು ಬಂದ|ನೋಡೋಣ/i.test(text)) {
+      const isOver45Days = /(?:60|90|120)\s*days/i.test(text);
+      const isPayWhenPaid = /party se aane|after exporter|exporter|when client pays|pay when paid|ದುಡ್ಡು ಬಂದ/i.test(text);
+      const quoteMatch = text.match(/(?:[A-Za-z0-9_\(\)\-\s]+:\s*)?[^.\n]*?(?:(?:60|90|120)\s*days|credit|baad\s*mein|baad\s*me|standard\s*terms|exporter|party\s*se|ಆಮೇಲೆ\s*ನೋಡೋಣ)[^.\n]*/i);
+
+      let title = 'Vague / Delayed Payment Term (MSMED Act Section 15 Protection Active)';
+      let howItHurts = 'No fixed payment deadline means buyer can delay payment indefinitely without legal interest. Section 15 of the MSMED Act establishes a 15-day statutory baseline.';
+
+      if (isOver45Days) {
+        title = 'Unlawful 60-Day Credit Demand (Exceeds MSMED Act 45-Day Statutory Ceiling)';
+        howItHurts = 'Buyer is demanding 60 days credit. Under Section 15 of the MSMED Act, 2006, written payment terms CANNOT legally exceed 45 days. Delayed payment starves the job-worker of working capital.';
+      } else if (isPayWhenPaid) {
+        title = 'Pay-When-Paid Exporter Clause (MSMED Act Section 15 Prohibited)';
+        howItHurts = 'Buyer is trying to make payment contingent on third-party collections. Under Section 15 of MSMED Act, payment cannot be conditional on external buyer payments.';
+      }
+
       detectedGaps.push({
-        id: 'gap_pay_when_paid',
+        id: 'gap_payment_terms',
         pillar_key: 'payment_terms',
-        title: 'Pay-When-Paid Exporter Clause (MSMED Act Section 15 Prohibited)',
+        title,
         where_msg_id: 'WhatsApp Stream',
-        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ನಮಗೆ ಎಕ್ಸ್ಪೋರ್ಟರ್ ಇಂದ ದುಡ್ಡು ಬಂದ ತಕ್ಷಣ ನಿಮಗೆ ಕ್ಲಿಯರ್ ಮಾಡ್ತೀನಿ."',
-        how_it_hurts: 'Buyer is trying to make your payment contingent on a third-party exporter. Under Section 15 of MSMED Act, payment must be made strictly within 15 days of delivery, regardless of external buyer payments.',
-        quick_fix_label: 'Apply 15-Day Govt Payment Mandate',
-        quick_fix_value: 'Payment due strictly within 15 days of delivery (Section 15 MSMED Act). Late payment attracts statutory 3x RBI interest.',
-        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, as per MSMED Act Section 15, payment cannot be contingent on third-party exporter clearance. Please confirm payment within 15 days of delivery.`
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Payment timing not fixed or delayed beyond statutory limits.',
+        how_it_hurts: howItHurts,
+        quick_fix_label: 'Enforce 15-Day Payment Timeline (Sec 15 MSMED)',
+        quick_fix_value: 'Payment due strictly within 15 days of delivery (Section 15 MSMED Act). Late payment attracts statutory 3x RBI interest (or 18% p.a. agreed default interest).',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} ji, as per MSMED Act Section 15, payment terms cannot exceed 45 days. We work on a 15-day payment cycle to pay our karigars. Please confirm 15 days so we can lock the batch.`
       });
     }
 
-    // Gap B: Arbitrary 15% Debit Note / Penalty (Void under Section 74 Contract Act & Section 42 Sale of Goods Act)
-    if (/15%|ಕಟ್|cut|debit note|penalty|ದಂಡ/i.test(text)) {
-      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:15%|ಕಟ್|cut|penalty)[^.\n]*/i);
+    // Gap 2: Arbitrary Debit Note & Defect Inspection Trap (Section 74 Contract Act & Section 42 Sale of Goods Act)
+    if (/debit\s*note|loose\s*thread|penalty|fine|ದಾರ\s*ಲೂಸ್|ಕಟ್\s*ಮಾಡ್ತೀನಿ|ಹಣ\s*ಕಟ್|kaat\s*lenge|checking\s*karke|1\s*month\s*baad|30\s*din\s*baad/i.test(text)) {
+      const quoteMatch = text.match(/(?:[A-Za-z0-9_\(\)\-\s]+:\s*)?[^.\n]*?(?:debit\s*note|loose\s*thread|penalty|kaat\s*lenge|checking\s*karke|ಕಟ್\s*ಮಾಡ್ತೀನಿ|ದಾರ\s*ಲೂಸ್)[^.\n]*/i);
       detectedGaps.push({
         id: 'gap_arbitrary_debit',
         pillar_key: 'scope',
-        title: 'Unlawful 15% Loose Thread Debit Note Penalty',
-        where_msg_id: 'WhatsApp Voice Note',
-        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ಡೆಲಿವರಿ ಆದ್ಮೇಲೆ ಒಂದು ದಾರ ಲೂಸ್ ಇದ್ರು ನೇರವಾಗಿ 15% ಪೇಮೆಂಟ್ ಕಟ್ ಮಾಡ್ತೀನಿ."',
-        how_it_hurts: 'Buyer is threatening a unilateral 15% (₹14,400) penalty without inspection and cure notice. Under Section 74 Contract Act and Section 42 Sale of Goods Act, arbitrary penalties are void.',
+        title: 'Unilateral Debit Note & Inspection Trap (Void under Contract Act Sec 74)',
+        where_msg_id: 'WhatsApp Stream',
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Buyer threatening unilateral debit note or delayed quality deduction.',
+        how_it_hurts: 'Buyer is threatening an arbitrary unilateral debit note or penalty without notice and right to cure. Under Section 74 Contract Act and Section 42 Sale of Goods Act, arbitrary penalties and unilateral deductions without inspection protocols are invalid.',
         quick_fix_label: 'Set 72-Hour Inspection & Rectification Limit',
-        quick_fix_value: 'Buyer must inspect shirts within 72 hours. Any loose threads or minor defects shall be rectified by tailor. Unilateral debit notes are prohibited.',
-        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, any minor loose threads will be checked and rectified within 72 hours under standard trade terms. Arbitrary 15% deductions cannot be accepted.`
+        quick_fix_value: 'Buyer must inspect goods within 72 hours of delivery. Any loose threads or minor defects shall be rectified by Job-Worker within 7 business days. Unilateral debit notes are prohibited.',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} ji, any minor stitching defects will be checked and rectified within 72 hours under our standard rework protocol. Unilateral debit notes cannot be accepted.`
       });
     }
 
-    // Gap C: Voice Note Scope Alteration & Rate Negotiation (Section 62 Indian Contract Act)
-    if (/ಎಕ್ಸ್ಟ್ರಾ|ಎಕ್ಸ್‌ಟ್ರಾ|extra|ಬಟನ್ ಹೋಲ್|button hole|double stitch|ಡಬಲ್ ಸ್ಟಿಚ್|embroidery|bio-wash/i.test(text)) {
-      const quoteMatch = text.match(/(?:[A-Za-z\u0C80-\u0CFF\s]+:\s*)?[^.\n]*?(?:ಎಕ್ಸ್ಟ್ರಾ|ಎಕ್ಸ್‌ಟ್ರಾ|extra|button|stitch|ಡಬಲ್)[^.\n]*/i);
+    // Gap 3: Scope Variation & Unpaid Extra Operations (Section 62 Indian Contract Act)
+    if (/extra|embroidery|bio-wash|ಬಟನ್\s*ಹೋಲ್|button\s*hole|double\s*stitch|ಡಬಲ್\s*ಸ್ಟಿಚ್|ಎಕ್ಸ್ಟ್ರಾ|ಎಕ್ಸ್‌ಟ್ರಾ/i.test(text)) {
+      const quoteMatch = text.match(/(?:[A-Za-z0-9_\(\)\-\s]+:\s*)?[^.\n]*?(?:extra|embroidery|bio-wash|button|stitch|ಡಬಲ್|ಎಕ್ಸ್ಟ್ರಾ)[^.\n]*/i);
       detectedGaps.push({
         id: 'gap_scope_variation',
         pillar_key: 'scope',
-        title: 'Voice-Note Scope Creep & Rate Revision (Section 62 ICA)',
+        title: 'Scope Variation & Unpaid Extra Operations (Section 62 ICA)',
         where_msg_id: 'WhatsApp Voice Note',
-        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Ramesh: "ಕಾಲರ್ ಹತ್ರ ಒಂದು ಎಕ್ಸ್ಟ್ರಾ ಬಟನ್ ಹೋಲ್ ಮಾಡಬೇಕು, ಮತ್ತೆ ಡಬಲ್ ಸ್ಟಿಚ್ ಇರಬೇಕು. ರೇಟ್ ₹45 ಇರುತ್ತೆ."',
-        how_it_hurts: 'Buyer attempted to add extra tailoring operations (extra buttonhole + double stitch) at old rate ₹45. Tailor successfully negotiated ₹3 extra, locking ₹48.',
-        quick_fix_label: 'Lock Agreed Rate at ₹48/pc (Sec 62)',
-        quick_fix_value: 'Scope includes extra buttonhole & double stitch at mutually agreed revised rate of ₹48/piece (Total ₹96,000 INR). Extra operations without payment barred under Sec 62 Contract Act.',
-        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} sir, extra buttonhole and double stitch are confirmed at ₹48/pc per our mutual agreement.`
+        where_quote: quoteMatch ? quoteMatch[0].trim() : 'Extra operations requested without agreed price revision.',
+        how_it_hurts: 'Buyer requested extra tailoring operations without price revision. Under Section 62 Contract Act, unilateral changes to scope without agreed compensation are invalid.',
+        quick_fix_label: 'Block Unpaid Scope Variation (Sec 62)',
+        quick_fix_value: 'Scope covers standard stitching only. Extra embroidery, wash, or operations require written price revision under Section 62 Contract Act.',
+        whatsapp_ask_text: `${extractedBuyer.split(' ')[0]} ji, extra operations require written price revision before starting production.`
       });
     }
 
