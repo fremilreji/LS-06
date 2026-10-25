@@ -65,9 +65,12 @@ export default function LegalPaperDocument({
 
   const dealId = garmentData?.deal_id || 'LOT-20261025';
   const udyamUrn = garmentData?.udyam_verification?.udyam_urn || 'UDYAM-KR-03-0128945';
-  const buyerAssentUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/create?deal=${dealId}&role=buyer`
-    : `http://localhost:3000/create?deal=${dealId}&role=buyer`;
+  const vercelDomain = process.env.NEXT_PUBLIC_VERCEL_URL 
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+    : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  const buyerAssentUrl = `${vercelDomain}/deal/${dealId}`;
+  const standardWhatsAppText = `Sir, please review and sign the order slip here: ${buyerAssentUrl}`;
+  const whatsappDirectHref = `https://wa.me/?text=${encodeURIComponent(standardWhatsAppText)}`;
 
   // 1. Extract quantity and rate_per_piece
   const quantityNum = garmentData?.payment_terms?.quantity 
@@ -136,6 +139,40 @@ export default function LegalPaperDocument({
   const showFeedback = (msg: string) => {
     setShareFeedback(msg);
     setTimeout(() => setShareFeedback(null), 4500);
+  };
+
+  const handleSaveAndShareWhatsApp = async () => {
+    try {
+      await fetch('/api/deal/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: dealId,
+          deal_id: dealId,
+          title: draft.title,
+          supplier_name: partyAName,
+          buyer_name: partyBName,
+          udyam_number: udyamUrn,
+          payment_terms: {
+            quantity_pcs: quantityNum,
+            rate_per_piece: ratePerPieceNum,
+            total_value: calculatedTotalValue,
+            total_value_formatted: totalValueFormatted,
+            payment_deadline_days: 15,
+          },
+          clauses: {
+            scope: { value: draft.extractedData.scopeOrProducts.value },
+            delivery_timeline: { value: draft.extractedData.deliveryTimeline.value },
+          },
+          extractedData: draft.extractedData,
+          garmentData,
+        }),
+      });
+      showFeedback('✓ Deal state pushed to Firestore! Opening WhatsApp...');
+    } catch (err) {
+      console.warn('Sync notice:', err);
+    }
+    window.open(whatsappDirectHref, '_blank', 'noopener,noreferrer');
   };
 
   const handleSendWhatsApp = (text: string, phone?: string) => {
@@ -489,12 +526,12 @@ export default function LegalPaperDocument({
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => handleSendWhatsApp(whatsappBuyerShare)}
+                          onClick={handleSaveAndShareWhatsApp}
                           className="w-full py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                          title="Open WhatsApp and copy message"
+                          title="Save deal to Firestore and open WhatsApp link"
                         >
                           <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                          <span>WhatsApp</span>
+                          <span>Save &amp; Share</span>
                         </button>
 
                         <button
