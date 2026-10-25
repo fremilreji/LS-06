@@ -976,24 +976,22 @@ export default function HomePage() {
       const data = await res.json();
       if (data?.deal?.signatures?.buyer) {
         const remoteBuyer = data.deal.signatures.buyer;
-        setBuyerSignatureRecord((prev: any) => {
-          if (!prev || prev.client_ip !== remoteBuyer.client_ip) {
-            showToast(`🎉 Remote Buyer Assent Received! Signed by ${remoteBuyer.signer_name} (IP: ${remoteBuyer.client_ip})`);
-          } else if (showManualToast) {
-            showToast(`✓ Buyer signature verified: IP ${remoteBuyer.client_ip}`);
-          }
-          return remoteBuyer;
-        });
+        setBuyerSignatureRecord(remoteBuyer);
+        if (!buyerSigned) {
+          showToast(`🎉 Remote Buyer Assent Received! Signed by ${remoteBuyer.signer_name} (IP: ${remoteBuyer.client_ip})`);
+        } else if (showManualToast) {
+          showToast(`✓ Buyer signature verified: IP ${remoteBuyer.client_ip}`);
+        }
         setBuyerSigned(true);
       } else if (showManualToast) {
         showToast('ℹ Awaiting remote Buyer signature on WhatsApp link...');
       }
-    } catch (e) {
+    } catch {
       if (showManualToast) showToast('Sync failed, please retry.');
     } finally {
       setIsSyncingBuyer(false);
     }
-  }, [dealId]);
+  }, [dealId, buyerSigned]);
 
   // Auto-poll every 2.5 seconds when on Step 3 until buyer signs
   useEffect(() => {
@@ -2036,32 +2034,50 @@ export default function HomePage() {
 
               {/* Dual Signature Section */}
               <div className="pt-4 border-t border-zinc-200 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                   
                   {/* Tailor Signature Box */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-zinc-900">
-                        1. Job-Worker Mark / Signature:
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-0.5">
+                      <label className="text-xs font-bold text-zinc-900 whitespace-nowrap">
+                        1. Job-Worker Mark (Party A):
                       </label>
-                      <div className="no-print flex items-center gap-2">
+                      <div className="no-print flex items-center gap-2 text-xs">
                         <button
                           type="button"
                           onClick={() => drawMarkX(true)}
-                          className="text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                          className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 cursor-pointer whitespace-nowrap"
                         >
                           Draw &ldquo;X&rdquo; Mark
                         </button>
+                        <span className="text-zinc-300">|</span>
                         <button
                           type="button"
                           onClick={() => clearCanvas(true)}
-                          className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer"
+                          className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer whitespace-nowrap"
                         >
                           Clear
                         </button>
                       </div>
                     </div>
 
+                    {/* Left Top Card */}
+                    <div className="p-2.5 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-between text-xs text-zinc-800 min-h-[46px]">
+                      <span className="flex items-center gap-1.5 font-semibold text-xs text-zinc-800">
+                        <ShieldCheck className="w-4 h-4 text-zinc-600 shrink-0" />
+                        <span>Tailor In-Unit Terminal</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-zinc-700 bg-white px-2 py-0.5 rounded border border-zinc-300 whitespace-nowrap">
+                        Party A Provider
+                      </span>
+                    </div>
+
+                    {/* Left Legal Declaration */}
+                    <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 select-none flex items-center min-h-[38px]">
+                      <span className="truncate">I declare I am authorized to bind Job-Worker entity (<strong>{supplierName}</strong>).</span>
+                    </div>
+
+                    {/* Left Canvas Pad */}
                     <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
                       <canvas
                         ref={supplierCanvasRef}
@@ -2083,12 +2099,12 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={handleTailorConfirmSign}
-                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer"
+                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer shadow-xs transition-colors"
                         >
                           Confirm Tailor Mark &amp; Lock IP
                         </button>
                       ) : (
-                        <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-mono">
+                        <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 font-mono">
                           ✓ Signed: Suresh (Tailor) • IP: {tailorSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'} • Time: {tailorSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       )}
@@ -2096,35 +2112,26 @@ export default function HomePage() {
                   </div>
 
                   {/* Buyer Signature Box */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-zinc-900">
-                        2. Buyer Mark / Signature:
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-0.5">
+                      <label className="text-xs font-bold text-zinc-900 whitespace-nowrap">
+                        2. Buyer Mark (Party B):
                       </label>
-                      <div className="no-print flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => syncBuyerStatus(true)}
-                          disabled={isSyncingBuyer}
-                          className="px-2 py-0.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
-                          title="Check live status from Buyer's phone"
-                        >
-                          <RefreshCw className={`w-2.5 h-2.5 ${isSyncingBuyer ? 'animate-spin' : ''}`} />
-                          <span>{isSyncingBuyer ? 'Syncing...' : 'Sync Buyer'}</span>
-                        </button>
+                      <div className="no-print flex items-center gap-2 text-xs">
                         {!buyerSigned && (
                           <>
                             <button
                               type="button"
                               onClick={() => drawMarkX(false)}
-                              className="text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 cursor-pointer whitespace-nowrap"
                             >
                               Draw &ldquo;X&rdquo; Mark
                             </button>
+                            <span className="text-zinc-300">|</span>
                             <button
                               type="button"
                               onClick={() => clearCanvas(false)}
-                              className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer"
+                              className="text-xs font-medium text-zinc-400 hover:text-rose-600 cursor-pointer whitespace-nowrap"
                             >
                               Clear
                             </button>
@@ -2133,37 +2140,55 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Buyer Direct WhatsApp Assent Status & Declaration */}
-                    <div className="no-print space-y-2">
-                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950">
-                        <span className="flex items-center gap-1.5 font-semibold">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                          <span>Direct WhatsApp Assent Channel</span>
-                        </span>
+                    {/* Right Top Card: WhatsApp Assent Status & Live Sync Button */}
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-950 min-h-[46px]">
+                      <span className="flex items-center gap-1.5 font-semibold text-xs text-emerald-950 truncate">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="truncate">Direct WhatsApp Assent</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {buyerSigned ? (
-                          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">
+                          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300 whitespace-nowrap">
                             ✓ Assent Confirmed
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 flex items-center gap-1 animate-pulse">
-                            <span>⏳ Awaiting Phone Sign</span>
-                          </span>
+                          <>
+                            <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 whitespace-nowrap animate-pulse">
+                              ⏳ Awaiting Sign
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => syncBuyerStatus(true)}
+                              disabled={isSyncingBuyer}
+                              className="px-2.5 py-1 rounded-md bg-white hover:bg-zinc-50 border border-blue-200 text-blue-700 text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap transition-colors"
+                              title="Check live status from Buyer's phone"
+                            >
+                              <RefreshCw className={`w-2.5 h-2.5 ${isSyncingBuyer ? 'animate-spin' : ''}`} />
+                              <span>{isSyncingBuyer ? 'Syncing...' : 'Sync'}</span>
+                            </button>
+                          </>
                         )}
                       </div>
-
-                      {!buyerSigned && (
-                        <label className="flex items-start gap-2 text-xs text-zinc-700 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={buyerAuthorized}
-                            onChange={(e) => setBuyerAuthorized(e.target.checked)}
-                            className="mt-0.5 w-3.5 h-3.5 rounded text-zinc-900"
-                          />
-                          <span>I declare I am authorized to bind the Buyer entity.</span>
-                        </label>
-                      )}
                     </div>
 
+                    {/* Right Legal Declaration */}
+                    {!buyerSigned ? (
+                      <label className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 cursor-pointer select-none flex items-center gap-2 min-h-[38px]">
+                        <input
+                          type="checkbox"
+                          checked={buyerAuthorized}
+                          onChange={(e) => setBuyerAuthorized(e.target.checked)}
+                          className="w-3.5 h-3.5 rounded text-zinc-900 border-zinc-300 shrink-0"
+                        />
+                        <span className="truncate">I declare I am authorized to bind Buyer entity (<strong>{buyerName}</strong>).</span>
+                      </label>
+                    ) : (
+                      <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 select-none flex items-center min-h-[38px]">
+                        <span className="truncate">✓ Authorized Signatory Verified under Section 10A IT Act</span>
+                      </div>
+                    )}
+
+                    {/* Right Canvas Pad */}
                     {!buyerSigned ? (
                       <>
                         <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
@@ -2182,11 +2207,11 @@ export default function HomePage() {
                           />
                         </div>
 
-                        <div className="no-print space-y-1.5">
+                        <div className="no-print space-y-1">
                           <button
                             type="button"
                             onClick={handleBuyerConfirmSign}
-                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-xs transition-colors"
                           >
                             <ShieldCheck className="w-4 h-4" />
                             <span>Simulate Local Buyer Sign</span>
@@ -2197,19 +2222,16 @@ export default function HomePage() {
                         </div>
                       </>
                     ) : (
-                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 font-mono space-y-1">
-                        <div className="font-bold flex items-center gap-1.5 text-emerald-800 font-sans">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 font-mono space-y-0.5">
+                        <div className="font-bold flex items-center gap-1.5 text-emerald-800 font-sans text-xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>Buyer Digital Assent Recorded (Sec 10A IT Act)</span>
                         </div>
                         <div className="text-[11px] text-zinc-700">
-                          <strong>Signer:</strong> {buyerSignatureRecord?.signer_name || buyerName}
+                          ✓ Signed: {buyerSignatureRecord?.signer_name || buyerName} • IP: {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'}
                         </div>
-                        <div className="text-[11px] text-zinc-700">
-                          <strong>Remote IP:</strong> {buyerSignatureRecord?.client_ip || detectedClientIp || '127.0.0.1'}
-                        </div>
-                        <div className="text-[11px] text-zinc-700">
-                          <strong>Timestamp:</strong> {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
+                        <div className="text-[10px] text-zinc-500">
+                          Time: {buyerSignatureRecord?.timestamp_ist || new Date().toLocaleTimeString('en-IN') + ' IST'}
                         </div>
                       </div>
                     )}
