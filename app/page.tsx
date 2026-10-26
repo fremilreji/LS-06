@@ -138,6 +138,34 @@ export default function HomePage() {
   // Wizard Step: 1 = Input, 2 = Terms Check, 3 = Order Slip
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
+  // Dynamic Real-Time Clock (IST)
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const timePart = now.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+      setCurrentDateTime(`${datePart} • ${timePart} IST`);
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Language: 'en' | 'hi' | 'kn'
   const [lang, setLang] = useState<'en' | 'hi' | 'kn'>('en');
 
@@ -1174,6 +1202,14 @@ export default function HomePage() {
               <p className="text-xs sm:text-base text-zinc-600 mt-0.5 sm:mt-1 font-normal">
                 Clear terms. Confident business.
               </p>
+
+              {/* Dynamic Real-Time Clock (Clean, no green 'LIVE' badge) */}
+              <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5 text-zinc-500 font-mono text-[10px] sm:text-[11px] font-medium tabular-nums">
+                <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span suppressHydrationWarning>
+                  {currentDateTime || 'Active Session • IST'}
+                </span>
+              </div>
             </div>
 
             {/* Language Selection & Audio Playback Buttons */}
