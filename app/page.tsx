@@ -2188,42 +2188,6 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                {/* Clause 5: On-Screen Interactive Audit Only (Hidden in PDF / Print for Clean Legal Execution) */}
-                {detectedGaps.length > 0 && (
-                  <div className="no-print p-4 rounded-xl border border-amber-300 bg-amber-50/60 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
-                        <span className="font-bold text-zinc-900 text-xs uppercase tracking-wide">
-                          5. On-Screen Risk Audit: All Negotiation Traps Neutralized in Clauses 1–4
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
-                        {detectedGaps.length} Flag(s) Protected by Law
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 text-[11px] text-zinc-800">
-                      {detectedGaps.map((gap, idx) => (
-                        <div key={gap.id || idx} className="p-2.5 bg-white rounded-lg border border-amber-200 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-zinc-900">{idx + 1}. {gap.title}</span>
-                            <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              ✓ Neutralized in Order Slip
-                            </span>
-                          </div>
-                          <div className="text-zinc-600 font-mono text-[10px] bg-zinc-50 p-1.5 rounded">
-                            WhatsApp Quote: &ldquo;{gap.where_quote}&rdquo;
-                          </div>
-                          <div className="text-emerald-950 font-medium text-[11px]">
-                            <strong>Statutory Correction Applied:</strong> {gap.quick_fix_value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
               </div>
 
               {/* Dual Signature Section */}
