@@ -4,7 +4,10 @@ A lightweight web app that turns informal WhatsApp business chats and voice note
 
 Built for **Problem Statement LS-06 (From Handshake to Contract)** at **Srujana Tech Fest 2026**.
 
-- **Live URL:** [https://ls-06.vercel.app](https://ls-06.vercel.app)
+- **Live Application:** [https://ls-06.vercel.app](https://ls-06.vercel.app)
+- **Detailed Project Report (Web):** [https://ls-06.vercel.app/report](https://ls-06.vercel.app/report)
+- **Detailed Project Report (PDF):** [PROJECT_REPORT_LS06.pdf](./PROJECT_REPORT_LS06.pdf)
+- **Detailed Project Report (Markdown):** [PROJECT_REPORT_LS06.md](./PROJECT_REPORT_LS06.md)
 - **Repository:** [https://github.com/fremilreji/LS-06](https://github.com/fremilreji/LS-06)
 
 ---
