@@ -13,7 +13,8 @@ import {
   Scale,
   Sparkles,
   FileText,
-  RotateCcw
+  RotateCcw,
+  Copy
 } from 'lucide-react';
 
 interface BuyerOrderSlipClientProps {
@@ -209,11 +210,15 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     clearCanvas();
     ctx.lineWidth = 3.5;
     ctx.strokeStyle = '#18181b';
+    const cx = Math.round(canvas.width / 2);
+    const cy = Math.round(canvas.height / 2);
+    const halfW = 50;
+    const halfH = 40;
     ctx.beginPath();
-    ctx.moveTo(60, 30);
-    ctx.lineTo(160, 110);
-    ctx.moveTo(160, 30);
-    ctx.lineTo(60, 110);
+    ctx.moveTo(cx - halfW, cy - halfH);
+    ctx.lineTo(cx + halfW, cy + halfH);
+    ctx.moveTo(cx + halfW, cy - halfH);
+    ctx.lineTo(cx - halfW, cy + halfH);
     ctx.stroke();
     setHasDrawn(true);
     setOtpVerified(true);
@@ -272,59 +277,74 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
   };
 
   return (
-    <div className="min-h-screen bg-ambient-grid py-4 sm:py-8 px-3.5 sm:px-6 lg:px-8 text-zinc-900 font-sans pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-ambient-grid py-4 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 text-zinc-900 font-sans pb-24 relative overflow-hidden">
       
       {/* Soft warm ambient lighting glow at top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
 
-      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6 relative z-10">
+      <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 relative z-10">
         
         {/* Top Header & Role Indicator */}
-        <div className="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3.5 sm:p-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl border border-zinc-200 shadow-xs">
+        <div className="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl border border-zinc-200 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-100/80 text-orange-700 flex items-center justify-center font-bold shrink-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-100/80 text-orange-700 flex items-center justify-center font-bold shrink-0">
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange-700">Buyer Assent Portal</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-orange-700 whitespace-nowrap">Buyer Assent Portal</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap">
                   Remote WhatsApp Link
                 </span>
               </div>
-              <h1 className="text-sm sm:text-lg font-bold text-zinc-900">
+              <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-zinc-900">
                 Review &amp; Sign Garment Order #{dealId}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <a
               href="/"
-              className="flex-1 sm:flex-none text-center px-3.5 py-2 sm:py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 min-h-[40px] flex items-center justify-center"
+              className="flex-1 sm:flex-none text-center px-3.5 py-2 sm:py-2.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 min-h-[40px] flex items-center justify-center whitespace-nowrap"
             >
               ← Back to App
             </a>
             <button
               type="button"
-              onClick={() => window.print()}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer min-h-[40px]"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  navigator.clipboard.writeText(window.location.href);
+                  setFeedbackMessage('✓ Shareable order link copied to clipboard!');
+                  setTimeout(() => setFeedbackMessage(null), 3000);
+                }
+              }}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 min-h-[40px] whitespace-nowrap cursor-pointer transition-colors"
+              title="Copy shareable link"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+              <span>Copy Link</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer min-h-[40px] whitespace-nowrap"
+            >
+              <Printer className="w-3.5 h-3.5 shrink-0" />
               <span>Print Slip</span>
             </button>
           </div>
         </div>
 
         {feedbackMessage && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium flex items-center gap-2 animate-in fade-in">
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{feedbackMessage}</span>
           </div>
         )}
 
         {/* The Clean Formal Printable Digital Order Slip (ऑर्डर पर्ची) */}
-        <div id="buyer-slip-content" className="printable-contract-sheet craft-card p-3.5 sm:p-8 md:p-10 space-y-4 sm:space-y-6 bg-white border border-zinc-200 shadow-sm">
+        <div id="buyer-slip-content" className="printable-contract-sheet craft-card p-4 sm:p-8 md:p-10 lg:p-12 space-y-4 sm:space-y-6 bg-white border border-zinc-200 shadow-sm">
           
           {/* Slip Header */}
           <div className="border-b-2 border-zinc-900 pb-3 sm:pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -340,8 +360,8 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
               </div>
             </div>
             
-            <div className="text-left sm:text-right w-full sm:w-auto">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+            <div className="text-left sm:text-right w-full sm:w-auto shrink-0">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 whitespace-nowrap">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                 <span>Electronic Assent Recorded (Sec 10A IT Act)</span>
               </span>
@@ -352,7 +372,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
           </div>
 
           {/* Parties Grid */}
-          <div className="printable-clause-card print-break-inside-avoid grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50/70 p-4 rounded-xl border border-zinc-200/80 text-xs">
+          <div className="printable-clause-card print-break-inside-avoid grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/70 p-4 sm:p-5 rounded-xl border border-zinc-200/80 text-xs sm:text-sm">
             <div>
               <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor (First Party)</div>
               <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
@@ -401,7 +421,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalValueFormatted} INR), exclusive of applicable GST.
               </p>
               <p className="mt-1 text-zinc-600 text-[11px] leading-relaxed">
-                <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business tax deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
+                <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business tax deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (<em>Silpi Industries v. KSRTC, 2021</em>), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
               </p>
             </div>
 
@@ -424,7 +444,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 4.1 <strong>Payment Timeline:</strong> Payment is due strictly within <strong>{paymentDays} days</strong> of delivery, as agreed between the parties (within the statutory 45-day outer limit permitted under Section 15 of the MSMED Act, 2006).
               </p>
               <p className="text-zinc-700 text-[11px] leading-relaxed">
-                4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC).
+                4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (<em>Silpi Industries v. KSRTC, 2021</em>), delayed payment beyond the agreed timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC).
               </p>
               <p className="text-zinc-700 text-[11px] leading-relaxed">
                 4.3 <strong>Contractual Default Interest (Pending MSME Registration):</strong> In the event statutory MSMED Act remedies are inapplicable due to pending Udyam registration, default beyond the agreed 15-day timeline shall attract an agreed commercial interest rate of <strong>18% per annum</strong> from the due date until full realization, alongside any damages and costs legally recoverable for breach of contract under Section 73 of the Indian Contract Act, 1872.
@@ -513,8 +533,8 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                   <div className="border-2 border-dashed border-zinc-300 rounded-xl bg-white overflow-hidden shadow-inner">
                     <canvas
                       ref={canvasRef}
-                      width={600}
-                      height={130}
+                      width={800}
+                      height={140}
                       onMouseDown={startDrawing}
                       onMouseMove={draw}
                       onMouseUp={stopDrawing}
@@ -522,7 +542,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                       onTouchStart={startDrawing}
                       onTouchMove={draw}
                       onTouchEnd={stopDrawing}
-                      className="w-full h-28 touch-none cursor-crosshair"
+                      className="w-full h-28 sm:h-32 touch-none cursor-crosshair"
                       style={{ touchAction: 'none' }}
                     />
                   </div>
@@ -531,13 +551,13 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                     type="button"
                     onClick={handleConfirmSignature}
                     disabled={isSubmitting}
-                    className="w-full py-3.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3.5 px-4 sm:px-6 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-h-[44px]"
                   >
                     {isSubmitting ? (
                       <span>Recording Attribution Log &amp; Digital Seal...</span>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4" />
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
                         <span>Confirm &amp; Digitally Lock Order Slip</span>
                       </>
                     )}

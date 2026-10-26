@@ -975,11 +975,15 @@ export default function HomePage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.lineWidth = 3.5;
     ctx.strokeStyle = '#18181b';
+    const cx = Math.round(canvas.width / 2);
+    const cy = Math.round(canvas.height / 2);
+    const halfW = 45;
+    const halfH = 35;
     ctx.beginPath();
-    ctx.moveTo(50, 30);
-    ctx.lineTo(150, 110);
-    ctx.moveTo(150, 30);
-    ctx.lineTo(50, 110);
+    ctx.moveTo(cx - halfW, cy - halfH);
+    ctx.lineTo(cx + halfW, cy + halfH);
+    ctx.moveTo(cx + halfW, cy - halfH);
+    ctx.lineTo(cx - halfW, cy + halfH);
     ctx.stroke();
     if (isSupplier) {
       setSupplierHasDrawn(true);
@@ -1162,7 +1166,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-ambient-grid text-zinc-900 font-sans pb-24 relative overflow-hidden">
       
       {/* Soft warm ambient lighting glow at top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -1175,8 +1179,8 @@ export default function HomePage() {
       {/* ==============================================================================
           TOP BAR (Clean, spacious, designer aesthetic from reference PDF)
           ============================================================================== */}
-      <header className="no-print relative z-10 pt-6 sm:pt-8 pb-4 sm:pb-6 px-3.5 sm:px-6">
-        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+      <header className="no-print relative z-10 pt-6 sm:pt-8 pb-4 sm:pb-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div>
@@ -1203,9 +1207,9 @@ export default function HomePage() {
                 Clear terms. Confident business.
               </p>
 
-              {/* Dynamic Real-Time Clock (Clean, no green 'LIVE' badge) */}
+              {/* Dynamic Real-Time Clock */}
               <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5 text-zinc-500 font-mono text-[10px] sm:text-[11px] font-medium tabular-nums">
-                <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
+                <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                 <span suppressHydrationWarning>
                   {currentDateTime || 'Active Session • IST'}
                 </span>
@@ -1213,26 +1217,26 @@ export default function HomePage() {
             </div>
 
             {/* Language Selection & Audio Playback Buttons */}
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 sm:p-1 text-xs font-semibold shadow-xs">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+              <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 sm:p-1 text-xs font-semibold shadow-xs shrink-0">
                 <button
                   type="button"
                   onClick={() => setLang('en')}
-                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors ${lang === 'en' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
+                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${lang === 'en' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
                 >
                   EN
                 </button>
                 <button
                   type="button"
                   onClick={() => setLang('hi')}
-                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors ${lang === 'hi' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
+                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${lang === 'hi' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
                 >
                   हिंदी
                 </button>
                 <button
                   type="button"
                   onClick={() => setLang('kn')}
-                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors ${lang === 'kn' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
+                  className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${lang === 'kn' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-zinc-600 hover:text-zinc-900'}`}
                 >
                   ಕನ್ನಡ
                 </button>
@@ -1242,10 +1246,10 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={handleSpeakSummary}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-900 font-semibold text-xs shadow-xs transition-colors cursor-pointer whitespace-nowrap"
               >
-                {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-orange-600" /> : <Volume2 className="w-3.5 h-3.5 text-zinc-700" />}
-                <span>{isSpeaking ? 'Stop' : '🔊 Listen'}</span>
+                {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-orange-600 shrink-0" /> : <Volume2 className="w-3.5 h-3.5 text-zinc-700 shrink-0" />}
+                <span>{isSpeaking ? 'Stop Audio' : '🔊 Listen Readout'}</span>
               </button>
 
               {/* Repeat / Replay Audio Button */}
@@ -1253,17 +1257,17 @@ export default function HomePage() {
                 type="button"
                 onClick={handleReplaySummary}
                 title="Repeat audio readout"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-700 font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-700 font-semibold text-xs shadow-xs transition-colors cursor-pointer whitespace-nowrap"
               >
-                <RotateCcw className="w-3 h-3 text-zinc-600" />
-                <span className="hidden xs:inline">Repeat</span>
+                <RotateCcw className="w-3 h-3 text-zinc-600 shrink-0" />
+                <span className="hidden sm:inline">Repeat</span>
               </button>
             </div>
           </div>
 
-          {/* Quick Demo Case Selector (Mobile Scrollable Chips) */}
+          {/* Quick Demo Case Selector */}
           <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar pb-1 w-full max-w-full sm:flex-wrap">
-            <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Demo:</span>
+            <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Demo Scenarios:</span>
             {PRESETS.map(p => (
               <button
                 key={p.id}
@@ -1272,7 +1276,7 @@ export default function HomePage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                   activePresetId === p.id
                     ? 'bg-zinc-900 text-white shadow-xs font-semibold'
-                    : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300'
+                    : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50'
                 }`}
               >
                 {p.label}
@@ -1296,32 +1300,32 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className={`py-2.5 px-2 sm:py-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
+              className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 1
-                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
+                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm ring-1 ring-zinc-300'
                   : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
               }`}
             >
-              <span className="truncate">1. Chat <span className="hidden sm:inline">&amp; MSME</span></span>
-              <span className={`hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md ${currentStep === 1 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-600'}`}>01</span>
+              <span className="truncate">1. Ingest <span className="hidden sm:inline">Chat &amp; Check</span></span>
+              <span className={`hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-md items-center ${currentStep === 1 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-500 bg-zinc-50'}`}>01</span>
             </button>
 
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className={`py-2.5 px-2 sm:py-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
+              className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 2
-                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
+                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm ring-1 ring-zinc-300'
                   : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
               }`}
             >
-              <div className="flex items-center gap-1 truncate">
-                <span className="truncate">2. 5 Terms <span className="hidden sm:inline">Check</span></span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="truncate">2. Terms <span className="hidden sm:inline">Triage &amp; Check</span></span>
                 {activeGaps.length > 0 && (
                   <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
                 )}
               </div>
-              <span className={`hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md ${currentStep === 2 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-600'}`}>02</span>
+              <span className={`hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-md items-center ${currentStep === 2 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-500 bg-zinc-50'}`}>02</span>
             </button>
 
             <button
@@ -1334,21 +1338,21 @@ export default function HomePage() {
                 }
                 setCurrentStep(3);
               }}
-              className={`py-2.5 px-2 sm:py-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
+              className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
                 currentStep === 3
-                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm'
+                  ? 'bg-white text-zinc-900 border-zinc-400 shadow-sm ring-1 ring-zinc-300'
                   : (detectedGaps.length > 0 && resolvedGapIds.length < detectedGaps.length)
                     ? 'bg-zinc-100/70 text-zinc-400 border-zinc-200'
                     : 'bg-white/60 text-zinc-600 border-zinc-200/80 hover:bg-white'
               }`}
             >
               <div className="flex items-center gap-1.5 truncate">
-                <span className="truncate">3. Order Slip</span>
+                <span className="truncate">3. <span className="hidden sm:inline">Digital </span>Order Slip</span>
                 {detectedGaps.length > 0 && resolvedGapIds.length < detectedGaps.length && (
                   <Lock className="w-3 h-3 text-zinc-400 shrink-0" />
                 )}
               </div>
-              <span className={`hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md ${currentStep === 3 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-600'}`}>03</span>
+              <span className={`hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-md items-center ${currentStep === 3 ? 'bg-zinc-100 text-zinc-900 font-bold' : 'text-zinc-500 bg-zinc-50'}`}>03</span>
             </button>
           </div>
 
@@ -1356,7 +1360,7 @@ export default function HomePage() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-3xl mx-auto px-3.5 sm:px-6 relative z-10 space-y-4 sm:space-y-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-4 sm:space-y-6">
 
         {/* ==============================================================================
             STEP 1: CHAT INPUT & UDYAM CHECK
@@ -1365,21 +1369,21 @@ export default function HomePage() {
           <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
             
             {/* Udyam Certificate Check */}
-            <div className="craft-card p-4 sm:p-6 space-y-3">
+            <div className="craft-card p-4 sm:p-6 lg:p-7 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   Step 1A • Statutory Pre-Requisite
                 </span>
-                <span className="text-[11px] sm:text-xs text-emerald-700 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-[11px] sm:text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap">
                   MSMED Act, 2006
                 </span>
               </div>
 
-              <h2 className="text-base sm:text-lg font-bold text-zinc-900">
+              <h2 className="text-base sm:text-lg lg:text-xl font-bold text-zinc-900">
                 Do you have an active MSME / Udyam Certificate?
               </h2>
 
-              <p className="text-xs text-zinc-500 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
                 Under the Supreme Court ruling in <em>Silpi Industries</em>, the 15-day payment protection rule applies only if you hold an active registration prior to supplying the goods.
               </p>
 
@@ -1395,7 +1399,7 @@ export default function HomePage() {
                   className="flex-1 px-3.5 py-2.5 sm:px-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-base sm:text-sm font-mono text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 min-h-[44px]"
                 />
 
-                <label className="flex items-center gap-2 p-2.5 px-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs font-medium text-zinc-700 cursor-pointer select-none min-h-[44px]">
+                <label className="flex items-center gap-2 p-2.5 px-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs font-medium text-zinc-700 cursor-pointer select-none min-h-[44px] whitespace-nowrap shrink-0 hover:bg-zinc-100 transition-colors">
                   <input
                     type="checkbox"
                     checked={hasUdyam}
@@ -1407,20 +1411,20 @@ export default function HomePage() {
               </div>
 
               {!hasUdyam && (
-                <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                <div className="p-3 sm:p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-xs sm:text-sm text-amber-900 leading-relaxed">
                   Notice: You can still generate an order memorandum, but you won&apos;t be eligible for 15-day summary recovery before the MSME Council until you register on <a href="https://udyamregistration.gov.in" target="_blank" rel="noopener noreferrer" className="font-semibold underline">udyamregistration.gov.in</a>.
                 </div>
               )}
             </div>
 
             {/* Chat & Voice Input Box */}
-            <div className="craft-card p-4 sm:p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div className="craft-card p-4 sm:p-6 lg:p-7 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4">
                 <div>
                   <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500">
                     Step 1B • Informal Negotiation Stream
                   </span>
-                  <h2 className="text-base sm:text-lg font-bold text-zinc-900 mt-0.5">
+                  <h2 className="text-base sm:text-lg lg:text-xl font-bold text-zinc-900 mt-0.5">
                     Paste WhatsApp messages or speak your order
                   </h2>
                 </div>
@@ -1428,7 +1432,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={toggleVoiceRecording}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer min-h-[42px] ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer min-h-[42px] whitespace-nowrap shrink-0 ${
                     isRecordingVoice
                       ? 'bg-rose-600 text-white animate-pulse'
                       : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
@@ -1440,7 +1444,7 @@ export default function HomePage() {
               </div>
 
               <textarea
-                rows={6}
+                rows={7}
                 value={rawChat}
                 onChange={(e) => setRawChat(e.target.value)}
                 placeholder="Type or paste your WhatsApp messages here (e.g. Suresh: Ready to stitch 1,500 Rayon Kurtis at Rs 58 per piece. Raghav: Done Suresh, rate is fine...)..."
@@ -1451,7 +1455,7 @@ export default function HomePage() {
                 type="button"
                 onClick={handleCheckOrder}
                 disabled={isAnalyzing}
-                className="w-full py-3.5 sm:py-4 px-6 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-950 text-white font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 min-h-[48px]"
+                className="w-full py-3.5 sm:py-4 px-6 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-950 text-white font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 min-h-[48px] whitespace-nowrap"
               >
                 {isAnalyzing ? (
                   <span>Checking terms against statutory rules...</span>
@@ -1475,22 +1479,22 @@ export default function HomePage() {
             
             {/* Section 29 Hard Halt Screen if price is uncertain */}
             {isHaltedSec29 ? (
-              <div className="craft-card p-6 border-rose-300 bg-rose-50/40 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
-                    <ShieldAlert className="w-5 h-5" />
+              <div className="craft-card p-6 lg:p-8 border-rose-300 bg-rose-50/40 space-y-4">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h2 className="text-base font-bold text-rose-950 uppercase tracking-tight">
+                    <h2 className="text-base sm:text-lg font-bold text-rose-950 uppercase tracking-tight">
                       Order Halted: Price is Uncertain (Section 29 Contract Act)
                     </h2>
-                    <p className="text-xs text-rose-800 leading-relaxed font-normal">
+                    <p className="text-xs sm:text-sm text-rose-800 leading-relaxed font-normal">
                       The negotiation mentions a floating rate (<em>&ldquo;Rs 90 se Rs 105 decide karenge&rdquo;</em>) and conditional payment (<em>&ldquo;jab mera party dega&rdquo;</em>). Under Section 29 of the Indian Contract Act, 1872, agreements with uncertain meaning cannot be legally enforced.
                     </p>
                   </div>
                 </div>
 
-                <div className="p-4 bg-white rounded-xl border border-rose-200 text-xs text-zinc-700 leading-relaxed">
+                <div className="p-4 bg-white rounded-xl border border-rose-200 text-xs sm:text-sm text-zinc-700 leading-relaxed">
                   <strong>Why this hurts the tailor:</strong> If you start cutting without a fixed price, the buyer can unilaterally pay the lower rate or withhold money for months.
                 </div>
 
@@ -1499,9 +1503,9 @@ export default function HomePage() {
                     href={`https://wa.me/?text=${encodeURIComponent('Bhai, as per our MSME accounting requirement, please confirm the exact rate per piece before we start cutting.')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-3 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs text-center flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs sm:text-sm text-center flex items-center justify-center gap-2 whitespace-nowrap shadow-xs"
                   >
-                    <MessageSquare className="w-4 h-4" />
+                    <MessageSquare className="w-4 h-4 shrink-0" />
                     <span>Ask Buyer on WhatsApp for Fixed Rate</span>
                   </a>
 
@@ -1518,7 +1522,7 @@ export default function HomePage() {
                       setEditQtyInput('1750');
                       showToast('Rate fixed at ₹95/pc. Halt cleared.');
                     }}
-                    className="px-4 py-3 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs cursor-pointer"
+                    className="px-5 py-3 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs sm:text-sm cursor-pointer whitespace-nowrap shadow-xs"
                   >
                     Set Rate to ₹95/pc (Demo)
                   </button>
@@ -1527,7 +1531,7 @@ export default function HomePage() {
             ) : (
               <>
                 {/* 5 Deal Terms KPI Grid */}
-                <div className="craft-card p-6 space-y-4">
+                <div className="craft-card p-4 sm:p-6 lg:p-7 space-y-4">
                   <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                     <div>
                       <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -1541,7 +1545,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setIsEditingTerms(!isEditingTerms)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-semibold text-zinc-700 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-semibold text-zinc-700 cursor-pointer whitespace-nowrap"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>{isEditingTerms ? 'Close Edit' : 'Edit Rate / Qty'}</span>
@@ -1591,13 +1595,13 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                     
                     {/* Parties */}
                     <div className="p-4 rounded-xl bg-zinc-50/70 border border-zinc-200/80 space-y-1">
                       <div className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">Parties</div>
-                      <div className="text-sm font-bold text-zinc-900 truncate">{buyerName}</div>
-                      <div className="text-xs text-zinc-500 truncate">Tailor: {supplierName.split(' - ')[0]}</div>
+                      <div className="text-sm font-bold text-zinc-900 truncate" title={buyerName}>{buyerName}</div>
+                      <div className="text-xs text-zinc-500 truncate" title={`Tailor: ${supplierName.split(' - ')[0]}`}>Tailor: {supplierName.split(' - ')[0]}</div>
                     </div>
 
                     {/* Scope & Quantity */}
@@ -1608,14 +1612,14 @@ export default function HomePage() {
                     }`}>
                       <div className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">Item &amp; Scope</div>
                       <div className="text-sm font-bold text-zinc-900">{quantity.toLocaleString('en-IN')} Pieces</div>
-                      <div className="text-xs text-zinc-500 truncate">{itemScope}</div>
+                      <div className="text-xs text-zinc-500 truncate" title={itemScope}>{itemScope}</div>
                     </div>
 
                     {/* Rate & Total Value (Strictly calculated) */}
                     <div className="p-4 rounded-xl bg-zinc-50/70 border border-zinc-200/80 space-y-1">
                       <div className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">Consideration</div>
                       <div className="text-sm font-bold text-zinc-900">₹{ratePerPiece} / piece</div>
-                      <div className="text-xs text-emerald-700 font-semibold">Total: ₹{totalFormatted} INR</div>
+                      <div className="text-xs text-emerald-700 font-semibold whitespace-nowrap">Total: ₹{totalFormatted} INR</div>
                     </div>
 
                     {/* Delivery Timeline */}
@@ -1626,7 +1630,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Payment Terms */}
-                    <div className={`p-4 rounded-xl border space-y-1 sm:col-span-2 transition-all ${
+                    <div className={`p-4 rounded-xl border space-y-1 sm:col-span-2 lg:col-span-2 transition-all ${
                       activeGaps.some(g => g.pillar_key === 'payment_terms')
                         ? 'bg-amber-50/60 border-amber-200'
                         : 'bg-zinc-50/70 border-zinc-200/80'
@@ -1641,7 +1645,7 @@ export default function HomePage() {
 
                 {/* Statutory Gaps, Flags & Chat Mistakes Section (Persistent, Full-Spectrum Audit) */}
                 {detectedGaps.length > 0 ? (
-                  <div className="craft-card p-6 border-amber-300 bg-white shadow-md space-y-5 animate-in fade-in">
+                  <div className="craft-card p-4 sm:p-6 lg:p-7 border-amber-300 bg-white shadow-md space-y-5 animate-in fade-in">
                     
                     {/* Header with Badges & Quick Action */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-zinc-200">
@@ -1659,21 +1663,21 @@ export default function HomePage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">
                           {detectedGaps.length} Flag{detectedGaps.length > 1 ? 's' : ''} Detected
                         </span>
                         {resolvedGapIds.length < detectedGaps.length ? (
                           <button
                             type="button"
                             onClick={handleApplyAllGaps}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Apply All Protections</span>
                           </button>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 whitespace-nowrap">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                             <span>All Protected</span>
                           </span>
@@ -1710,7 +1714,7 @@ export default function HomePage() {
                                 <button
                                   type="button"
                                   onClick={() => speakText(gap.how_it_hurts || '')}
-                                  className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+                                  className="text-xs font-medium text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer whitespace-nowrap"
                                   title="Listen in Indian voice"
                                 >
                                   <Volume2 className="w-3.5 h-3.5" />
@@ -1749,7 +1753,7 @@ export default function HomePage() {
                                   <button
                                     type="button"
                                     onClick={() => editingGapId === gap.id ? handleCancelEditGap() : handleStartEditGap(gap)}
-                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer whitespace-nowrap"
                                   >
                                     <Edit3 className="w-3 h-3" />
                                     <span>{editingGapId === gap.id ? 'Cancel Edit' : 'Edit Clause'}</span>
@@ -1772,14 +1776,14 @@ export default function HomePage() {
                                       <button
                                         type="button"
                                         onClick={handleCancelEditGap}
-                                        className="px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium text-zinc-600 hover:bg-zinc-50 cursor-pointer"
+                                        className="px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium text-zinc-600 hover:bg-zinc-50 cursor-pointer whitespace-nowrap"
                                       >
                                         Cancel
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => handleSaveCustomGap(gap.id)}
-                                        className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                        className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                                       >
                                         <Check className="w-3.5 h-3.5" />
                                         <span>Save &amp; Apply Clause</span>
@@ -1790,7 +1794,7 @@ export default function HomePage() {
                                   <div className="p-2.5 bg-emerald-100/60 rounded-xl border border-emerald-200 text-emerald-950 font-medium leading-relaxed flex items-start justify-between gap-2">
                                     <span>{gap.quick_fix_value}</span>
                                     {gap.isCustom && (
-                                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-400">
+                                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-400 whitespace-nowrap">
                                         Customized
                                       </span>
                                     )}
@@ -1803,23 +1807,23 @@ export default function HomePage() {
                                 <button
                                   type="button"
                                   onClick={() => handleResolveGap(gap.id)}
-                                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                                     isProtected
                                       ? 'bg-white hover:bg-zinc-50 border border-emerald-400 text-emerald-800'
                                       : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-xs'
                                   }`}
                                 >
-                                  <Check className="w-4 h-4" />
+                                  <Check className="w-4 h-4 shrink-0" />
                                   <span>{isProtected ? '✓ Statutory Clause Applied (Click to Toggle)' : gap.quick_fix_label}</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   onClick={() => editingGapId === gap.id ? handleCancelEditGap() : handleStartEditGap(gap)}
-                                  className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 text-center cursor-pointer"
+                                  className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 text-center cursor-pointer whitespace-nowrap"
                                   title="Edit this clause directly"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 text-zinc-600" />
+                                  <Edit3 className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
                                   <span>Edit</span>
                                 </button>
 
@@ -1827,9 +1831,9 @@ export default function HomePage() {
                                   href={`https://wa.me/?text=${encodeURIComponent(gap.whatsapp_ask_text)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 text-center"
+                                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-800 font-semibold text-xs flex items-center justify-center gap-1.5 text-center whitespace-nowrap"
                                 >
-                                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                                  <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                                   <span>Ask Buyer on WhatsApp</span>
                                 </a>
                               </div>
@@ -1848,7 +1852,7 @@ export default function HomePage() {
                               <AlertTriangle className="w-4 h-4 text-amber-600" />
                             </span>
                             <div>
-                              <span className="font-bold text-amber-900">
+                              <span className="font-bold text-amber-900 whitespace-nowrap">
                                 {detectedGaps.length - resolvedGapIds.length} Warning(s) Remaining:
                               </span>
                               <span className="text-zinc-600 ml-1">
@@ -1861,19 +1865,19 @@ export default function HomePage() {
                             <button
                               type="button"
                               onClick={handleApplyAllGaps}
-                              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer min-h-[44px]"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer min-h-[44px] whitespace-nowrap"
                             >
-                              <Check className="w-4 h-4" />
+                              <Check className="w-4 h-4 shrink-0" />
                               <span>Apply All &amp; Unlock</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={handleAdvanceToOrderSlip}
-                              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-zinc-200 text-zinc-500 font-bold text-xs cursor-pointer hover:bg-zinc-300 transition-colors min-h-[44px]"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-zinc-200 text-zinc-500 font-bold text-xs cursor-pointer hover:bg-zinc-300 transition-colors min-h-[44px] whitespace-nowrap"
                               title="Clear all warnings above to unlock Step 3"
                             >
-                              <Lock className="w-4 h-4 text-zinc-500" />
+                              <Lock className="w-4 h-4 text-zinc-500 shrink-0" />
                               <span>Locked</span>
                             </button>
                           </div>
@@ -1888,10 +1892,10 @@ export default function HomePage() {
                           <button
                             type="button"
                             onClick={handleAdvanceToOrderSlip}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer min-h-[44px]"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer min-h-[44px] whitespace-nowrap"
                           >
                             <span>Proceed to Digital Order Slip (Step 3)</span>
-                            <ArrowRight className="w-4 h-4" />
+                            <ArrowRight className="w-4 h-4 shrink-0" />
                           </button>
                         </>
                       )}
@@ -2131,7 +2135,7 @@ export default function HomePage() {
             {/* ====================================================================
                 VIEW B: THE FORMAL PRINTABLE DIGITAL ORDER SLIP (Tailor View & Print)
                 ==================================================================== */}
-            <div className={`printable-contract-sheet craft-card p-3.5 sm:p-8 md:p-10 space-y-4 sm:space-y-6 bg-white border border-zinc-200 ${viewRole === 'buyer' ? 'hidden sm:block' : 'block'}`}>
+            <div className={`printable-contract-sheet craft-card p-4 sm:p-8 md:p-10 lg:p-12 space-y-5 sm:space-y-6 bg-white border border-zinc-200 shadow-md ${viewRole === 'buyer' ? 'hidden sm:block' : 'block'}`}>
               
               {/* Slip Header */}
               <div className="border-b-2 border-zinc-900 pb-3 sm:pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -2147,8 +2151,8 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right w-full sm:w-auto">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <div className="text-left sm:text-right w-full sm:w-auto shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>Electronic Assent Recorded (Sec 10A IT Act)</span>
                   </span>
@@ -2159,13 +2163,13 @@ export default function HomePage() {
               </div>
 
               {/* Contracting Parties */}
-              <div className="printable-clause-card print-break-inside-avoid grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50/70 p-4 rounded-xl border border-zinc-200/80 text-xs">
+              <div className="printable-clause-card print-break-inside-avoid grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/70 p-4 sm:p-5 rounded-xl border border-zinc-200/80 text-xs sm:text-sm">
                 <div>
                   <div className="text-[10px] uppercase font-bold text-zinc-400">1. Job-Worker / Tailor:</div>
                   <div className="font-bold text-zinc-900 text-sm">{supplierName}</div>
                   <div className="text-zinc-500 mt-0.5">Udyam Registration: <strong className="text-zinc-800 font-mono">{udyamUrn || 'Pending Registration'}</strong></div>
                   {udyamUrn ? (
-                    <div className="text-emerald-700 font-medium mt-0.5">✓ Active Udyam Registration — Eligible under <em>Silpi Industries</em> for MSMED Act Provisions</div>
+                    <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ Active Udyam Registration — Eligible under <em>Silpi Industries</em> for MSMED Act Provisions</div>
                   ) : (
                     <div className="text-amber-800 font-medium mt-0.5 text-[11px] leading-tight">
                       ⚠️ Registration Pending: Self-declared micro unit. Under <em>Silpi Industries v. KSRTC (2021)</em>, statutory MSMED Act remedies require active Udyam registration on or before the date of entering into the contract / commencement of supplies; pending registration, enforced as binding contractual covenants under Indian Contract Act, 1872.
@@ -2186,9 +2190,9 @@ export default function HomePage() {
                 
                 {/* Clause 1: Scope */}
                 <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
-                  <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
+                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
                     1. Scope of Work, Bailment Standard &amp; Contractual 72-Hour Inspection Protocol
-                  </div>
+                  </h3>
                   <p>1.1 <strong>Scope of Work:</strong> Stitching &amp; Finishing of {itemScope.replace(/^Stitching\s+(?:&\s+Finishing\s+)?of\s+/i, '')} — <strong>Total Confirmed Quantity: {quantity.toLocaleString('en-IN')} units</strong>.</p>
                   <p className="text-zinc-600">
                     1.2 <strong>Bailment of Fabric (Sec 150–152 Indian Contract Act, 1872):</strong> Raw fabric is bailed by Buyer to Job-Worker. Job-Worker owes a statutory duty of ordinary prudence and safe custody (Section 151 ICA), but is not liable for pre-existing latent fabric defects, mill shrinkage, yarn irregularities, or dye bleeding undisclosed by the Buyer.
@@ -2200,22 +2204,22 @@ export default function HomePage() {
 
                 {/* Clause 2: Labour Charges & Tax Notice */}
                 <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
-                  <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
+                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
                     2. Labour Charges &amp; MSME Tax Deduction Notice (Sec 37(2)(g) Income-tax Act, 2025)
-                  </div>
+                  </h3>
                   <p className="text-sm font-semibold text-zinc-900">
                     The agreed labour consideration is ₹{ratePerPiece} per piece for {quantity.toLocaleString('en-IN')} units (Total Consideration: ₹{totalFormatted} INR), exclusive of applicable GST.
                   </p>
                   <p className="mt-1 text-zinc-600 text-xs leading-relaxed">
-                    <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business expense deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
+                    <strong>Tax Deduction Timing Notice (Conditional):</strong> Timely payment within the agreed 15-day period supports the Buyer&apos;s business expense deduction. Under Section 37(2)(g) of the Income-tax Act, 2025 (which replaced Section 43B(h) of the 1961 Act effective 1 April 2026), where the Job-Worker holds active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (<em>Silpi Industries v. KSRTC, 2021</em>), payments delayed beyond the agreed MSMED Act timeline are disallowed as deductible expenses in the year of incurrence and deferred until the tax year of actual payment.
                   </p>
                 </div>
 
                 {/* Clause 3: Delivery */}
                 <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40">
-                  <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
+                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
                     3. Delivery Timeline &amp; Fabric Delay Shield
-                  </div>
+                  </h3>
                   <p>
                     3.1 Target dispatch: <strong>{deliveryTimeline}</strong>. Any delay by the Buyer in supplying fabric rolls shall automatically extend the completion deadline day-for-day without penalty (Sec 53 &amp; 67 Contract Act).
                   </p>
@@ -2223,14 +2227,14 @@ export default function HomePage() {
 
                 {/* Clause 4: Payment */}
                 <div className="printable-clause-card print-break-inside-avoid p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/40 space-y-1.5">
-                  <div className="font-semibold text-zinc-900 text-xs uppercase mb-1">
+                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider mb-1">
                     4. Agreed Payment Terms &amp; MSMED Act Conditional Statutory Notice
-                  </div>
+                  </h3>
                   <p>
                     4.1 <strong>Contractual Payment Timeline:</strong> Payment is due strictly within <strong>15 days</strong> of delivery, as agreed between the parties (well within the statutory 45-day maximum outer limit permitted under Section 15 of the MSMED Act, 2006).
                   </p>
                   <p className="text-zinc-700 text-xs leading-relaxed">
-                    4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (*Silpi Industries v. KSRTC, 2021*), delayed payment beyond the agreed 15-day timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 of the MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC).
+                    4.2 <strong>Statutory Interest on Delayed Payment (Conditional):</strong> Conditional upon the Job-Worker holding an active, verified Udyam registration on or before the date of entering into the contract / commencement of supplies (<em>Silpi Industries v. KSRTC, 2021</em>), delayed payment beyond the agreed 15-day timeline attracts statutory compound interest with monthly rests at <strong>3 times the notified RBI Bank Rate</strong> under Section 16 of the MSMED Act, 2006, recoverable through the Micro and Small Enterprises Facilitation Council (MSEFC).
                   </p>
                   <p className="text-zinc-700 text-xs leading-relaxed">
                     4.3 <strong>Contractual Default Interest (Pending MSME Registration):</strong> In the event statutory MSMED Act remedies are inapplicable due to pending Udyam registration, default beyond the agreed 15-day timeline shall attract an agreed commercial interest rate of <strong>18% per annum</strong> from the due date until full realization, alongside any damages and costs legally recoverable for breach of contract under Section 73 of the Indian Contract Act, 1872.
@@ -2241,7 +2245,7 @@ export default function HomePage() {
 
               {/* Dual Signature Section */}
               <div className="pt-4 border-t border-zinc-200 space-y-4 dual-signature-block print-break-inside-avoid">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   
                   {/* Tailor Signature Box */}
                   <div className="space-y-2.5">
@@ -2280,16 +2284,16 @@ export default function HomePage() {
                     </div>
 
                     {/* Left Legal Declaration */}
-                    <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 select-none flex items-center min-h-[38px]">
-                      <span className="truncate">Signatory Authority: Self-Declared by Tailor (<strong>{supplierName}</strong>)</span>
+                    <div className="p-2 px-2.5 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 select-none flex items-center min-h-[44px] leading-snug">
+                      <span>Signatory Authority: Self-Declared by Tailor (<strong>{supplierName}</strong>)</span>
                     </div>
 
                     {/* Left Canvas Pad */}
                     <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
                       <canvas
                         ref={supplierCanvasRef}
-                        width={400}
-                        height={110}
+                        width={600}
+                        height={140}
                         onMouseDown={startDrawing(true)}
                         onMouseMove={draw(true)}
                         onMouseUp={stopDrawing(true)}
@@ -2306,7 +2310,7 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={handleTailorConfirmSign}
-                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer shadow-xs transition-colors"
+                          className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs cursor-pointer shadow-xs transition-colors min-h-[40px] whitespace-nowrap"
                         >
                           Confirm Tailor Mark &amp; Lock IP
                         </button>
@@ -2380,18 +2384,18 @@ export default function HomePage() {
 
                     {/* Right Legal Declaration */}
                     {!buyerSigned ? (
-                      <label className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 cursor-pointer select-none flex items-center gap-2 min-h-[38px]">
+                      <label className="p-2 px-2.5 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700 cursor-pointer select-none flex items-center gap-2 min-h-[44px] leading-snug">
                         <input
                           type="checkbox"
                           checked={buyerAuthorized}
                           onChange={(e) => setBuyerAuthorized(e.target.checked)}
                           className="w-3.5 h-3.5 rounded text-zinc-900 border-zinc-300 shrink-0"
                         />
-                        <span className="truncate">I declare I am authorized to bind Buyer entity (<strong>{buyerName}</strong>).</span>
+                        <span>I declare I am authorized to bind Buyer entity (<strong>{buyerName}</strong>).</span>
                       </label>
                     ) : (
-                      <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 select-none flex items-center min-h-[38px]">
-                        <span className="truncate">✓ Signatory Authority Declared under Section 10A IT Act (Entity Authority Verification Pending)</span>
+                      <div className="p-2 px-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 select-none flex items-center min-h-[44px] leading-snug">
+                        <span>✓ Signatory Authority Declared under Section 10A IT Act (Entity Authority Verification Pending)</span>
                       </div>
                     )}
 
@@ -2401,8 +2405,8 @@ export default function HomePage() {
                         <div className="border border-zinc-300 rounded-xl overflow-hidden bg-white">
                           <canvas
                             ref={buyerCanvasRef}
-                            width={400}
-                            height={110}
+                            width={600}
+                            height={140}
                             onMouseDown={startDrawing(false)}
                             onMouseMove={draw(false)}
                             onMouseUp={stopDrawing(false)}
@@ -2418,7 +2422,7 @@ export default function HomePage() {
                           <button
                             type="button"
                             onClick={handleBuyerConfirmSign}
-                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-xs transition-colors min-h-[40px] whitespace-nowrap"
                           >
                             <ShieldCheck className="w-4 h-4" />
                             <span>Simulate Local Buyer Sign</span>
@@ -2504,7 +2508,7 @@ export default function HomePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={handleSaveAndSendWhatsApp}
-                  className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                  className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px] whitespace-nowrap"
                 >
                   <MessageSquare className="w-4 h-4 shrink-0" />
                   <span>Send to Buyer on WhatsApp</span>
@@ -2516,7 +2520,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={handleCopyDealLink}
-                    className="py-2.5 px-2 sm:px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px]"
+                    className="py-2.5 px-2 sm:px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px] whitespace-nowrap"
                     title="Copy Shareable Link"
                   >
                     <Copy className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
@@ -2528,7 +2532,7 @@ export default function HomePage() {
                     href={`/deal/${dealId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2.5 px-2 sm:px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 min-h-[42px]"
+                    className="py-2.5 px-2 sm:px-3.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 min-h-[42px] whitespace-nowrap"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                     <span>Open Link</span>
@@ -2538,7 +2542,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="py-2.5 px-2 sm:px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-[11px] sm:text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px]"
+                    className="py-2.5 px-2 sm:px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-[11px] sm:text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px] whitespace-nowrap"
                   >
                     <Printer className="w-3.5 h-3.5 shrink-0" />
                     <span>Print PDF</span>
