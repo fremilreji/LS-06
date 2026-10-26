@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { 
   ShieldCheck, 
   CheckCircle2, 
@@ -136,6 +137,34 @@ Buyer: Market rate chal raha hai, finish dekh ke Rs 90 se Rs 105 decide karenge.
 export default function HomePage() {
   // Wizard Step: 1 = Input, 2 = Terms Check, 3 = Order Slip
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  // Dynamic Real-Time Clock (IST)
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const timePart = now.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+      setCurrentDateTime(`${datePart} • ${timePart} IST`);
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Language: 'en' | 'hi' | 'kn'
   const [lang, setLang] = useState<'en' | 'hi' | 'kn'>('en');
@@ -1155,12 +1184,38 @@ export default function HomePage() {
                 AGREEMENT DESK / GARMENT JOB-WORK
               </div>
               <h1 className="text-2xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight flex items-baseline gap-1">
-                <span>Dealproof</span>
-                <span className="text-orange-600 font-serif text-xl sm:text-2xl">*</span>
+                <Link
+                  href="/"
+                  onClick={(e) => {
+                    if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                      handleResetToBlank();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className="inline-flex items-baseline gap-1 group cursor-pointer hover:opacity-85 transition-opacity"
+                  title="Dealproof — Click to reset or start fresh agreement"
+                >
+                  <span>Dealproof</span>
+                  <span className="text-orange-600 font-serif text-xl sm:text-2xl group-hover:scale-125 transition-transform" title="Dealproof Legal Intelligence Engine">*</span>
+                </Link>
               </h1>
               <p className="text-xs sm:text-base text-zinc-600 mt-0.5 sm:mt-1 font-normal">
                 Clear terms. Confident business.
               </p>
+
+              {/* Dynamic Live Date & Time (Clean, non-breaking layout) */}
+              <div className="flex items-center gap-2 mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-zinc-600">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold tracking-wide shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  LIVE
+                </span>
+                <div className="flex items-center gap-1.5 text-zinc-600 font-mono text-[10px] sm:text-[11px] font-medium tabular-nums">
+                  <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
+                  <span suppressHydrationWarning>
+                    {currentDateTime || 'Active Session • IST'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Language Selection & Audio Playback Buttons */}
