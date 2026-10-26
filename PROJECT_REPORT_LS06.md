@@ -230,9 +230,27 @@ To ensure that generated contracts can be presented in court or printed on A4 pa
 
 ## 10. User Interface & Demonstration
 
-* **Desktop & Tablet View:** Clean, spacious three-step workflow with split-pane comparison, real-time risk indicators, and instant vector print preview.
-* **Smartphone View:** Designed for the shop floor—horizontal scrolling preset chips, compact step navigation, thumb-friendly touch targets, and full touch-screen signature drawing.
-* **Remote Buyer Experience:** The tailor clicks **"Send to Buyer on WhatsApp"**, generating a `wa.me` message with a direct link (`/deal/[dealId]`). The buyer opens the link on their own phone, inspects the terms, draws their digital mark, and locks the agreement with their independent network IP.
+### 10.1 Step 1 & Step 2: Ingestion & 5-Pillar Statutory Gap Triage
+![Figure 1: Step 1 (Mobile Chat & Speech Ingestion) & Step 2 (Statutory Gap Analysis)](./public/screenshots/step2_gap_analysis.png)
+
+#### Annotated Feature Breakdown (Figure 1):
+* **[A] Step 1A MSME / Udyam Check:** Validates URN format and applies Supreme Court *Silpi Industries (2021)* precedent rule (active registration required prior to supply for MSEFC summary jurisdiction).
+* **[B] Step 1B Speech Recording:** Browser-native Web Speech API captures voice notes on-device in Hindi (`hi-IN`), Kannada (`kn-IN`), and Indian English (`en-IN`) with zero audio server costs.
+* **[C] WhatsApp Ingestion Stream:** Direct copy-paste box parses raw vernacular negotiation streams with preset demo scenarios for instant evaluation.
+* **[D] 5-Pillar Extraction KPI:** Layer 1 automatically extracts Buyer, Supplier, Quantity, Rate per piece, and Delivery Timeline into deterministic state.
+* **[E] 100% Deterministic Math:** Computes exact total consideration (Qty x Rate = Total INR) in TypeScript code, completely preventing LLM arithmetic errors.
+* **[F] In-Place Clause Editor:** Clicking `✏️ Edit Clause` allows the job-worker to customize protective clause text directly before proceeding; advancement to Step 3 is strictly gated until all predatory terms are resolved.
+
+### 10.2 Step 3 & Step 4: 2-Page Digital Order Slip & Remote Mobile Buyer Assent
+![Figure 2: Step 3 (Verified Order Slip) & Step 4 (Remote Mobile Buyer Assent)](./public/screenshots/step3_order_slip.png)
+
+#### Annotated Feature Breakdown (Figure 2):
+* **[A] Clean 2-Page Printable Slip:** Formatted with strict `@media print` CSS rules for zero blank space on court-admissible A4 paper.
+* **[B] Statutory Clauses:** Embeds ICA Sec 150-152 bailment safe custody, SOGA Sec 42 72-hour inspection window, and Sec 37(2)(g) tax deduction timing warnings.
+* **[C] Section 63 BSA Schedule:** Generates canonical SHA-256 electronic record certificate with terminal IP and device fingerprinting.
+* **[D] Karnataka Stamp Act Notice:** Transparently discloses Article 5(i-d) Rs. 500 works contract duty, citing *In Re: Interplay (2023)*.
+* **[E] Remote Buyer Signing Portal:** Tailor shares a direct WhatsApp link (`wa.me`) leading to an independent mobile portal (`/deal/[id]`).
+* **[F] Bilateral Mobile Assent:** Buyer verifies OTP, inspects clean commercial terms without finger-pointing warnings, and signs with independent IP.
 
 ---
 
