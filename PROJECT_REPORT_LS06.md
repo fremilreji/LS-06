@@ -231,7 +231,7 @@ To ensure that generated contracts can be presented in court or printed on A4 pa
 ## 10. User Interface & Demonstration
 
 ### 10.1 Step 1 & Step 2: Ingestion & 5-Pillar Statutory Gap Triage
-![Figure 1: Step 1 (Mobile Chat & Speech Ingestion) & Step 2 (Statutory Gap Analysis)](./public/screenshots/step2_gap_analysis.png)
+![Figure 1: Step 1 (Mobile Chat & Speech Ingestion) & Step 2 (Statutory Gap Analysis)](./public/screenshots/figure1_annotated.png)
 
 #### Annotated Feature Breakdown (Figure 1):
 * **[A] Step 1A MSME / Udyam Check:** Validates URN format and applies Supreme Court *Silpi Industries (2021)* precedent rule (active registration required prior to supply for MSEFC summary jurisdiction).
@@ -242,7 +242,7 @@ To ensure that generated contracts can be presented in court or printed on A4 pa
 * **[F] In-Place Clause Editor:** Clicking `✏️ Edit Clause` allows the job-worker to customize protective clause text directly before proceeding; advancement to Step 3 is strictly gated until all predatory terms are resolved.
 
 ### 10.2 Step 3 & Step 4: 2-Page Digital Order Slip & Remote Mobile Buyer Assent
-![Figure 2: Step 3 (Verified Order Slip) & Step 4 (Remote Mobile Buyer Assent)](./public/screenshots/step3_order_slip.png)
+![Figure 2: Step 3 (Verified Order Slip) & Step 4 (Remote Mobile Buyer Assent)](./public/screenshots/figure2_annotated.png)
 
 #### Annotated Feature Breakdown (Figure 2):
 * **[A] Clean 2-Page Printable Slip:** Formatted with strict `@media print` CSS rules for zero blank space on court-admissible A4 paper.

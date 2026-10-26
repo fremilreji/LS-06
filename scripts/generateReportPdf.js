@@ -49,12 +49,12 @@ function generatePdf() {
     }
   }
 
-  // Load screenshots
+  // Load screenshots with visual callouts and annotations
   const screenshotDir = path.join(__dirname, '..', 'public', 'screenshots');
-  const step1Path = path.join(screenshotDir, 'step1_mobile_ingestion.png');
-  const step2Path = path.join(screenshotDir, 'step2_gap_analysis.png');
-  const step3Path = path.join(screenshotDir, 'step3_order_slip.png');
-  const step4Path = path.join(screenshotDir, 'step4_remote_buyer_assent.jpg');
+  const step1Path = path.join(screenshotDir, 'step1_annotated.png');
+  const step2Path = path.join(screenshotDir, 'step2_annotated.png');
+  const step3Path = path.join(screenshotDir, 'step3_annotated.png');
+  const step4Path = path.join(screenshotDir, 'step4_annotated.jpg');
 
   const lines = rawContent.split('\n');
   let inCodeBlock = false;

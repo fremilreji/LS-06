@@ -167,6 +167,64 @@ export default function ProjectReportPage() {
           </div>
         </section>
 
+        {/* Section 10: User Interface & Demonstration */}
+        <section className="craft-card p-6 sm:p-8 lg:p-10 space-y-6 bg-white border border-zinc-200">
+          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center gap-2 border-b border-zinc-100 pb-2.5">
+            <FileText className="w-5 h-5 text-orange-600 shrink-0" />
+            <span>10. User Interface &amp; Annotated Demonstration</span>
+          </h2>
+          
+          <div className="space-y-6">
+            {/* Figure 1 */}
+            <div className="space-y-3">
+              <h3 className="text-sm sm:text-base font-bold text-zinc-800">
+                Figure 1: Step 1 (Mobile Chat &amp; Speech Ingestion) &amp; Step 2 (Statutory Gap Analysis)
+              </h3>
+              <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-xs bg-zinc-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src="/screenshots/figure1_annotated.png" 
+                  alt="Figure 1: Step 1 and Step 2 Ingestion and Gap Analysis" 
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 text-xs sm:text-sm text-zinc-700 space-y-1.5">
+                <div className="font-bold text-zinc-900 pb-1">Annotated Callout Guide (Figure 1):</div>
+                <div><span className="font-bold text-red-700">[A] Step 1A MSME Check:</span> Validates URN format and enforces Supreme Court <em>Silpi Industries (2021)</em> precedent rule.</div>
+                <div><span className="font-bold text-red-700">[B] Step 1B Speech Recording:</span> Native Web Speech API records and transcribes voice notes in Hindi, Kannada, and Indian English on-device.</div>
+                <div><span className="font-bold text-red-700">[C] WhatsApp Ingestion Stream:</span> Fast paste box with instant real-world test presets (1,500 Kurtis, 2,000 Polo Shirts).</div>
+                <div><span className="font-bold text-red-700">[D] 5-Pillar Extraction KPI:</span> Deterministic state machine extracts Buyer, Supplier, Quantity, Rate, and Delivery Timeline.</div>
+                <div><span className="font-bold text-red-700">[E] 100% Deterministic Math:</span> Arithmetic executed in TypeScript (Qty × Rate = Rs. 87,000), eliminating LLM hallucination.</div>
+                <div><span className="font-bold text-red-700">[F] In-Place Clause Editor:</span> Interactive editor allows job-worker to resolve unfair terms before advancing to the final order slip.</div>
+              </div>
+            </div>
+
+            {/* Figure 2 */}
+            <div className="space-y-3 pt-4 border-t border-zinc-100">
+              <h3 className="text-sm sm:text-base font-bold text-zinc-800">
+                Figure 2: Step 3 (Verified Order Slip) &amp; Step 4 (Remote Mobile Buyer Assent)
+              </h3>
+              <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-xs bg-zinc-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src="/screenshots/figure2_annotated.png" 
+                  alt="Figure 2: Step 3 and Step 4 Order Slip and Buyer Assent" 
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 text-xs sm:text-sm text-zinc-700 space-y-1.5">
+                <div className="font-bold text-zinc-900 pb-1">Annotated Callout Guide (Figure 2):</div>
+                <div><span className="font-bold text-red-700">[A] Court-Admissible 2-Page Slip:</span> Formatted with strict <code>@media print</code> CSS rules for zero blank space on A4 paper.</div>
+                <div><span className="font-bold text-red-700">[B] Statutory Clauses:</span> Enforces ICA Sec 150-152 bailment custody, SOGA Sec 42 72-hr inspection window, and Sec 37(2)(g) tax deductions.</div>
+                <div><span className="font-bold text-red-700">[C] Section 63 BSA Schedule:</span> Generates canonical SHA-256 electronic record certificate with terminal IP and device fingerprinting.</div>
+                <div><span className="font-bold text-red-700">[D] Karnataka Stamp Act Notice:</span> Discloses Article 5(i-d) Rs. 500 works contract duty, citing <em>In Re: Interplay (2023)</em>.</div>
+                <div><span className="font-bold text-red-700">[E] Remote WhatsApp Share:</span> Direct WhatsApp link (<code>wa.me</code>) invites buyer to review terms on an independent portal (<code>/deal/[id]</code>).</div>
+                <div><span className="font-bold text-red-700">[F] Bilateral Mobile Assent:</span> Buyer verifies terms without internal risk warnings and signs digitally with an independent IP log.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Section 15: Team & Roles */}
         <section className="craft-card p-6 sm:p-8 lg:p-10 space-y-4 bg-white border border-zinc-200">
           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center gap-2 border-b border-zinc-100 pb-2.5">
