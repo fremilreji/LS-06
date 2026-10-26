@@ -172,7 +172,7 @@ Balancing Section 42 of the *Sale of Goods Act, 1930* and bailment standards und
 To ensure that generated contracts can be presented in court or printed on A4 paper without awkward gaps:
 * Scoped `.printable-contract-sheet > div` to `break-inside: auto`.
 * Scoped `break-inside: avoid` strictly to individual `.printable-clause-card`s and the `.dual-signature-block`.
-* Result: Clauses 1–4 neatly fill Page 1 with **zero blank space**, while Page 2 cleanly houses Clause 5 (Risk Audit), Signatures, BSA Certificate, and Stamp Duty notices.
+* Result: Clauses 1–4 neatly fill Page 1 with **zero blank space**, while Page 2 cleanly houses the Dual Assent & Signatures, Section 63 BSA Evidence Certificate, and Karnataka Stamp Act notices without finger-pointing risk warnings.
 
 ---
 
