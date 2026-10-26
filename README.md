@@ -121,6 +121,18 @@ Anand: And remember, if we find any loose threads later in checking, we will dir
 
 ---
 
-## Team
+## Team & Roles (Redhounds)
 
-Built by Team Redhounds for Srujana Tech Fest 2026 (Problem Statement LS-06).
+Built collaboratively during the 48-hour Srujana Tech Fest 2026 (Problem Statement LS-06). Our team divided the architecture into two focused pods:
+
+* **Chintha Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
+  * Designed the mobile-first, low-literacy interface tailored for micro-unit job-workers.
+  * Built the Next.js React components and Tailwind CSS styling.
+  * Engineered the "Traffic-Light" 5-Pillar gap resolution UI.
+  * Developed the strict `@media print` formatting for the final A4 Court-Admissible PDF and MSME ODR Portal export.
+
+* **Fremil Reji & K C Vaishnavi (Backend, Cloud Architecture & Legal Engine)**
+  * Architected the FastAPI / Next.js API backend and Firebase Firestore database integration.
+  * Built the AI-driven deterministic JSON state machine to map informal chats to Indian Statutory Law (MSMED Act, Contract Act).
+  * Engineered the Anti-Forgery Dual Signature system with OTP verification and Section 11 IT Act IP/Device fingerprinting.
+  * Implemented the SHA-256 cryptographic hashing for the Section 63 BSA 2023 evidence certificate.

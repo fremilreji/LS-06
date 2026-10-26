@@ -1,4 +1,4 @@
-# DealProof AI — Detailed Project Report
+# DealProof AI (PactProof / Jan-Karar) — Detailed Project Report
 ## Problem Statement LS-06: From Handshake to Contract (Informal Agreements)
 ### Srujana Tech Fest 2026 | Legal Services Hackathon
 **Submission Deadline:** 10:00 AM, 26 October 2026  
@@ -9,7 +9,7 @@
 
 ## 1. Project Overview
 
-* **Project Title:** DealProof AI — From Handshake to Contract
+* **Project Title:** DealProof AI / PactProof (Jan-Karar) — From Handshake to Contract
 * **Team Name:** Redhounds
 * **Track / Theme:** Legal Services (Srujana Tech Fest 2026)
 * **Official Problem Statement:** LS-06 — From Handshake to Contract (Informal Agreements)
@@ -292,11 +292,20 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 15. Team Contributions & References
 
-### 15.1 Team Roles & Work Distribution
-* **Member 1 (Frontend & UI/UX):** Next.js App Router, Tailwind CSS v4 styling, mobile responsiveness, touch-screen signature canvas, and print layout engine.
-* **Member 2 (Analysis & Legal Engine):** Deterministic extraction algorithms (`lib/analysis/extractTerms.ts`), risk gap triage (`detectMissingTerms.ts`), and multilingual Kannada/Hindi regex parsers.
-* **Member 3 (Legal Drafting & Precedents):** Formulation of the 5 core clauses, Karnataka Stamp Act research, *Silpi Industries* and *In Re: Interplay* jurisprudence, and Section 63 BSA certificate drafting.
-* **Member 4 (Cryptography, Testing & Deployment):** SHA-256 canonical hashing payload, Vitest automated test suite, Firebase Cloud sync, Vercel serverless edge deployment.
+### 15.1 Team Roles & Work Distribution (Team Redhounds)
+Built collaboratively during the 48-hour Srujana Tech Fest 2026. Our team divided the architecture into two focused pods to ensure both an accessible user experience and an ironclad legal backend:
+
+* **Chintha Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
+  * Designed the mobile-first, low-literacy interface tailored for micro-unit job-workers.
+  * Built the Next.js React components and Tailwind CSS styling.
+  * Engineered the "Traffic-Light" 5-Pillar gap resolution UI.
+  * Developed the strict `@media print` formatting for the final A4 Court-Admissible PDF and MSME ODR Portal export.
+
+* **Fremil Reji & K C Vaishnavi (Backend, Cloud Architecture & Legal Engine)**
+  * Architected the FastAPI / Next.js API backend and Firebase Firestore database integration.
+  * Built the AI-driven deterministic JSON state machine to map informal chats to Indian Statutory Law (MSMED Act, Contract Act).
+  * Engineered the Anti-Forgery Dual Signature system with OTP verification and Section 11 IT Act IP/Device fingerprinting.
+  * Implemented the SHA-256 cryptographic hashing for the Section 63 BSA 2023 evidence certificate.
 
 ### 15.2 Statutory Acts & Legal Authorities Cited
 1. **Micro, Small and Medium Enterprises Development Act, 2006 (MSMED Act):** Sections 15, 16, 17, and 18.
