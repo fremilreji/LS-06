@@ -188,7 +188,7 @@ export function exportDraftToPdf(draft: AgreementDraft): jsPDF {
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184); // Slate-400
     doc.text(
-      `DealProof AI | Srujana Tech Fest 2026 LS-06 | Page ${i} of ${totalPages}`,
+      `DealProof AI | Digital Order Memorandum | Page ${i} of ${totalPages}`,
       pageWidth / 2,
       pageHeight - 10,
       { align: 'center' }

@@ -11,12 +11,12 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-zinc-500">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-zinc-900 flex items-center gap-1">
-              dealproof<span className="text-zinc-400">.</span>
+              dealproof<span className="text-emerald-600">.</span>
             </span>
             <span>•</span>
-            <span className="text-zinc-600 font-medium">Jan-Karar (LS-06)</span>
+            <span className="text-zinc-600 font-medium">Jan-Karar</span>
             <span>•</span>
-            <span>Srujana Tech Fest 2026</span>
+            <span className="text-zinc-500">Digital Order Memorandum Platform</span>
           </div>
           
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px]">

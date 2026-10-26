@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Dealproof ✦ Jan-Karar — From Handshake to Contract (LS-06)',
+  title: 'Dealproof ✦ Jan-Karar — From Handshake to Contract',
   description:
-    'Turn informal business conversations into clear agreement drafts. Legal tech analysis for Indian MSMEs (Problem LS-06). Built with Next.js, Firebase & Vercel.',
+    'Turn informal business conversations into clear agreement drafts. Legal tech analysis for Indian MSMEs. Built with Next.js, Firebase & Vercel.',
 };
 
 export default function RootLayout({
