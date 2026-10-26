@@ -123,4 +123,4 @@ Anand: And remember, if we find any loose threads later in checking, we will dir
 
 ## Team
 
-Built by Team DealProof for Srujana Tech Fest 2026 (Problem Statement LS-06).
+Built by Team Redhounds for Srujana Tech Fest 2026 (Problem Statement LS-06).

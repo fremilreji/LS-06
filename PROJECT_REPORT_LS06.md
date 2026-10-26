@@ -10,7 +10,7 @@
 ## 1. Project Overview
 
 * **Project Title:** DealProof AI — From Handshake to Contract
-* **Team Name:** Team DealProof
+* **Team Name:** Redhounds
 * **Track / Theme:** Legal Services (Srujana Tech Fest 2026)
 * **Official Problem Statement:** LS-06 — From Handshake to Contract (Informal Agreements)
 * **Executive Summary:**  
@@ -312,4 +312,4 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 * ***In Re: Interplay Between Arbitration Agreements under the Arbitration and Conciliation Act, 1996 and the Indian Stamp Act, 1899 (2023) 7-Judge Constitution Bench:*** Affirming that unstamped or deficiently stamped agreements are not void ab initio, and the deficiency is curable upon payment of appropriate duty and penalty.
 
 ---
-*Report prepared by Team DealProof for Srujana Tech Fest 2026.*
+*Report prepared by Team Redhounds for Srujana Tech Fest 2026.*
