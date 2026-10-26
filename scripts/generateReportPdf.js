@@ -124,39 +124,91 @@ function generatePdf() {
       doc.line(margin, cursorY, pageWidth - margin, cursorY);
       cursorY += 3.5;
 
-      // When reaching Section 10: User Interface & Demonstration, embed screenshots!
+      // When reaching Section 10: User Interface & Demonstration, embed annotated screenshots!
       if (text.includes('10. User Interface') || text.includes('Demonstration')) {
-        checkPageBreak(120);
+        checkPageBreak(165);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
+        doc.setFontSize(11);
         doc.setTextColor(30, 30, 30);
-        doc.text('Figure 1: Step 1 (Mobile Chat & Speech Ingestion) and Step 2 (Statutory Gap Analysis)', margin, cursorY);
+        doc.text('Figure 1: Step 1 (Mobile Chat & Speech Ingestion) & Step 2 (Statutory Gap Analysis)', margin, cursorY);
         cursorY += 5;
 
         // Embed Step 1 & Step 2 side by side
         if (fs.existsSync(step1Path) && fs.existsSync(step2Path)) {
           const b1 = 'data:image/png;base64,' + fs.readFileSync(step1Path).toString('base64');
           const b2 = 'data:image/png;base64,' + fs.readFileSync(step2Path).toString('base64');
-          doc.addImage(b1, 'PNG', margin, cursorY, 55, 110);
-          doc.addImage(b2, 'PNG', margin + 60, cursorY, 120, 110);
-          cursorY += 115;
+          doc.addImage(b1, 'PNG', margin, cursorY, 52, 102);
+          doc.addImage(b2, 'PNG', margin + 56, cursorY, 124, 102);
+          cursorY += 105;
         }
 
-        checkPageBreak(125);
+        // Callout card explaining Figure 1
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(215, 225, 235);
+        doc.roundedRect(margin, cursorY, maxLineWidth, 36, 1.5, 1.5, 'FD');
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
+        doc.setFontSize(8);
+        doc.setTextColor(30, 41, 59);
+        doc.text('Interactive Features Demonstrated in Figure 1:', margin + 3, cursorY + 4.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+        const fig1Notes = [
+          '[A] Step 1A MSME / Udyam Check: Validates URN format and applies Supreme Court Silpi Industries (2021) compliance rule.',
+          '[B] Step 1B Speech Recording: Browser-native Web Speech API captures voice notes on-device in Hindi, Kannada, and Indian English.',
+          '[C] WhatsApp Ingestion: Direct copy-paste box parses raw vernacular negotiation streams with preset demo cases for instant evaluation.',
+          '[D] 5-Pillar Extraction KPI: Layer 1 extracts Buyer, Supplier, Qty, Rate, and Delivery Timeline into deterministic state.',
+          '[E] 100% Deterministic Math: Computes exact total INR (Qty x Rate) in TypeScript code, preventing LLM arithmetic errors.',
+          '[F] In-Place Clause Editor: "Edit Clause" button allows tailoring terms directly before advancing; advancement is strictly locked until warnings resolve.'
+        ];
+        let noteY = cursorY + 9;
+        fig1Notes.forEach(fn => {
+          doc.text(fn, margin + 3, noteY);
+          noteY += 4.2;
+        });
+        cursorY += 41;
+
+        checkPageBreak(165);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
         doc.setTextColor(30, 30, 30);
-        doc.text('Figure 2: Step 3 (Verified Order Slip) and Step 4 (Remote Mobile Buyer Assent)', margin, cursorY);
+        doc.text('Figure 2: Step 3 (Verified Order Slip) & Step 4 (Remote Mobile Buyer Assent)', margin, cursorY);
         cursorY += 5;
 
         // Embed Step 3 & Step 4
         if (fs.existsSync(step3Path) && fs.existsSync(step4Path)) {
           const b3 = 'data:image/png;base64,' + fs.readFileSync(step3Path).toString('base64');
           const b4 = 'data:image/jpeg;base64,' + fs.readFileSync(step4Path).toString('base64');
-          doc.addImage(b3, 'PNG', margin, cursorY, 120, 110);
-          doc.addImage(b4, 'JPEG', margin + 125, cursorY, 55, 110);
-          cursorY += 115;
+          doc.addImage(b3, 'PNG', margin, cursorY, 124, 102);
+          doc.addImage(b4, 'JPEG', margin + 128, cursorY, 52, 102);
+          cursorY += 105;
         }
+
+        // Callout card explaining Figure 2
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(215, 225, 235);
+        doc.roundedRect(margin, cursorY, maxLineWidth, 36, 1.5, 1.5, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(30, 41, 59);
+        doc.text('Interactive Features Demonstrated in Figure 2:', margin + 3, cursorY + 4.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+        const fig2Notes = [
+          '[A] Clean 2-Page Printable Slip: Formatted with strict @media print CSS rules for zero blank space on court-admissible A4 paper.',
+          '[B] Statutory Clauses: Embeds ICA Sec 150-152 bailment safe custody, SOGA Sec 42 72-hr inspection window, and Sec 37(2)(g) tax warnings.',
+          '[C] Section 63 BSA Schedule: Generates canonical SHA-256 electronic record certificate with terminal IP and device fingerprinting.',
+          '[D] Karnataka Stamp Act Notice: Transparently discloses Article 5(i-d) Rs. 500 works contract duty, citing In Re: Interplay (2023).',
+          '[E] Remote Buyer Signing Portal: Tailor shares a direct WhatsApp link (wa.me) leading to an independent mobile portal (/deal/[id]).',
+          '[F] Bilateral Mobile Assent: Buyer verifies OTP, inspects clean commercial terms without finger-pointing warnings, and signs with independent IP.'
+        ];
+        let noteY2 = cursorY + 9;
+        fig2Notes.forEach(fn => {
+          doc.text(fn, margin + 3, noteY2);
+          noteY2 += 4.2;
+        });
+        cursorY += 41;
       }
 
     } else if (trimmed.startsWith('### ')) {
@@ -213,7 +265,7 @@ function generatePdf() {
 
   const pdfBytes = doc.output('arraybuffer');
   fs.writeFileSync(outPath, Buffer.from(pdfBytes));
-  console.log(`PDF successfully generated with screenshots at: ${outPath} (${totalPages} pages)`);
+  console.log(`PDF successfully generated with annotated screenshots at: ${outPath} (${totalPages} pages)`);
 }
 
 generatePdf();
