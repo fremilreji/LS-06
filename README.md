@@ -125,7 +125,7 @@ Anand: And remember, if we find any loose threads later in checking, we will dir
 
 Built collaboratively during the 48-hour Srujana Tech Fest 2026 (Problem Statement LS-06). Our team divided the architecture into two focused pods:
 
-* **Chintha Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
+* **C Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
   * Designed the mobile-first, low-literacy interface tailored for micro-unit job-workers.
   * Built the Next.js React components and Tailwind CSS styling.
   * Engineered the "Traffic-Light" 5-Pillar gap resolution UI.

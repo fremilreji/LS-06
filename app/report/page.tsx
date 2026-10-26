@@ -176,7 +176,7 @@ export default function ProjectReportPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2">
               <div className="font-bold text-zinc-900 text-sm">Pod 1: Frontend, UX/UI &amp; Accessibility</div>
-              <div className="text-orange-700 font-semibold">Chintha Nakshatra &amp; Shivani B</div>
+              <div className="text-orange-700 font-semibold">C Nakshatra &amp; Shivani B</div>
               <ul className="list-disc pl-4 space-y-1 text-zinc-600">
                 <li>Designed mobile-first interface for micro-unit job-workers</li>
                 <li>Built Next.js React components &amp; Tailwind CSS styling</li>

@@ -275,7 +275,7 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
     <div className="min-h-screen bg-ambient-grid py-4 sm:py-8 px-3.5 sm:px-6 lg:px-8 text-zinc-900 font-sans pb-24 relative overflow-hidden">
       
       {/* Soft warm ambient lighting glow at top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
 
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6 relative z-10">
         

@@ -28,15 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#fafafa] text-zinc-900 selection:bg-zinc-900 selection:text-white">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}>
+      <body className="min-h-full flex flex-col bg-[#fafafa] text-zinc-900 selection:bg-zinc-900 selection:text-white overflow-x-hidden">
         <AuthProvider>
           <div className="no-print">
             <Suspense fallback={<div className="h-14 bg-white border-b border-zinc-200" />}>
               <Navbar />
             </Suspense>
           </div>
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
           <div className="no-print">
             <Footer />
           </div>

@@ -295,7 +295,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### 15.1 Team Roles & Work Distribution (Team Redhounds)
 Built collaboratively during the 48-hour Srujana Tech Fest 2026. Our team divided the architecture into two focused pods to ensure both an accessible user experience and an ironclad legal backend:
 
-* **Chintha Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
+* **C Nakshatra & Shivani B (Frontend, UX/UI & Accessibility)**
   * Designed the mobile-first, low-literacy interface tailored for micro-unit job-workers.
   * Built the Next.js React components and Tailwind CSS styling.
   * Engineered the "Traffic-Light" 5-Pillar gap resolution UI.

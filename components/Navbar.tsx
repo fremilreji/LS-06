@@ -4,11 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  ShieldCheck, 
   FileText, 
   PlusCircle, 
-  BookmarkCheck, 
-  Sparkles 
+  BookmarkCheck
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -21,12 +19,12 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 text-zinc-900 shadow-2xs">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+    <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 text-zinc-900 shadow-2xs w-full max-w-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 gap-2">
           
-          {/* Logo & Category Badge */}
-          <div className="flex items-center space-x-3">
+          {/* Brand Logo Link */}
+          <div className="flex items-center shrink-0">
             <Link 
               href="/" 
               onClick={(e) => {
@@ -36,23 +34,19 @@ export default function Navbar() {
                 }
               }}
               className="flex items-center space-x-2 group cursor-pointer"
+              title="Dealproof Home"
             >
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center text-white shadow-xs font-black text-sm group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center text-white shadow-xs font-black text-sm group-hover:scale-105 transition-transform shrink-0">
                 DP
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-bold text-base tracking-tight text-zinc-950">
-                  dealproof<span className="text-emerald-600">.</span>
-                </span>
-                <span className="hidden sm:inline-block text-[10px] text-zinc-500 font-semibold uppercase tracking-wider bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200">
-                  Order Shield
-                </span>
-              </div>
+              <span className="font-bold text-base tracking-tight text-zinc-950">
+                dealproof<span className="text-emerald-600">.</span>
+              </span>
             </Link>
           </div>
 
-          {/* Navigation Links & Action */}
-          <nav className="flex items-center space-x-1 sm:space-x-2">
+          {/* Navigation Links & Action (Responsive Mobile-Optimized) */}
+          <nav className="flex items-center space-x-1 sm:space-x-2 shrink-0">
             {navLinks.map(link => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -66,14 +60,15 @@ export default function Navbar() {
                       window.location.href = '/';
                     }
                   }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  title={link.label}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     isActive
                       ? 'bg-zinc-100 text-zinc-950 font-bold'
                       : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
-                  <span>{link.label}</span>
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-500'}`} />
+                  <span className="hidden md:inline">{link.label}</span>
                 </Link>
               );
             })}
@@ -85,11 +80,12 @@ export default function Navbar() {
                   window.location.href = '/';
                 }
               }}
-              className="ml-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
               title="Start a new deal from scratch"
             >
               <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
-              <span>+ New Order</span>
+              <span className="hidden xs:inline">+ New Order</span>
+              <span className="xs:hidden">New</span>
             </button>
           </nav>
 

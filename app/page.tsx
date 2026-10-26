@@ -1162,7 +1162,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-ambient-grid text-zinc-900 font-sans pb-24 relative overflow-hidden">
       
       {/* Soft warm ambient lighting glow at top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[300px] bg-gradient-to-b from-orange-100/40 via-amber-50/20 to-transparent blur-3xl pointer-events-none overflow-hidden" />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -1268,7 +1268,7 @@ export default function HomePage() {
           </div>
 
           {/* Quick Demo Case Selector (Mobile Scrollable Chips) */}
-          <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar pb-1 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 sm:flex-wrap">
+          <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar pb-1 w-full max-w-full sm:flex-wrap">
             <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Demo:</span>
             {PRESETS.map(p => (
               <button
