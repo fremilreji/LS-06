@@ -430,33 +430,6 @@ export default function BuyerOrderSlipClient({ initialDeal, dealId }: BuyerOrder
                 4.3 <strong>Contractual Default Interest (Pending MSME Registration):</strong> In the event statutory MSMED Act remedies are inapplicable due to pending Udyam registration, default beyond the agreed 15-day timeline shall attract an agreed commercial interest rate of <strong>18% per annum</strong> from the due date until full realization, alongside any damages and costs legally recoverable for breach of contract under Section 73 of the Indian Contract Act, 1872.
               </p>
             </div>
-
-            {/* Clause 5: Statutory Risk Audit: Informal Chat Clauses Neutralized */}
-            <div className="printable-clause-card print-break-inside-avoid bg-amber-50/60 p-3.5 rounded-lg border border-amber-300 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-700" />
-                  <h3 className="font-bold text-zinc-900 text-xs uppercase tracking-wider">
-                    5. STATUTORY RISK AUDIT &amp; INFORMAL CHAT REMEDIES
-                  </h3>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
-                  Statutory Protection Active
-                </span>
-              </div>
-              <div className="text-[11px] text-zinc-700 space-y-1.5">
-                <div className="p-2 bg-white rounded border border-amber-200">
-                  <strong>• 15-Day Payment Timeline (Sec 15 MSMED Act / Sec 73 ICA):</strong> Buyer payment cannot be made contingent on third-party exporter or wholesale collections. Conditional upon valid Udyam registration under *Silpi Industries*, mandatory 3x RBI compound interest applies; otherwise standard contractual damages apply.
-                </div>
-                <div className="p-2 bg-white rounded border border-amber-200">
-                  <strong>• 72-Hour Inspection Limit (Sec 42 Sale of Goods Act &amp; Sec 74 ICA):</strong> Arbitrary loose-thread debit notes and unilateral penalties are void by law. Minor defects shall be rectified by Job-Worker.
-                </div>
-                <div className="p-2 bg-white rounded border border-amber-200">
-                  <strong>• Scope &amp; Price Certainty (Sec 62 ICA):</strong> Consideration locked at ₹{ratePerPiece}/pc (Total: ₹{totalValueFormatted} INR). Unilateral alterations without written price revision are legally barred.
-                </div>
-              </div>
-            </div>
-
           </div>
 
           {/* Buyer Assent & Verification Section */}
